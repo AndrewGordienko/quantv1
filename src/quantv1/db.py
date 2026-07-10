@@ -444,6 +444,9 @@ CREATE TABLE IF NOT EXISTS earnings_positioning_snapshots (
     days_to_cover           DOUBLE,
     institutional_ownership DOUBLE,
     passive_ownership       DOUBLE,
+    borrow_available        BOOLEAN,
+    borrow_fee_bps_annual   DOUBLE,
+    borrow_known_at         TIMESTAMP,
     source                  VARCHAR,
     source_record_id        VARCHAR,
     ingested_at             TIMESTAMP,
@@ -805,6 +808,12 @@ def _migrate_schema(con: duckdb.DuckDBPyConnection) -> None:
             "guidance_status": "VARCHAR",
             "guidance_role": "VARCHAR",
             "feature_version": "VARCHAR",
+        })
+    if _table_exists(con, "earnings_positioning_snapshots"):
+        _add_columns(con, "earnings_positioning_snapshots", {
+            "borrow_available": "BOOLEAN",
+            "borrow_fee_bps_annual": "DOUBLE",
+            "borrow_known_at": "TIMESTAMP",
         })
 
 

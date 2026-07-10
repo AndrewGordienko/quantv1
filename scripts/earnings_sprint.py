@@ -42,11 +42,15 @@ def main() -> None:
     windows.add_argument("--workers", type=int, default=1)
     windows.add_argument("--force", action="store_true")
     sub.add_parser("preflight")
-    sub.add_parser("features")
+    features = sub.add_parser("features")
+    feature_mode = features.add_mutually_exclusive_group(required=True)
+    feature_mode.add_argument("--coarse", action="store_true")
+    feature_mode.add_argument("--full", action="store_true")
+    features.add_argument("--include-retrospective-holdout", action="store_true")
     sub.add_parser("audit")
     run_parser = sub.add_parser("run")
     run_parser.add_argument("--lock-spec", action="store_true")
-    run_parser.add_argument("--final-test", action="store_true")
+    run_parser.add_argument("--retrospective-holdout", action="store_true")
     args = parser.parse_args()
 
     if args.command == "universe":
@@ -103,15 +107,22 @@ def main() -> None:
         end = datetime.now(timezone.utc).replace(tzinfo=None)
         print(entitlement_preflight("AAPL", end - timedelta(days=1), end))
     elif args.command == "features":
+        from datetime import date
         from quantv1.research.earnings_alpha import build_feature_frame
-        print({"features": len(build_feature_frame())})
+        from quantv1.ingest.earnings import RETROSPECTIVE_HOLDOUT_START
+        before = (date.max if args.include_retrospective_holdout
+                  else RETROSPECTIVE_HOLDOUT_START)
+        print({"features": len(build_feature_frame(
+            mode="full" if args.full else "coarse", before=before
+        ))})
     elif args.command == "audit":
         import json
         from quantv1.research.earnings_alpha import structured_data_audit
         print(json.dumps(structured_data_audit(), indent=2))
     elif args.command == "run":
         from quantv1.research.earnings_alpha import run
-        print(run(lock_spec=args.lock_spec, final_test=args.final_test))
+        print(run(lock_spec=args.lock_spec,
+                  retrospective_holdout=args.retrospective_holdout))
 
 
 if __name__ == "__main__":

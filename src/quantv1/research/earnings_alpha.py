@@ -29,17 +29,37 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from ..config import DATA_DIR, ROOT
 from ..db import connect
-from ..ingest.earnings import FINAL_TEST_START, SPRINT_VERSION, VALIDATION_START
+from ..ingest.earnings import (
+    PROTOCOL_LOCK_DATE,
+    RETROSPECTIVE_HOLDOUT_START,
+    SAMPLE_END,
+    SPRINT_VERSION,
+    VALIDATION_START,
+)
 from ..portfolio.ledger import MarkedExposureBook, PortfolioLedger
+from .protocol import (
+    BETA_VERSION,
+    MIN_PERMUTATION_FRACTION,
+    TARGET_VERSION,
+    clustered_mean_ci,
+    clustered_portfolio_bootstrap,
+    execution_cost_estimate,
+    first_session_after,
+    hac_statistics,
+    power_requirements,
+    shrink_and_clip_beta,
+    trading_sessions,
+)
 from .earnings_strategy import (
     COST_HURDLE_MULTIPLE,
     decision_from_prediction,
 )
 
 FEATURE_PATH = DATA_DIR / "earnings_features.parquet"
+FEATURE_METADATA_PATH = DATA_DIR / "earnings_features_metadata.json"
 REPORT_PATH = DATA_DIR / "earnings_alpha_report.json"
 SPEC_LOCK_PATH = DATA_DIR / "earnings_model_spec_lock.json"
-FINAL_REPORT_PATH = DATA_DIR / "earnings_final_test_report.json"
+RETROSPECTIVE_REPORT_PATH = DATA_DIR / "earnings_retrospective_holdout_report.json"
 # Coarse V5 screen: bar execution with deliberately punitive assumed costs.
 # Historical NBBO remains a later promotion requirement, not an early blocker.
 DECISION_MINUTES = 30
@@ -57,6 +77,7 @@ MIN_QUOTE_COVERAGE = 0.95
 EULER = 0.5772156649
 COARSE_SAMPLE_MODULUS = 4
 COARSE_SAMPLE_REMAINDER = 0
+ARTIFACT_VERSION = "earnings-features-v2"
 
 PRICE_NUMERIC = [
     "gap", "reaction_1m", "reaction_5m", "reaction_30m",
@@ -251,7 +272,9 @@ def _daily_context(con, ticker: str, benchmark: str, session_date: date) -> dict
     """, [benchmark, session_date]).df().sort_values("date")
     if asset.empty:
         return {"prior_close": None, "pre_event_volatility": None,
-                "trailing_adv": None, "beta": None}
+                "trailing_adv": None, "beta": None, "beta_raw": None,
+                "beta_observations": 0, "beta_estimation_end": None,
+                "beta_version": BETA_VERSION}
     prior_close = float(asset.iloc[-1]["close"])
     returns = asset["close"].pct_change().dropna()
     volatility = float(returns.tail(20).std()) if len(returns) >= 10 else None
@@ -261,9 +284,16 @@ def _daily_context(con, ticker: str, benchmark: str, session_date: date) -> dict
     br = merged["close_bench"].pct_change()
     valid = ar.notna() & br.notna()
     variance = br[valid].var()
-    beta = float(ar[valid].cov(br[valid]) / variance) if valid.sum() >= 20 and variance > 0 else None
+    beta_observations = int(valid.sum())
+    beta_raw = (float(ar[valid].cov(br[valid]) / variance)
+                if beta_observations >= 20 and variance > 0 else None)
+    beta = (shrink_and_clip_beta(beta_raw, beta_observations)
+            if beta_raw is not None else None)
     return {"prior_close": prior_close, "pre_event_volatility": volatility,
-            "trailing_adv": adv, "beta": beta}
+            "trailing_adv": adv, "beta": beta, "beta_raw": beta_raw,
+            "beta_observations": beta_observations,
+            "beta_estimation_end": str(asset.iloc[-1]["date"]),
+            "beta_version": BETA_VERSION}
 
 
 def _consensus_actuals(con, event_id: str, event_time, decision_time) -> dict:
@@ -284,7 +314,8 @@ def _consensus_actuals(con, event_id: str, event_time, decision_time) -> dict:
         "guidance_revenue_vs_consensus": np.nan,
         "implied_move": np.nan, "implied_volatility": np.nan,
         "days_to_cover": np.nan, "institutional_ownership": np.nan,
-        "passive_ownership": np.nan,
+        "passive_ownership": np.nan, "borrow_available": None,
+        "borrow_fee_bps_annual": np.nan, "borrow_known_at": None,
     }
     for metric, prefix in (("diluted_eps", "eps"), ("revenue", "revenue"),
                            ("gross_margin", "gross_margin"),
@@ -377,13 +408,15 @@ def _consensus_actuals(con, event_id: str, event_time, decision_time) -> dict:
     if options:
         result["implied_move"], result["implied_volatility"] = options
     positioning = con.execute("""
-        SELECT days_to_cover,institutional_ownership,passive_ownership
+        SELECT days_to_cover,institutional_ownership,passive_ownership,
+               borrow_available,borrow_fee_bps_annual,borrow_known_at
         FROM earnings_positioning_snapshots
         WHERE earnings_event_id=? AND observed_at<? ORDER BY observed_at DESC LIMIT 1
     """, [event_id, event_time]).fetchone()
     if positioning:
         (result["days_to_cover"], result["institutional_ownership"],
-         result["passive_ownership"]) = positioning
+         result["passive_ownership"], result["borrow_available"],
+         result["borrow_fee_bps_annual"], result["borrow_known_at"]) = positioning
     return result
 
 
@@ -469,8 +502,24 @@ def _window_features(con, row) -> dict | None:
         if expected_minute_volume and not first30.empty else np.nan
     )
 
-    raw_5d = exit_values["asset_close"] / entry["price"] - 1
-    benchmark_5d = exit_values["benchmark_close"] / benchmark_entry["price"] - 1
+    if quote_complete:
+        target_entry = entry_quote["mid"]
+        target_delayed_entry = delayed_entry_quote["mid"]
+        target_exit = exit_quote["mid"]
+        target_benchmark_entry = benchmark_entry_quote["mid"]
+        target_benchmark_delayed_entry = benchmark_delayed_quote["mid"]
+        target_benchmark_exit = benchmark_exit_quote["mid"]
+        target_price_basis = "NBBO_MID"
+    else:
+        target_entry = entry["price"]
+        target_delayed_entry = delayed_entry["price"]
+        target_exit = exit_values["asset_close"]
+        target_benchmark_entry = benchmark_entry["price"]
+        target_benchmark_delayed_entry = benchmark_delayed["price"]
+        target_benchmark_exit = exit_values["benchmark_close"]
+        target_price_basis = "BAR_MID_PROXY"
+    raw_5d = target_exit / target_entry - 1
+    benchmark_5d = target_benchmark_exit / target_benchmark_entry - 1
     sector_residual_5d = raw_5d - benchmark_5d
     beta = context["beta"]
     reaction30_residual = (reaction30 - beta * benchmark_reaction30
@@ -480,22 +529,22 @@ def _window_features(con, row) -> dict | None:
                         if np.isfinite(reaction30_residual) and
                         context["pre_event_volatility"] and context["pre_event_volatility"] > 0
                         else np.nan)
-    actually_hedged_5d = (raw_5d - beta * benchmark_5d
-                          if beta is not None else np.nan)
-    delayed_raw_5d = exit_values["asset_close"] / delayed_entry["price"] - 1
-    delayed_benchmark_5d = (exit_values["benchmark_close"] /
-                            benchmark_delayed["price"] - 1)
+    beta_hedged_5d = (raw_5d - beta * benchmark_5d
+                      if beta is not None else np.nan)
+    delayed_raw_5d = target_exit / target_delayed_entry - 1
+    delayed_benchmark_5d = (target_benchmark_exit /
+                            target_benchmark_delayed_entry - 1)
     delayed_sector_residual_5d = delayed_raw_5d - delayed_benchmark_5d
-    delayed_actually_hedged_5d = (delayed_raw_5d - beta * delayed_benchmark_5d
-                                  if beta is not None else np.nan)
+    delayed_beta_hedged_5d = (delayed_raw_5d - beta * delayed_benchmark_5d
+                              if beta is not None else np.nan)
     consensus = _consensus_actuals(con, row.earnings_event_id,
                                    row.earliest_public_time,
                                    decision.to_pydatetime())
-    # A validation event whose five-day exit reaches the final period would leak
-    # final-time prices into model selection. Keep it out of both cells.
-    if session_date >= FINAL_TEST_START:
-        time_bucket = "FINAL_TEST_TIME"
-    elif exit_values["date"] >= FINAL_TEST_START:
+    # A validation event whose exit reaches the sealed retrospective period
+    # would leak holdout prices into model selection. Keep it out of both cells.
+    if session_date >= RETROSPECTIVE_HOLDOUT_START:
+        time_bucket = "RETROSPECTIVE_HOLDOUT_TIME"
+    elif exit_values["date"] >= RETROSPECTIVE_HOLDOUT_START:
         time_bucket = "EMBARGOED_OUTCOME"
     elif session_date < VALIDATION_START:
         time_bucket = "TRAIN_TIME"
@@ -518,12 +567,23 @@ def _window_features(con, row) -> dict | None:
         "pre_event_volatility": context["pre_event_volatility"],
         "trailing_adv": context["trailing_adv"],
         "first5_volume_ratio": volume_ratio, "beta": beta,
+        "beta_raw": context.get("beta_raw", context["beta"]),
+        "beta_observations": context.get("beta_observations", 0),
+        "beta_estimation_end": context.get("beta_estimation_end"),
+        "beta_version": context.get("beta_version", BETA_VERSION),
         "target_raw_5d": raw_5d,
         "target_sector_residual_5d": sector_residual_5d,
-        "target_actually_hedged_5d": actually_hedged_5d,
+        "target_beta_hedged_5d": beta_hedged_5d,
+        "target_actually_hedged_5d": beta_hedged_5d,
         "delayed_target_raw_5d": delayed_raw_5d,
         "delayed_target_sector_residual_5d": delayed_sector_residual_5d,
-        "delayed_target_actually_hedged_5d": delayed_actually_hedged_5d,
+        "delayed_target_beta_hedged_5d": delayed_beta_hedged_5d,
+        "delayed_target_actually_hedged_5d": delayed_beta_hedged_5d,
+        "target_version": TARGET_VERSION,
+        "target_price_basis": target_price_basis,
+        "target_entry_mid": target_entry, "target_exit_mid": target_exit,
+        "target_benchmark_entry_mid": target_benchmark_entry,
+        "target_benchmark_exit_mid": target_benchmark_exit,
         "entry_price": entry["price"], "exit_price": exit_values["asset_close"],
         "delayed_entry_price": delayed_entry["price"],
         "benchmark_entry_price": benchmark_entry["price"],
@@ -560,10 +620,23 @@ def _window_features(con, row) -> dict | None:
     return record
 
 
-def build_feature_frame(verbose: bool = True, *,
-                        before: date = FINAL_TEST_START,
-                        sample_modulus: int = COARSE_SAMPLE_MODULUS,
-                        sample_remainder: int = COARSE_SAMPLE_REMAINDER) -> pd.DataFrame:
+def build_feature_frame(verbose: bool = True, *, mode: str,
+                        before: date = RETROSPECTIVE_HOLDOUT_START) -> pd.DataFrame:
+    if mode not in {"coarse", "full"}:
+        raise EarningsStudyError("feature mode must be 'coarse' or 'full'")
+    includes_holdout = pd.Timestamp(before).date() > RETROSPECTIVE_HOLDOUT_START
+    if includes_holdout and not SPEC_LOCK_PATH.exists():
+        raise EarningsStudyError(
+            "retrospective holdout features require a locked model specification"
+        )
+    if includes_holdout and mode != "full":
+        raise EarningsStudyError("retrospective holdout requires a full artifact")
+    sample_modulus = COARSE_SAMPLE_MODULUS if mode == "coarse" else None
+    sample_remainder = COARSE_SAMPLE_REMAINDER
+    # Apply additive schema migrations before opening the long-lived read-only
+    # feature connection. This keeps existing research databases usable.
+    migration = connect()
+    migration.close()
     con = connect(read_only=True)
     windows = con.execute("""
         SELECT e.earnings_event_id,e.ticker,e.earliest_public_time,e.release_session,
@@ -580,6 +653,7 @@ def build_feature_frame(verbose: bool = True, *,
           AND e.earliest_public_time < ?
         ORDER BY e.earliest_public_time,e.ticker
     """, ["earnings-alpha-v1-2021-06-30", before]).df()
+    eligible_windows = len(windows)
     if sample_modulus:
         if sample_modulus < 2 or not 0 <= sample_remainder < sample_modulus:
             raise EarningsStudyError("invalid deterministic feature sample")
@@ -597,7 +671,22 @@ def build_feature_frame(verbose: bool = True, *,
     con.close()
     frame = pd.DataFrame(records)
     frame, feature_stats = add_structured_features(frame)
+    metadata = {
+        "artifact_version": ARTIFACT_VERSION, "mode": mode,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "before": str(before), "eligible_market_windows": eligible_windows,
+        "selected_market_windows": len(windows), "feature_rows": len(frame),
+        "sample_modulus": sample_modulus, "sample_remainder": sample_remainder,
+        "target_version": TARGET_VERSION, "beta_version": BETA_VERSION,
+        "protocol_lock_date": str(PROTOCOL_LOCK_DATE),
+        "retrospective_holdout_start": str(RETROSPECTIVE_HOLDOUT_START),
+        "includes_retrospective_holdout": includes_holdout,
+        "code_hash": _git_hash(),
+    }
+    FEATURE_METADATA_PATH.write_text(json.dumps(metadata, indent=2, default=str))
     if not frame.empty:
+        frame["artifact_mode"] = mode
+        frame["artifact_version"] = ARTIFACT_VERSION
         parquet_con = duckdb.connect(":memory:")
         try:
             parquet_con.register("_earnings_features", frame)
@@ -627,12 +716,14 @@ def build_feature_frame(verbose: bool = True, *,
                 created_at=excluded.created_at,metadata=excluded.metadata
         """, [(row.earnings_event_id, row.entry_time, row.exit_time,
                 row.target_raw_5d, row.target_sector_residual_5d,
-                row.target_actually_hedged_5d, now,
+                row.target_beta_hedged_5d, now,
                 json.dumps({"entry": "next one-minute bar after 30-minute decision",
                             "exit": "fifth subsequent common market close",
                             "cost_bps_per_side": BAR_COST_BPS_PER_SIDE}))
                for row in frame.itertuples(index=False)])
         write_con.close()
+    else:
+        FEATURE_PATH.unlink(missing_ok=True)
     return frame
 
 
@@ -644,6 +735,19 @@ def _load_feature_frame() -> pd.DataFrame:
         return con.execute("SELECT * FROM read_parquet(?)", [str(FEATURE_PATH)]).df()
     finally:
         con.close()
+
+
+def _load_feature_metadata() -> dict:
+    if not FEATURE_METADATA_PATH.exists():
+        return {"artifact_version": "LEGACY", "mode": "unknown",
+                "promotion_eligible": False}
+    metadata = json.loads(FEATURE_METADATA_PATH.read_text())
+    metadata["promotion_eligible"] = (
+        metadata.get("mode") == "full" and
+        metadata.get("target_version") == TARGET_VERSION and
+        metadata.get("beta_version") == BETA_VERSION
+    )
+    return metadata
 
 
 def structured_data_audit(frame: pd.DataFrame | None = None) -> dict:
@@ -660,6 +764,7 @@ def structured_data_audit(frame: pd.DataFrame | None = None) -> dict:
     coverage = coverage_statistics(data)
     return {
         "status": "READY" if coverage["gate_passed"] else "BLOCKED",
+        "feature_artifact": _load_feature_metadata(),
         "table_rows": tables, "coverage": coverage,
         "required": [
             "archived point-in-time EPS and revenue consensus",
@@ -811,11 +916,11 @@ def add_structured_features(frame: pd.DataFrame,
 
 
 def descriptive_tables(frame: pd.DataFrame) -> dict:
-    data = frame.dropna(subset=["target_sector_residual_5d"]).copy()
+    data = frame.dropna(subset=["target_beta_hedged_5d"]).copy()
     if data.empty:
         return {}
     data["initial_direction"] = np.sign(data["reaction_30m"])
-    data["continuation"] = data["initial_direction"] * data["target_sector_residual_5d"] > 0
+    data["continuation"] = data["initial_direction"] * data["target_beta_hedged_5d"] > 0
     data["year"] = pd.to_datetime(data["entry_time"]).dt.year
 
     def table(columns):
@@ -823,8 +928,8 @@ def descriptive_tables(frame: pd.DataFrame) -> dict:
         result = grouped.agg(
             n=("ticker", "size"),
             mean_raw_5d=("target_raw_5d", "mean"),
-            mean_sector_residual_5d=("target_sector_residual_5d", "mean"),
-            median_sector_residual_5d=("target_sector_residual_5d", "median"),
+            mean_beta_hedged_5d=("target_beta_hedged_5d", "mean"),
+            median_beta_hedged_5d=("target_beta_hedged_5d", "median"),
             continuation_rate=("continuation", "mean"),
         ).reset_index()
         return json.loads(result.to_json(orient="records"))
@@ -840,8 +945,8 @@ def descriptive_tables(frame: pd.DataFrame) -> dict:
             n=("ticker", "size"),
             mean_signal=(column, "mean"),
             mean_raw_5d=("target_raw_5d", "mean"),
-            mean_sector_residual_5d=("target_sector_residual_5d", "mean"),
-            median_sector_residual_5d=("target_sector_residual_5d", "median"),
+            mean_beta_hedged_5d=("target_beta_hedged_5d", "mean"),
+            median_beta_hedged_5d=("target_beta_hedged_5d", "median"),
         ).reset_index()
         return json.loads(grouped.to_json(orient="records"))
     return {
@@ -919,7 +1024,7 @@ def _fit(train: pd.DataFrame, numeric: list[str], categorical: list[str]):
          "model__l1_ratio": [0.1, 0.5, 0.9]},
         scoring="neg_mean_squared_error", cv=cv, n_jobs=1,
     )
-    search.fit(train[numeric + categorical], train["target_sector_residual_5d"])
+    search.fit(train[numeric + categorical], train["target_beta_hedged_5d"])
     return search.best_estimator_, search.best_params_
 
 
@@ -957,8 +1062,7 @@ def _execution_prices(row: dict, side: int, delayed: bool = False) -> dict | Non
     return {**{name: float(value) for name, value in values.items()}, "mode": "BAR"}
 
 
-def _bar_leg(row, side: int, delayed: bool = False,
-             doubled_costs: bool = False) -> float | None:
+def _bar_leg(row, side: int, cost: dict, delayed: bool = False) -> float | None:
     prices = _execution_prices(row, side, delayed)
     if prices is None:
         return None
@@ -974,9 +1078,7 @@ def _bar_leg(row, side: int, delayed: bool = False,
     asset = side * (exit_price / entry - 1)
     hedge_side = -side if beta >= 0 else side
     benchmark = hedge_side * (benchmark_exit / benchmark_entry - 1)
-    round_trip_cost = BAR_COST_BPS_PER_SIDE * 2 / 1e4
-    if doubled_costs:
-        round_trip_cost *= 2
+    round_trip_cost = cost["ledger_cost_bps_per_side"] * 2 / 1e4
     return float(asset + abs(beta) * benchmark -
                  round_trip_cost * (1 + abs(beta)))
 
@@ -986,10 +1088,10 @@ def simulate_portfolio(frame: pd.DataFrame, predictions: np.ndarray, *,
     data = frame.copy()
     data["prediction"] = predictions
     data = data.sort_values("delayed_entry_time" if delayed else "entry_time")
-    cost_bps = BAR_COST_BPS_PER_SIDE * (2 if doubled_costs else 1)
-    risk_book = MarkedExposureBook(cost_bps_per_side=cost_bps)
+    risk_book = MarkedExposureBook(cost_bps_per_side=0.0)
     risk_rejections = {"max_positions": 0, "duplicate_ticker": 0,
-                       "gross": 0, "sector_gross": 0, "net": 0}
+                       "gross": 0, "sector_gross": 0, "net": 0,
+                       "cost_or_borrow": 0}
     trades = []
     for row in data.to_dict(orient="records"):
         entry_time = pd.Timestamp(row["delayed_entry_time"] if delayed else row["entry_time"])
@@ -1002,17 +1104,26 @@ def simulate_portfolio(frame: pd.DataFrame, predictions: np.ndarray, *,
             risk_rejections["duplicate_ticker"] += 1
             continue
         prediction = row["prediction"]
+        proposed_side = 1 if prediction > 0 else -1 if prediction < 0 else 0
+        if not proposed_side:
+            continue
+        cost = execution_cost_estimate(
+            row, proposed_side, delayed=delayed, doubled=doubled_costs
+        )
+        if not cost["deployable"]:
+            risk_rejections["cost_or_borrow"] += 1
+            continue
         decision = decision_from_prediction(
-            prediction, row.get("beta"), cost_bps_per_side=cost_bps,
+            prediction, row.get("beta"), cost_bps_per_side=0.0,
             hurdle_multiple=COST_HURDLE_MULTIPLE,
+            all_in_cost_estimate=cost["all_in_cost"],
         )
         if decision["side"] == 0:
             continue
         side = decision["side"]
-        hedge_multiplier = abs(float(row["beta"])) if np.isfinite(row["beta"]) else np.nan
-        if not np.isfinite(hedge_multiplier):
+        if not np.isfinite(row["beta"]):
             continue
-        leg_return = _bar_leg(row, side, delayed=delayed, doubled_costs=doubled_costs)
+        leg_return = _bar_leg(row, side, cost, delayed=delayed)
         if leg_return is None:
             continue
         execution_prices = _execution_prices(row, side, delayed)
@@ -1030,6 +1141,15 @@ def simulate_portfolio(frame: pd.DataFrame, predictions: np.ndarray, *,
                  "benchmark_exit_price": execution_prices["benchmark_exit"],
                  "execution_mode": execution_prices["mode"],
                  "daily_marks": row.get("daily_marks"),
+                 "announcement_date": str(pd.Timestamp(
+                     row.get("public_time", entry_time)
+                 ).date()),
+                 "ledger_cost_bps_per_side": cost["ledger_cost_bps_per_side"],
+                 "estimated_all_in_cost": cost["all_in_cost"],
+                 "embedded_spread_bps": cost["embedded_spread_bps"],
+                 "participation_rate": cost["participation_rate"],
+                 "impact_bps_per_side": cost["impact_bps_per_side"],
+                 "borrow_fee_bps_annual": cost["borrow_fee_bps_annual"],
                  "signal_hurdle_bps": decision["hurdle_bps"]}
         projection = risk_book.project(trade, entry_time)
         if projection["gross"] > MAX_GROSS + 1e-12:
@@ -1052,12 +1172,22 @@ def simulate_portfolio(frame: pd.DataFrame, predictions: np.ndarray, *,
         risk_book.open(trade, projection)
         trades.append(trade)
     calendar = set()
-    for value in data.get("daily_marks", pd.Series(dtype=object)).dropna():
-        records = json.loads(value) if isinstance(value, str) else value
-        calendar.update(pd.Timestamp(record["date"]).date()
-                        for record in records or [])
+    if len(data):
+        starts = pd.to_datetime(data["delayed_entry_time" if delayed else "entry_time"],
+                                utc=True, errors="coerce").dropna()
+        ends = pd.to_datetime(data["delayed_exit_time" if delayed else "exit_time"],
+                              utc=True, errors="coerce").dropna()
+        buckets = set(data.get("time_bucket", pd.Series(dtype=str)).dropna())
+        if buckets == {"VALIDATION_TIME"}:
+            calendar.update(trading_sessions(
+                VALIDATION_START, RETROSPECTIVE_HOLDOUT_START - timedelta(days=1)
+            ))
+        elif buckets == {"RETROSPECTIVE_HOLDOUT_TIME"}:
+            calendar.update(trading_sessions(RETROSPECTIVE_HOLDOUT_START, SAMPLE_END))
+        elif len(starts) and len(ends):
+            calendar.update(trading_sessions(starts.min(), ends.max()))
     portfolio = PortfolioLedger(
-        cost_bps_per_side=cost_bps,
+        cost_bps_per_side=0.0,
         calendar=calendar,
     ).run(trades)
     portfolio["risk_rejections"] = risk_rejections
@@ -1149,7 +1279,7 @@ def _git_hash() -> str:
 
 def _dataset_hash(frame: pd.DataFrame) -> str:
     values = frame[["earnings_event_id", "ticker", "public_time",
-                    "target_sector_residual_5d"]] \
+                    "target_beta_hedged_5d"]] \
         .astype(str).sort_values("earnings_event_id").to_csv(index=False)
     return hashlib.sha256(values.encode()).hexdigest()[:16]
 
@@ -1258,7 +1388,10 @@ def permutation_controls(model: Pipeline, frame: pd.DataFrame,
     block_prediction = model.predict(block_permuted)
     baseline_prediction = model.predict(features)
     timestamp_prediction = baseline_prediction[order]
-    actual = frame["target_sector_residual_5d"]
+    target_column = ("target_beta_hedged_5d"
+                     if "target_beta_hedged_5d" in frame
+                     else "target_sector_residual_5d")
+    actual = frame[target_column]
     return {
         "status": "COMPLETE", "random_state": random_state,
         "grouping": grouping,
@@ -1270,13 +1403,15 @@ def permutation_controls(model: Pipeline, frame: pd.DataFrame,
 def _evaluate_cell(frame: pd.DataFrame, prediction: np.ndarray) -> dict:
     portfolio = simulate_portfolio(frame, prediction)
     return {
-        "predictive": _metrics(frame.target_sector_residual_5d, prediction),
+        "predictive": _metrics(frame.target_beta_hedged_5d, prediction),
         "portfolio": portfolio,
+        "hac": hac_statistics(portfolio["daily_returns"]),
+        "cluster_bootstrap": clustered_portfolio_bootstrap(portfolio),
         "delayed_entry": simulate_portfolio(frame, prediction, delayed=True),
         "doubled_costs": simulate_portfolio(frame, prediction, doubled_costs=True),
         "unseen_company_robustness": _metrics(
             frame.loc[frame.company_bucket == "UNSEEN_COMPANY",
-                      "target_sector_residual_5d"],
+                      "target_beta_hedged_5d"],
             prediction[frame.company_bucket.to_numpy() == "UNSEEN_COMPANY"],
         ) if (frame.company_bucket == "UNSEEN_COMPANY").any() else None,
     }
@@ -1298,82 +1433,96 @@ def _persist_experiment(result: dict, status: str) -> None:
 
 
 def run(frame: pd.DataFrame | None = None, verbose: bool = True, *,
-        lock_spec: bool = False, final_test: bool = False) -> dict:
-    """Run validation by default; the frozen final year requires a prior lock.
-
-    Validation chooses the model. ``final_test=True`` is irreversible at the
-    report level: once written, later calls return the existing result.
-    """
-    if final_test and FINAL_REPORT_PATH.exists():
-        existing = json.loads(FINAL_REPORT_PATH.read_text())
-        return {"status": "FINAL_TEST_ALREADY_OPENED", "result": existing}
-    if final_test and not SPEC_LOCK_PATH.exists():
-        return {"status": "FINAL_TEST_BLOCKED_SPEC_NOT_LOCKED"}
+        lock_spec: bool = False, retrospective_holdout: bool = False,
+        final_test: bool = False) -> dict:
+    """Run validation or open the sealed retrospective holdout exactly once."""
+    retrospective_holdout = retrospective_holdout or final_test
+    if retrospective_holdout and RETROSPECTIVE_REPORT_PATH.exists():
+        existing = json.loads(RETROSPECTIVE_REPORT_PATH.read_text())
+        return {"status": "RETROSPECTIVE_HOLDOUT_ALREADY_OPENED", "result": existing}
+    if retrospective_holdout and not SPEC_LOCK_PATH.exists():
+        return {"status": "RETROSPECTIVE_HOLDOUT_BLOCKED_SPEC_NOT_LOCKED"}
 
     data = (frame.copy() if frame is not None else
             (_load_feature_frame() if FEATURE_PATH.exists()
-             else build_feature_frame(verbose=verbose)))
+             else build_feature_frame(verbose=verbose, mode="coarse")))
     if data.empty:
         result = {"status": "NOT_EVALUATED_DATA_INCOMPLETE",
                   "reason": "no Tier 1/2 earnings event bar windows"}
         REPORT_PATH.write_text(json.dumps(result, indent=2))
         return result
     data["entry_time"] = pd.to_datetime(data["entry_time"], utc=True)
-    usable = data.dropna(subset=["target_sector_residual_5d"]) \
+    usable = data.dropna(subset=["target_beta_hedged_5d"]) \
         .sort_values("entry_time").copy()
     train = usable[usable.time_bucket == "TRAIN_TIME"].copy()
     validation = usable[usable.time_bucket == "VALIDATION_TIME"].copy()
-    final = usable[usable.time_bucket == "FINAL_TEST_TIME"].copy()
-    prefinal = usable[usable.time_bucket != "FINAL_TEST_TIME"].copy()
+    holdout = usable[usable.time_bucket == "RETROSPECTIVE_HOLDOUT_TIME"].copy()
+    preholdout = usable[usable.time_bucket != "RETROSPECTIVE_HOLDOUT_TIME"].copy()
     counts = {"features": len(data), "usable": len(usable), "train": len(train),
-              "validation": len(validation), "final_frozen": len(final),
+              "validation": len(validation), "retrospective_frozen": len(holdout),
               "unseen_company_validation": int(
                   (validation.company_bucket == "UNSEEN_COMPANY").sum())}
     if len(train) < MIN_TRAIN or len(validation) < MIN_VALIDATION:
         result = {
             "status": "NOT_EVALUATED_DATA_INCOMPLETE", "counts": counts,
             "required": {"train": MIN_TRAIN, "validation": MIN_VALIDATION},
-            "descriptive": descriptive_tables(prefinal),
+            "descriptive": descriptive_tables(preholdout),
+            "retrospective_holdout_outcomes_evaluated": False,
             "final_test_outcomes_evaluated": False,
         }
         REPORT_PATH.write_text(json.dumps(result, indent=2, default=str))
         return result
 
-    dataset_hash = _dataset_hash(usable if final_test else prefinal)
+    dataset_hash = _dataset_hash(usable if retrospective_holdout else preholdout)
     splits = {"train_end": str(VALIDATION_START - timedelta(days=1)),
               "validation_start": str(VALIDATION_START),
-              "validation_end": str(FINAL_TEST_START - timedelta(days=1)),
-              "final_test_start": str(FINAL_TEST_START),
+              "validation_end": str(RETROSPECTIVE_HOLDOUT_START - timedelta(days=1)),
+              "retrospective_holdout_start": str(RETROSPECTIVE_HOLDOUT_START),
+              "protocol_lock_date": str(PROTOCOL_LOCK_DATE),
               "primary_test": "future time across all eligible companies",
               "unseen_company": "additional robustness only"}
 
-    if final_test:
-        if final.empty:
-            return {"status": "FINAL_TEST_BLOCKED_DATA_INCOMPLETE",
+    if retrospective_holdout:
+        if holdout.empty:
+            return {"status": "RETROSPECTIVE_HOLDOUT_BLOCKED_DATA_INCOMPLETE",
                     "counts": counts}
         spec = json.loads(SPEC_LOCK_PATH.read_text())
+        holdout_artifact = (_load_feature_metadata() if frame is None else {
+            "mode": (str(data["artifact_mode"].iloc[0])
+                     if "artifact_mode" in data and len(data) else "unknown"),
+            "promotion_eligible": ("artifact_mode" in data and len(data) and
+                                   str(data["artifact_mode"].iloc[0]) == "full"),
+            "includes_retrospective_holdout": True,
+        })
+        if (not holdout_artifact.get("promotion_eligible") or
+                not holdout_artifact.get("includes_retrospective_holdout")):
+            return {"status": "RETROSPECTIVE_HOLDOUT_BLOCKED_ARTIFACT",
+                    "reason": "a full, current holdout artifact is required"}
         model_name = spec["model_name"]
         numeric, categorical = spec["numeric"], spec["categorical"]
         model = _pipeline(numeric, categorical)
         model.set_params(**spec["elastic_net_params"])
-        model.fit(prefinal[numeric + categorical],
-                  prefinal["target_sector_residual_5d"])
-        prediction = model.predict(final[numeric + categorical])
-        evaluated = _evaluate_cell(final, prediction)
+        model.fit(preholdout[numeric + categorical],
+                  preholdout["target_beta_hedged_5d"])
+        prediction = model.predict(holdout[numeric + categorical])
+        evaluated = _evaluate_cell(holdout, prediction)
         stability = _stability_and_concentration(evaluated["portfolio"])
         dsr = _deflated_sharpe(evaluated["portfolio"]["daily_returns"],
                                int(spec["experiment_trials"]))
         result = {
-            "status": "FINAL_TEST_OPENED", "model_name": model_name,
+            "status": "RETROSPECTIVE_HOLDOUT_OPENED", "model_name": model_name,
             "counts": counts, "splits": splits, "dataset_hash": dataset_hash,
             "experiment_id": hashlib.sha256(
-                f"{SPRINT_VERSION}|{dataset_hash}|FINAL|{model_name}".encode()
+                f"{SPRINT_VERSION}|{dataset_hash}|RETROSPECTIVE|{model_name}".encode()
             ).hexdigest()[:20],
             "result": evaluated, "stability": stability,
             "deflated_sharpe": dsr, "spec_lock": spec,
+            "retrospective_holdout_outcomes_evaluated": True,
             "final_test_outcomes_evaluated": True,
         }
-        FINAL_REPORT_PATH.write_text(json.dumps(result, indent=2, default=str))
+        RETROSPECTIVE_REPORT_PATH.write_text(
+            json.dumps(result, indent=2, default=str)
+        )
         _persist_experiment(result, result["status"])
         return result
 
@@ -1389,14 +1538,14 @@ def run(frame: pd.DataFrame | None = None, verbose: bool = True, *,
         validation_results[model_name] = _evaluate_cell(
             validation, predictions[model_name]
         )
-        pred_frame = validation[["entry_time", "sector", "target_sector_residual_5d"]].copy()
+        pred_frame = validation[["entry_time", "sector", "target_beta_hedged_5d"]].copy()
         pred_frame["prediction"] = predictions[model_name]
         validation_results[model_name]["ic_by_year"] = {
-            str(year): _metrics(group["target_sector_residual_5d"], group["prediction"])["ic"]
+            str(year): _metrics(group["target_beta_hedged_5d"], group["prediction"])["ic"]
             for year, group in pred_frame.groupby(pd.to_datetime(pred_frame["entry_time"]).dt.year)
         }
         validation_results[model_name]["ic_by_sector"] = {
-            str(sector): _metrics(group["target_sector_residual_5d"], group["prediction"])["ic"]
+            str(sector): _metrics(group["target_beta_hedged_5d"], group["prediction"])["ic"]
             for sector, group in pred_frame.groupby("sector") if len(group) >= 5
         }
         validation_results[model_name]["permutation_controls"] = permutation_controls(
@@ -1408,7 +1557,7 @@ def run(frame: pd.DataFrame | None = None, verbose: bool = True, *,
                  else "M0_price_reaction")
     candidate_result = validation_results[candidate]
     naive_rmse = float(np.sqrt(np.mean(
-        np.square(validation["target_sector_residual_5d"].to_numpy())
+        np.square(validation["target_beta_hedged_5d"].to_numpy())
     )))
     con = connect(read_only=True)
     trials = max(32, 32 + con.execute(
@@ -1421,6 +1570,57 @@ def run(frame: pd.DataFrame | None = None, verbose: bool = True, *,
         validation.get("quote_complete", pd.Series(False, index=validation.index)),
         errors="coerce",
     ).fillna(0).mean())
+    artifact = _load_feature_metadata() if frame is None else {
+        "mode": (str(data["artifact_mode"].iloc[0])
+                 if "artifact_mode" in data and len(data) else "unknown"),
+        "promotion_eligible": ("artifact_mode" in data and len(data) and
+                               str(data["artifact_mode"].iloc[0]) == "full"),
+    }
+    power = power_requirements(float(train["target_beta_hedged_5d"].std(ddof=1)))
+    trade_frame = pd.DataFrame(candidate_result["portfolio"].get("trades", []))
+    if trade_frame.empty:
+        sample_audit = {"unique_executable_trades": 0, "unique_tickers": 0,
+                        "announcement_dates": 0, "events_by_year": {},
+                        "effective_sample_size": 0, "passes": False}
+    else:
+        trade_frame["year"] = pd.to_datetime(trade_frame["entry_time"], utc=True).dt.year
+        events_by_year = trade_frame.groupby("year").size().to_dict()
+        bootstrap_effective = candidate_result["cluster_bootstrap"].get(
+            "effective_sample_size", 0
+        )
+        sample_audit = {
+            "unique_executable_trades": int(trade_frame.earnings_event_id.nunique()),
+            "unique_tickers": int(trade_frame.ticker.nunique()),
+            "announcement_dates": int(trade_frame.announcement_date.nunique()),
+            "events_by_year": {str(key): int(value)
+                               for key, value in events_by_year.items()},
+            "effective_sample_size": int(bootstrap_effective),
+        }
+        sample_audit["passes"] = bool(
+            power.get("status") == "FROZEN" and
+            sample_audit["unique_executable_trades"] >=
+            power["minimum_unique_executable_trades"] and
+            sample_audit["unique_tickers"] >= power["minimum_unique_tickers"] and
+            sample_audit["announcement_dates"] >= power["minimum_announcement_dates"] and
+            sample_audit["effective_sample_size"] >=
+            power["minimum_effective_sample_size"] and
+            bool(events_by_year) and min(events_by_year.values()) >=
+            power["minimum_events_per_eligible_year"]
+        )
+    permutation_rows = candidate_result["permutation_controls"].get(
+        "grouping", {}
+    ).get("permuted_rows", 0)
+    permutation_fraction = permutation_rows / len(validation)
+    bootstrap_ci = candidate_result["cluster_bootstrap"].get(
+        "confidence_intervals", {}
+    )
+    bootstrap_positive = all(
+        bootstrap_ci.get(metric, [None])[0] is not None and
+        bootstrap_ci[metric][0] > 0
+        for metric in ("mean_net_return_per_trade", "total_portfolio_return",
+                       "annualized_alpha")
+    )
+    hac_ci = candidate_result["hac"].get("annualized_alpha_ci", [None, None])
     if structured_tested:
         m1 = validation_results["M1_structured_surprise"]
         m2 = validation_results["M2_surprise_reaction_mismatch"]
@@ -1430,10 +1630,18 @@ def run(frame: pd.DataFrame | None = None, verbose: bool = True, *,
         m2_ic_lift = (m1_ic is not None and m2_ic is not None and m2_ic > m1_ic)
         m2_net_lift = (m2["portfolio"]["net_return"] >
                        m1["portfolio"]["net_return"])
+        loss_lift = (np.square(validation["target_beta_hedged_5d"] -
+                               predictions["M1_structured_surprise"]) -
+                     np.square(validation["target_beta_hedged_5d"] -
+                               predictions["M2_surprise_reaction_mismatch"]))
+        m2_m1_lift_ci = clustered_mean_ci(validation, loss_lift)
     else:
         m2_loss_lift = m2_ic_lift = m2_net_lift = False
+        m2_m1_lift_ci = {"status": "NOT_TESTED",
+                         "confidence_interval": [None, None]}
     screening_gates = {
         "representative_structured_coverage": coverage["gate_passed"],
+        "full_feature_artifact": bool(artifact.get("promotion_eligible")),
         "m2_predictive_loss_lift_vs_m1": m2_loss_lift,
         "m2_spearman_ic_lift_vs_m1": m2_ic_lift,
         "m2_net_lift_vs_m1": m2_net_lift,
@@ -1454,6 +1662,15 @@ def run(frame: pd.DataFrame | None = None, verbose: bool = True, *,
         "no_excessive_concentration": stability.get("concentration_pass", False),
         "executable_quote_coverage_at_least_95pct":
             quote_coverage >= MIN_QUOTE_COVERAGE,
+        "minimum_permutation_change_coverage":
+            permutation_fraction >= MIN_PERMUTATION_FRACTION,
+        "power_derived_sample_requirements": sample_audit["passes"],
+        "cluster_bootstrap_lower_bounds_above_zero": bootstrap_positive,
+        "hac_alpha_lower_bound_above_zero":
+            hac_ci[0] is not None and hac_ci[0] > 0,
+        "m2_minus_m1_clustered_loss_lift_lower_bound_above_zero":
+            m2_m1_lift_ci["confidence_interval"][0] is not None and
+            m2_m1_lift_ci["confidence_interval"][0] > 0,
     }
     passed = all(screening_gates.values())
     experiment_id = hashlib.sha256(
@@ -1468,13 +1685,18 @@ def run(frame: pd.DataFrame | None = None, verbose: bool = True, *,
         "models": validation_results, "elastic_net_params": params,
         "screening_gates": screening_gates,
         "deflated_sharpe": dsr, "stability": stability,
+        "feature_artifact": artifact, "power_requirements": power,
+        "sample_audit": sample_audit,
+        "permutation_change_fraction": permutation_fraction,
+        "m2_minus_m1_clustered_loss_lift": m2_m1_lift_ci,
         "executable_quote_coverage": quote_coverage,
         "structured_surprise_tested": structured_tested,
         "structured_coverage": coverage,
         "structured_surprise_blocker": None if structured_tested else
             "point-in-time EPS+revenue coverage is below 80% or not representative by year, sector, and company size",
         "catboost_allowed": passed,
-        "descriptive": descriptive_tables(prefinal),
+        "descriptive": descriptive_tables(preholdout),
+        "retrospective_holdout_outcomes_evaluated": False,
         "final_test_outcomes_evaluated": False,
     }
     if lock_spec:
@@ -1484,7 +1706,7 @@ def run(frame: pd.DataFrame | None = None, verbose: bool = True, *,
         else:
             numeric, categorical = model_specs[candidate]
             lock = {
-                "locked_at": datetime.now(timezone.utc).isoformat(),
+                "model_spec_locked_at": datetime.now(timezone.utc).isoformat(),
                 "validation_experiment_id": experiment_id,
                 "model_name": candidate, "numeric": numeric,
                 "categorical": categorical,
@@ -1492,7 +1714,14 @@ def run(frame: pd.DataFrame | None = None, verbose: bool = True, *,
                 "cost_hurdle_multiple": COST_HURDLE_MULTIPLE,
                 "bar_cost_bps_per_side": BAR_COST_BPS_PER_SIDE,
                 "experiment_trials": trials, "splits": splits,
+                "target_version": TARGET_VERSION, "beta_version": BETA_VERSION,
+                "feature_artifact": artifact,
+                "power_requirements": power,
+                "cost_model": "observed-spread-liquidity-borrow-v1",
             }
+            lock["prospective_forward_start"] = first_session_after(
+                lock["model_spec_locked_at"]
+            )
             if SPEC_LOCK_PATH.exists():
                 raise EarningsStudyError("model specification is already locked")
             SPEC_LOCK_PATH.write_text(json.dumps(lock, indent=2, default=str))

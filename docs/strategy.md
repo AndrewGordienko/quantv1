@@ -1,6 +1,6 @@
 # Earnings expectation-reaction mismatch
 
-Frozen 2026-07-10. Do not tune this specification against the final period.
+Frozen 2026-07-10. Do not tune this specification against the sealed holdout.
 
 ## Event and decision
 
@@ -31,8 +31,20 @@ liquidity are retained separately.
 ```text
 fundamental surprise = mean(directional standardized surprises, revision breadth)
 mismatch              = fundamental surprise - residual reaction score
-target                = five-day stock return - sector ETF return
+diagnostic residual   = five-day stock return - sector ETF return
 ```
+
+The canonical target is the executable mid-to-mid beta hedge:
+
+```text
+target = stock return(t -> t+5d) - frozen beta(t-) * sector ETF return(t -> t+5d)
+```
+
+Beta is estimated solely from pre-event daily returns, shrunk toward one,
+clipped to `[0, 2]`, frozen at the decision, and stored in the feature artifact
+with its observation count and estimation end. The same sector ETF and beta are
+used in the label, prediction metrics, hedge, and portfolio accounting. Costs
+remain outside the label.
 
 Training-only 1%/99% winsorization, imputation, and standardization are mandatory.
 
@@ -74,7 +86,13 @@ Portfolio statistics come from signed stock/hedge quantities in a daily ledger.
 NAV, returns, drawdown, gross/net/sector exposure, and stock/hedge turnover are
 marked every common session rather than booked only on exit dates.
 
-## Validation and final holdout
+The hurdle is event-specific when eligible NBBO data exists: observed stock and
+hedge spreads, participation relative to ADV, liquidity impact, an adverse-
+selection buffer, and historical borrow enter the estimate. A short is
+non-deployable if historical borrow availability or fee is unknown. Bar-only
+development results retain the conservative 15-basis-point-per-side assumption.
+
+## Validation and holdouts
 
 Validation compares M0 versus M1 and M1 versus M2 using RMSE, MAE, Spearman IC,
 net portfolio return, delayed entry, doubled costs, year/sector stability, and
@@ -82,7 +100,28 @@ company/event/quarter concentration. Deterministic block-feature and timestamp
 permutation controls are recorded for every fitted model. Null permutations keep
 ticker/event blocks atomic and move them only within the same year and sector.
 
-The final period may be opened once, only after M2 has all of:
+The complete XNYS calendar, including zero-return cash sessions, feeds portfolio
+statistics. Five-day overlap uses HAC/Newey-West inference with lag five.
+Uncertainty also uses a two-way announcement-session/ticker cluster bootstrap
+for mean net trade return, total return, annualized alpha, Sharpe, and M2-minus-M1
+loss lift. The required trade, ticker, announcement-date, per-year, and effective
+sample sizes are computed from the frozen 1% economic effect size and observed
+training-target volatility before M2 is run. At least 50% of validation rows must
+actually change in permutation controls.
+
+Feature artifacts are explicit: `--coarse` is the deterministic 25% development
+sample and can never promote; `--full` is the complete frozen sample required for
+promotion.
+
+Three dates have distinct meanings:
+
+- retrospective holdout starts 2025-07-01 and may be opened once after validation;
+- the research protocol was frozen 2026-07-10;
+- the genuine prospective record begins on the first XNYS session after the
+  final M2 feature set, coefficients, hyperparameters, cost model, and trading
+  rules are locked.
+
+The sealed retrospective holdout may be opened once, only after M2 has all of:
 
 - net Sharpe above 1;
 - deflated-Sharpe probability above 0.95;
@@ -90,6 +129,9 @@ The final period may be opened once, only after M2 has all of:
 - stable years and sectors;
 - no positive-P&L concentration above 25%; and
 - executable quote coverage of at least 95%.
+
+It is a retrospective check, never described as prospective. The model-spec lock
+records the immutable specification and prospective start date.
 
 If properly measured M2 fails, retire it. The next independent strategy is forced
 flow: index reconstitutions, ETF demand, corporate actions, and required shares

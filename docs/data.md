@@ -20,6 +20,8 @@ Every record requires a vendor/source ID, source provenance, feature version, an
 - Previous and new guidance, plus pre-release consensus for the guided period.
 - Earliest verified release timestamp and fiscal-period mapping.
 - Point-in-time company-size classification for coverage auditing.
+- Historical stock-loan availability and annualized fee, with an immutable
+  `borrow_known_at` timestamp. Missing borrow makes short results non-deployable.
 - Preferably a pre-release options-implied move.
 
 The intake rejects snapshots at or after release, current values backfilled into
@@ -77,3 +79,8 @@ Company-size coverage uses a separate pre-sample manifest:
 
 Load with `earnings_sprint.py universe-metadata FILE`. Observations after the
 frozen universe date are rejected.
+
+Positioning manifests may include `borrow_available`,
+`borrow_fee_bps_annual`, and `borrow_known_at`. Available borrow requires a
+nonnegative fee and a timestamp known before the release; assumed generic borrow
+fees are not accepted for the primary long/short test.

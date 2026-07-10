@@ -77,7 +77,10 @@ class MarkedExposureBook:
                 hedge_value = abs(position.hedge_quantity * benchmark_exit)
                 self.cash += position.asset_quantity * asset_exit
                 self.cash += position.hedge_quantity * benchmark_exit
-                self.cash -= self.cost_rate * (asset_value + hedge_value)
+                exit_cost_rate = float(position.trade.get(
+                    "ledger_cost_bps_per_side", self.cost_rate * 1e4
+                )) / 1e4
+                self.cash -= exit_cost_rate * (asset_value + hedge_value)
             else:
                 remaining.append(position)
         self.active = remaining
@@ -108,7 +111,10 @@ class MarkedExposureBook:
         side = int(trade["side"])
         asset_notional = nav * weight
         hedge_notional = asset_notional * abs(beta)
-        projected_nav = nav - self.cost_rate * (asset_notional + hedge_notional)
+        entry_cost_rate = float(trade.get(
+            "ledger_cost_bps_per_side", self.cost_rate * 1e4
+        )) / 1e4
+        projected_nav = nav - entry_cost_rate * (asset_notional + hedge_notional)
         if projected_nav <= 0:
             return {"nav": projected_nav, "gross": math.inf,
                     "net": math.inf, "sector_gross": math.inf,
@@ -145,7 +151,10 @@ class MarkedExposureBook:
                           if hedge_notional else 0.0)
         self.cash -= asset_quantity * asset_entry
         self.cash -= hedge_quantity * benchmark_entry
-        self.cash -= self.cost_rate * (asset_notional + hedge_notional)
+        entry_cost_rate = float(trade.get(
+            "ledger_cost_bps_per_side", self.cost_rate * 1e4
+        )) / 1e4
+        self.cash -= entry_cost_rate * (asset_notional + hedge_notional)
         trade["asset_notional"] = asset_notional
         trade["hedge_notional"] = hedge_notional
         self.active.append(_Position(
@@ -202,9 +211,21 @@ class PortfolioLedger:
 
     def run(self, trades: list[dict]) -> dict:
         if not trades:
+            nav_path = [
+                {"date": str(day), "nav": self.initial_nav, "return": 0.0}
+                for day in sorted(self.calendar)
+            ]
+            exposure_path = [
+                {"date": str(day), "gross": 0.0, "net": 0.0,
+                 "sector_gross": {}, "stock_turnover": 0.0,
+                 "hedge_turnover": 0.0}
+                for day in sorted(self.calendar)
+            ]
             return {
-                "n_trades": 0, "net_return": 0.0, "daily_returns": [],
-                "nav_path": [], "exposure_path": [], "max_drawdown": 0.0,
+                "n_trades": 0, "net_return": 0.0,
+                "daily_returns": [0.0] * len(nav_path),
+                "nav_path": nav_path, "exposure_path": exposure_path,
+                "trade_daily_pnl": [], "max_drawdown": 0.0,
                 "turnover": 0.0, "stock_turnover": 0.0,
                 "hedge_turnover": 0.0, "avg_gross_exposure": 0.0,
                 "max_gross_exposure": 0.0, "max_net_exposure": 0.0,
@@ -229,9 +250,11 @@ class PortfolioLedger:
         nav_path = []
         exposure_path = []
         daily_returns = []
+        trade_daily_pnl = []
         total_stock_turnover = total_hedge_turnover = 0.0
 
         for day in days:
+            day_attribution: dict[str, float] = {}
             day_stock_turnover = day_hedge_turnover = 0.0
             for trade in by_entry.get(day, []):
                 weight = float(trade["weight"])
@@ -249,7 +272,13 @@ class PortfolioLedger:
                                   benchmark_entry if hedge_notional else 0.0)
                 cash -= asset_quantity * asset_entry
                 cash -= hedge_quantity * benchmark_entry
-                cash -= self.cost_rate * (asset_notional + hedge_notional)
+                entry_cost_rate = float(trade.get(
+                    "ledger_cost_bps_per_side", self.cost_rate * 1e4
+                )) / 1e4
+                entry_cost = entry_cost_rate * (asset_notional + hedge_notional)
+                cash -= entry_cost
+                event_id = str(trade["earnings_event_id"])
+                day_attribution[event_id] = day_attribution.get(event_id, 0.0) - entry_cost
                 day_stock_turnover += asset_notional
                 day_hedge_turnover += hedge_notional
                 active.append(_Position(
@@ -262,6 +291,11 @@ class PortfolioLedger:
             for position in active:
                 mark = position.marks.get(day)
                 if mark:
+                    pnl = (position.asset_quantity * (mark[0] - position.last_asset) +
+                           position.hedge_quantity *
+                           (mark[1] - position.last_benchmark))
+                    event_id = str(position.trade["earnings_event_id"])
+                    day_attribution[event_id] = day_attribution.get(event_id, 0.0) + pnl
                     position.last_asset, position.last_benchmark = mark
 
             pre_exit_nav = cash + sum(
@@ -277,7 +311,13 @@ class PortfolioLedger:
                 hedge_value = abs(position.hedge_quantity * position.last_benchmark)
                 cash += position.asset_quantity * position.last_asset
                 cash += position.hedge_quantity * position.last_benchmark
-                cash -= self.cost_rate * (asset_value + hedge_value)
+                exit_cost_rate = float(position.trade.get(
+                    "ledger_cost_bps_per_side", self.cost_rate * 1e4
+                )) / 1e4
+                exit_cost = exit_cost_rate * (asset_value + hedge_value)
+                cash -= exit_cost
+                event_id = str(position.trade["earnings_event_id"])
+                day_attribution[event_id] = day_attribution.get(event_id, 0.0) - exit_cost
                 day_stock_turnover += asset_value
                 day_hedge_turnover += hedge_value
             if closing:
@@ -303,6 +343,16 @@ class PortfolioLedger:
                 "hedge_turnover": float(hedge_turnover),
             })
             daily_returns.append(float(daily_return))
+            for event_id, pnl in day_attribution.items():
+                trade = next(item for item in trades
+                             if str(item["earnings_event_id"]) == event_id)
+                trade_daily_pnl.append({
+                    "date": str(day), "earnings_event_id": event_id,
+                    "ticker": str(trade["ticker"]),
+                    "announcement_date": str(trade.get(
+                        "announcement_date", _as_date(trade["entry_time"]))),
+                    "sector": str(trade["sector"]), "pnl": float(pnl),
+                })
             total_stock_turnover += stock_turnover
             total_hedge_turnover += hedge_turnover
             previous_nav = nav
@@ -320,6 +370,7 @@ class PortfolioLedger:
             "net_return": float(previous_nav / self.initial_nav - 1.0),
             "daily_returns": daily_returns, "nav_path": nav_path,
             "exposure_path": exposure_path,
+            "trade_daily_pnl": trade_daily_pnl,
             "max_drawdown": float(drawdown.min()) if len(drawdown) else 0.0,
             "turnover": float(total_stock_turnover + total_hedge_turnover),
             "stock_turnover": float(total_stock_turnover),

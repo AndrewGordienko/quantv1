@@ -120,6 +120,43 @@ class EarningsIngestTests(unittest.TestCase):
                 with self.assertRaises(earnings.EarningsDataError):
                     earnings.ingest_release_manifest(path)
 
+    def test_historical_borrow_requires_point_in_time_availability_and_fee(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db_path = Path(directory) / "test.duckdb"
+            release_path = Path(directory) / "release.json"
+            positioning_path = Path(directory) / "positioning.json"
+            with patch("quantv1.db.DB_PATH", db_path):
+                connect().close()
+                release_path.write_text(json.dumps([{
+                    "ticker": "TEST", "cik": "123",
+                    "fiscal_period_end": "2024-12-31",
+                    "public_time": "2025-01-29T16:01:00-05:00",
+                    "source_type": "company_ir",
+                    "source_url": "https://ir.test.com/q4",
+                    "reviewed_earliest": True,
+                }]))
+                earnings.ingest_release_manifest(release_path)
+                con = connect(read_only=True)
+                event_id = con.execute(
+                    "SELECT earnings_event_id FROM earnings_events"
+                ).fetchone()[0]
+                con.close()
+                record = {
+                    "earnings_event_id": event_id,
+                    "observed_at": "2025-01-29T15:00:00-05:00",
+                    "borrow_available": True,
+                    "source": "licensed", "source_record_id": "borrow-1",
+                }
+                positioning_path.write_text(json.dumps([record]))
+                with self.assertRaises(earnings.EarningsDataError):
+                    earnings.ingest_positioning_manifest(positioning_path)
+                record.update({"borrow_known_at": "2025-01-29T15:01:00-05:00",
+                               "borrow_fee_bps_annual": 75.0})
+                positioning_path.write_text(json.dumps([record]))
+                self.assertEqual(earnings.ingest_positioning_manifest(
+                    positioning_path
+                )["positioning_snapshots"], 1)
+
     def test_company_size_must_be_known_at_universe_formation(self):
         with tempfile.TemporaryDirectory() as directory:
             db_path = Path(directory) / "test.duckdb"
@@ -278,6 +315,7 @@ class EarningsExecutionTests(unittest.TestCase):
                 "benchmark_entry_price": 100.0,
                 "benchmark_delayed_entry_price": 100.0,
                 "benchmark_exit_price": 100.0, "beta": 0.0,
+                "borrow_available": True, "borrow_fee_bps_annual": 0.0,
                 "daily_marks": marks,
             })
         predictions = np.asarray([0.02, -0.02, 0.02, -0.02, 0.02])

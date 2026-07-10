@@ -14,7 +14,8 @@ under a new name.
 | Intraday mean reversion | Rejected | Completed V5 evidence found no positive net signal. Do not reslice the same public-news sample. |
 | Powerful-person headline mentions | Invalid proxy | A mention is not a verified actor action. Primary-source CEO/CFO behavior remains untested and may enter only as M3 incremental lift over M2. |
 | Earnings price/reaction baseline (M0) | Rejected on current validation | The elastic net produces a constant prediction and zero trades after the cost hurdle. It does not demonstrate a profitable strategy. |
-| Structured earnings mismatch (M1/M2) | Blocked, not rejected | Point-in-time EPS/revenue coverage is 0%; dispersion, revisions, actuals, guidance, size metadata, and executable quotes are incomplete. The final holdout remains sealed. |
+| Structured earnings mismatch (M1/M2) | Blocked, not rejected | Point-in-time EPS/revenue coverage is 0%; dispersion, revisions, actuals, guidance, size metadata, borrow, and executable quotes are incomplete. The 2025-07 retrospective holdout remains sealed; no prospective record exists before model-spec lock. |
+| EERM protocol correction | Engineering complete; alpha still untested | Canonical target and hedge now share a pre-event frozen beta; XNYS cash days, marked trade attribution, HAC statistics, announcement-date/ticker bootstrap, powered sample gates, full-artifact enforcement, liquidity-aware costs, and fail-closed shorts are mandatory. This work does not constitute strategy evidence. |
 | CatBoost, neural nets, world-model teacher | Prohibited | Complexity cannot advance until M2 elastic net demonstrates stable net signal. World-model work remains a later shadow optimizer only. |
 | Forced flows from index/ETF/corporate actions | Next independent hypothesis | Not yet tested. Advance here if properly measured M2 fails validation; use required shares divided by ADV as the core pressure measure. |
 

@@ -16,7 +16,7 @@ regular session and measure:
 mismatch = fundamental surprise - standardized residual reaction
 ```
 
-An elastic net predicts the five-day sector-adjusted return. A trade is allowed
+An elastic net predicts the five-day frozen-beta-hedged return. A trade is allowed
 only when the absolute prediction exceeds twice the estimated stock-plus-hedge
 round-trip cost. Positions are beta hedged and close on the fifth common trading
 day.
@@ -31,8 +31,8 @@ hypotheses and negative results are recorded in
 - M0: price and reaction baseline available.
 - M1/M2: blocked until representative EPS+revenue coverage reaches 80% in both
   training and validation.
-- Final period: sealed. The code refuses to lock or open it unless M2 clears all
-  validation gates.
+- Retrospective 2025-07 holdout: sealed. A separate prospective record begins
+  only after the final model specification is locked.
 - CatBoost: prohibited until M2 elastic net demonstrates signal.
 
 ## Commands
@@ -42,7 +42,8 @@ uv sync
 uv run python -m unittest discover -s tests
 
 uv run python scripts/earnings_sprint.py audit
-uv run python scripts/earnings_sprint.py features
+uv run python scripts/earnings_sprint.py features --coarse  # development only
+uv run python scripts/earnings_sprint.py features --full    # promotion artifact
 uv run python scripts/earnings_sprint.py run
 ```
 

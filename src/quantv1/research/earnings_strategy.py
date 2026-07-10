@@ -1,7 +1,7 @@
 """Shared earnings strategy decisions and bar-side execution rules.
 
 The batch screen and localhost replay both call these functions.  This module
-contains no model fitting and therefore cannot accidentally open the final test.
+contains no model fitting and therefore cannot open the sealed holdout.
 """
 
 from __future__ import annotations
@@ -26,12 +26,15 @@ def estimated_all_in_cost(beta: float | None,
 def decision_from_prediction(
         predicted_return: float | None, beta: float | None,
         cost_bps_per_side: float = BAR_COST_BPS_PER_SIDE,
-        hurdle_multiple: float = COST_HURDLE_MULTIPLE) -> dict:
+        hurdle_multiple: float = COST_HURDLE_MULTIPLE,
+        all_in_cost_estimate: float | None = None) -> dict:
     """Trade only when expected residual return clears the all-in cost hurdle."""
     if predicted_return is None or not math.isfinite(float(predicted_return)):
         return {"action": "NO TRADE", "side": 0,
                 "reason": "prediction unavailable at this timestamp"}
-    all_in_cost = estimated_all_in_cost(beta, cost_bps_per_side)
+    all_in_cost = (float(all_in_cost_estimate)
+                   if all_in_cost_estimate is not None else
+                   estimated_all_in_cost(beta, cost_bps_per_side))
     if all_in_cost is None:
         return {"action": "NO TRADE", "side": 0,
                 "reason": "beta or hedge cost unavailable at this timestamp"}

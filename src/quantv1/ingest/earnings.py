@@ -30,9 +30,8 @@ UNIVERSE_VERSION = "earnings-alpha-v1-2021-06-30"
 SAMPLE_START = date(2021, 7, 1)
 SAMPLE_END = date(2026, 6, 30)
 VALIDATION_START = date(2024, 7, 1)
-FINAL_TEST_START = date(2025, 7, 1)
-# Backwards-compatible name; final-test rows must not be used for selection.
-HOLDOUT_START = FINAL_TEST_START
+RETROSPECTIVE_HOLDOUT_START = date(2025, 7, 1)
+PROTOCOL_LOCK_DATE = date(2026, 7, 10)
 _SEC_SUBMISSIONS = "https://data.sec.gov/submissions"
 _SEC_ARCHIVES = "https://www.sec.gov/Archives/edgar/data"
 _ET = ZoneInfo("America/New_York")
@@ -997,18 +996,33 @@ def ingest_positioning_manifest(path: str | Path) -> dict:
         observed_at = _utc_naive(record["observed_at"], "observed_at")
         if observed_at >= event_time:
             raise EarningsDataError("positioning snapshot must predate release")
+        borrow_available = record.get("borrow_available")
+        borrow_known_at = None
+        borrow_fee = record.get("borrow_fee_bps_annual")
+        if borrow_available is not None:
+            if "borrow_known_at" not in record:
+                raise EarningsDataError("borrow availability requires borrow_known_at")
+            borrow_known_at = _utc_naive(record["borrow_known_at"], "borrow_known_at")
+            if borrow_known_at >= event_time:
+                raise EarningsDataError("borrow data must be known before release")
+            if borrow_available is True and borrow_fee is None:
+                raise EarningsDataError("available borrow requires annual fee")
+            if borrow_fee is not None and float(borrow_fee) < 0:
+                raise EarningsDataError("borrow fee cannot be negative")
         rows.append((record["earnings_event_id"], observed_at,
                      record.get("short_interest_shares"), record.get("days_to_cover"),
                      record.get("institutional_ownership"),
-                     record.get("passive_ownership"), record["source"],
+                     record.get("passive_ownership"), borrow_available,
+                     borrow_fee, borrow_known_at, record["source"],
                      str(record["source_record_id"]), now,
                      json.dumps(record.get("metadata", {}))))
     con.executemany("""
         INSERT INTO earnings_positioning_snapshots
             (earnings_event_id,observed_at,short_interest_shares,days_to_cover,
-             institutional_ownership,passive_ownership,source,source_record_id,
+             institutional_ownership,passive_ownership,borrow_available,
+             borrow_fee_bps_annual,borrow_known_at,source,source_record_id,
              ingested_at,metadata)
-        VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING
     """, rows)
     con.close()
     return {"positioning_snapshots": len(rows)}

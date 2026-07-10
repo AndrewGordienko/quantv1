@@ -103,6 +103,12 @@ class HistoricalQuotePipelineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             feature = self._feature(directory)
         self.assertTrue(feature["quote_complete"])
+        benchmark_return = (feature["target_benchmark_exit_mid"] /
+                            feature["target_benchmark_entry_mid"] - 1.0)
+        self.assertAlmostEqual(feature["target_beta_hedged_5d"],
+                               feature["target_raw_5d"] -
+                               feature["beta"] * benchmark_return)
+        self.assertEqual(feature["target_version"], "beta-hedged-mid-v1")
         self.assertEqual(feature["execution_mode"],
                          "NEXT_EXECUTABLE_NBBO_PLUS_ASSUMED_COST")
         result = simulate_portfolio(pd.DataFrame([feature]), np.asarray([0.02]))
