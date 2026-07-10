@@ -151,6 +151,41 @@ CREATE TABLE IF NOT EXISTS ingest_watermarks (
     PRIMARY KEY (ticker, source)
 );
 
+-- === Actor State & Influence Engine ======================================
+-- Observable public actors and their TIME-VALID relationships (valid_from/to +
+-- first_seen_at so today's org chart never leaks into historical tests).
+CREATE TABLE IF NOT EXISTS actors (
+    actor_id    VARCHAR PRIMARY KEY,
+    name        VARCHAR,
+    role        VARCHAR,          -- central_banker | ceo | regulator | official | politician
+    org         VARCHAR,          -- primary org / ticker
+    authority   DOUBLE,           -- coarse formal-power prior [0,1]
+    aliases     JSON
+);
+CREATE TABLE IF NOT EXISTS actor_relationships (
+    actor_id      VARCHAR,
+    rel_type      VARCHAR,        -- leads | regulates | sits_on | mentioned | met_with ...
+    target        VARCHAR,        -- org/ticker/agency/committee
+    valid_from    DATE,
+    valid_to      DATE,
+    source        VARCHAR,
+    first_seen_at TIMESTAMP
+);
+-- One row per (public actor event, affected ticker). public_time is the exact
+-- moment it was public; first_seen_at is when our collector observed it.
+CREATE TABLE IF NOT EXISTS actor_events (
+    actor_event_id VARCHAR,
+    actor_id       VARCHAR,
+    ticker         VARCHAR,
+    public_time    TIMESTAMP,
+    event_type     VARCHAR,        -- news_mention | speech | press_conf | earnings_call | post
+    headline       VARCHAR,
+    catalyst_id    VARCHAR,
+    source         VARCHAR,
+    first_seen_at  TIMESTAMP,
+    PRIMARY KEY (actor_event_id, ticker)
+);
+
 -- === V4: minute bars for the intraday event-reaction engine ================
 CREATE TABLE IF NOT EXISTS bars_minute (
     ticker VARCHAR,
