@@ -9,15 +9,19 @@ market's reaction to freshly-timestamped public events.
 Legality unchanged: only lawfully-obtained PUBLIC information. The objective is
 public information the market has not yet fully processed — never MNPI.
 
-## Hard dependency (shapes the whole sequence)
+## Data + execution stack (Canada-resolved)
 
-The flagship needs **historical minute bars + quotes + timestamped news**. That
-requires **Alpaca API keys** (market-data + news, incl. historical news for
-replay), or an equivalent paid feed. Everything below that touches minute data or
-news is GATED on keys in a gitignored `.env`. What is unblocked now: the event
-bus, the leak-free replay backtester, and event-reaction studies on the
-daily-resolution public events we already have (Federal Register, congress,
-insider) against the hourly bars we already ingested.
+Alpaca is US-only, so for Canada:
+- **Data: Polygon.io** (global vendor, not a broker). Minute bars + news API with
+  publish timestamps. Free tier = recent/2y with 5 req/min; **Starter ($29/mo) =
+  5y history, unlimited calls** — what we're on. `POLYGON_API_KEY` in gitignored
+  `.env`; ingester `ingest/polygon_data.py`.
+- **Execution: Interactive Brokers** (paper + live, Canada). API via TWS/IB
+  Gateway; connector is a later step (`execution/ibkr.py`, after a strategy clears
+  the bar).
+
+Everything writes to the SAME `bars_minute` + `events` tables, so the replay
+engine is vendor-agnostic (Alpaca ingester kept as an alt).
 
 ## 1. Timestamped real-time event bus
 

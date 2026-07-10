@@ -49,13 +49,16 @@ class ReplayParams:
 
 
 class BarPanel:
-    """Intraday bars as per-ticker numpy arrays with fast time lookup."""
+    """Intraday bars as per-ticker numpy arrays with fast time lookup.
 
-    def __init__(self, con=None):
+    `table` selects the resolution: 'bars_minute' (V4 real system) or
+    'bars_hourly' (the free PoC)."""
+
+    def __init__(self, con=None, table: str = "bars_hourly"):
         own = con is None
         con = con or connect(read_only=True)
-        df = con.execute("SELECT ticker, ts, open, high, low, close, volume "
-                         "FROM bars_hourly ORDER BY ticker, ts").df()
+        df = con.execute(f"SELECT ticker, ts, open, high, low, close, volume "
+                         f"FROM {table} ORDER BY ticker, ts").df()
         if own:
             con.close()
         df["ts"] = pd.to_datetime(df["ts"]).astype("int64")   # ns since epoch
@@ -136,7 +139,8 @@ def replay(events: pd.DataFrame, panel: BarPanel, signal_fn,
                        "entry_ns": int(d["ts"][i_entry]), "exit_ns": int(d["ts"][exit_i]),
                        "gross": float(gross), "net": float(net), "reason": reason,
                        "bars_held": int(exit_i - i_entry + 1)})
-        last_exit_ns[tk] = int(d["ts"][exit_i]) + p.cooldown_bars * 3_600_000_000_000
+        bar_ns = int(d["ts"][exit_i] - d["ts"][exit_i - 1]) if exit_i > 0 else 60_000_000_000
+        last_exit_ns[tk] = int(d["ts"][exit_i]) + p.cooldown_bars * bar_ns
 
     return _metrics(pd.DataFrame(trades), p, test_start)
 
