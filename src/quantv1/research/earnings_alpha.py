@@ -59,6 +59,7 @@ COARSE_SAMPLE_REMAINDER = 0
 PRICE_NUMERIC = [
     "gap", "reaction_1m", "reaction_5m", "reaction_30m",
     "pre_event_volatility", "trailing_adv", "first5_volume_ratio",
+    "abnormal_volume_30m",
 ]
 PRICE_CATEGORICAL = ["release_session", "sector"]
 EARNINGS_NUMERIC = [
@@ -71,6 +72,12 @@ EARNINGS_CATEGORICAL = ["fiscal_quarter"]
 POSITIONING_NUMERIC = [
     "implied_move", "implied_volatility", "days_to_cover",
     "institutional_ownership", "passive_ownership",
+]
+STRUCTURED_COVERAGE_MIN = 0.80
+STRUCTURED_NUMERIC = [
+    "eps_surprise_z", "revenue_surprise_z", "guidance_surprise_z",
+    "analyst_dispersion_z", "revision_breadth", "pre_event_volatility",
+    "liquidity",
 ]
 
 
@@ -248,6 +255,7 @@ def _consensus_actuals(con, event_id: str, event_time, decision_time) -> dict:
         "eps_surprise_raw": np.nan, "revenue_surprise_raw": np.nan,
         "eps_analyst_count": np.nan, "revenue_analyst_count": np.nan,
         "has_point_in_time_consensus": 0.0,
+        "has_eps_consensus": 0.0, "has_revenue_consensus": 0.0,
         "analyst_dispersion_raw": np.nan, "revision_breadth": np.nan,
         "gross_margin_surprise": np.nan, "free_cash_flow_surprise": np.nan,
         "bookings_surprise": np.nan, "guidance_eps_surprise": np.nan,
@@ -283,6 +291,9 @@ def _consensus_actuals(con, event_id: str, event_time, decision_time) -> dict:
             if metric == "diluted_eps":
                 result["analyst_dispersion_raw"] = estimate[2]
                 result["revision_breadth"] = estimate[3]
+                result["has_eps_consensus"] = 1.0
+            if metric == "revenue":
+                result["has_revenue_consensus"] = 1.0
             result["has_point_in_time_consensus"] = 1.0
     for metric, output in (("guidance_eps", "guidance_eps_surprise"),
                            ("guidance_revenue", "guidance_revenue_surprise")):
@@ -310,6 +321,9 @@ def _consensus_actuals(con, event_id: str, event_time, decision_time) -> dict:
             LIMIT 1
         """, [event_id, metric]).fetchone():
             result["guidance_status"] = "NO_GUIDANCE"
+    result["has_point_in_time_consensus"] = float(
+        result["has_eps_consensus"] and result["has_revenue_consensus"]
+    )
     options = con.execute("""
         SELECT implied_move,implied_volatility FROM earnings_options_expectations
         WHERE earnings_event_id=? AND observed_at<? ORDER BY observed_at DESC LIMIT 1
@@ -348,7 +362,8 @@ def _window_features(con, row) -> dict | None:
         return None
     benchmark_entry = _next_bar_open(benchmark_session, entry["time"])
     benchmark_delayed = _next_bar_open(benchmark_session, delayed_entry["time"])
-    if benchmark_entry is None or benchmark_delayed is None:
+    benchmark_event_open = _next_bar_open(benchmark_session, anchor)
+    if benchmark_entry is None or benchmark_delayed is None or benchmark_event_open is None:
         return None
     exit_values = _five_day_exit(bars, benchmark_bars, session_date)
     if exit_values is None:
@@ -372,16 +387,33 @@ def _window_features(con, row) -> dict | None:
     reaction5_price = _known_bar_close(session, anchor + pd.Timedelta(minutes=5))
     reaction5 = reaction5_price / event_open - 1 if reaction5_price and event_open else np.nan
     reaction30 = p30 / event_open - 1 if p30 and event_open else np.nan
+    benchmark_p30 = _known_bar_close(benchmark_session, decision)
+    benchmark_reaction30 = (
+        benchmark_p30 / benchmark_event_open["price"] - 1
+        if benchmark_p30 and benchmark_event_open["price"] else np.nan
+    )
     first5 = session[(session_ts >= anchor) & (session_ts < decision)]
     expected_minute_volume = ((context["trailing_adv"] / prior_close / 390)
                               if context["trailing_adv"] and prior_close else None)
     volume_ratio = (float(first5["volume"].sum()) / (expected_minute_volume * 5)
                     if expected_minute_volume and not first5.empty else np.nan)
+    first30 = session[(session_ts >= anchor) & (session_ts < decision)]
+    abnormal_volume30 = (
+        float(first30["volume"].sum()) / (expected_minute_volume * DECISION_MINUTES)
+        if expected_minute_volume and not first30.empty else np.nan
+    )
 
     raw_5d = exit_values["asset_close"] / entry["price"] - 1
     benchmark_5d = exit_values["benchmark_close"] / benchmark_entry["price"] - 1
     sector_residual_5d = raw_5d - benchmark_5d
     beta = context["beta"]
+    reaction30_residual = (reaction30 - beta * benchmark_reaction30
+                           if beta is not None and np.isfinite(benchmark_reaction30)
+                           else np.nan)
+    reaction30_score = (reaction30_residual / context["pre_event_volatility"]
+                        if np.isfinite(reaction30_residual) and
+                        context["pre_event_volatility"] and context["pre_event_volatility"] > 0
+                        else np.nan)
     actually_hedged_5d = (raw_5d - beta * benchmark_5d
                           if beta is not None else np.nan)
     delayed_raw_5d = exit_values["asset_close"] / delayed_entry["price"] - 1
@@ -411,6 +443,9 @@ def _window_features(con, row) -> dict | None:
         "company_bucket": row.company_bucket, "time_bucket": time_bucket,
         "gap": gap, "reaction_1m": reaction1, "reaction_5m": reaction5,
         "reaction_30m": reaction30,
+        "residual_reaction_30m": reaction30_residual,
+        "reaction_score": reaction30_score,
+        "abnormal_volume_30m": abnormal_volume30,
         "pre_event_volatility": context["pre_event_volatility"],
         "trailing_adv": context["trailing_adv"],
         "first5_volume_ratio": volume_ratio, "beta": beta,
@@ -477,6 +512,7 @@ def build_feature_frame(verbose: bool = True, *,
             print(f"  earnings features {index}/{len(windows)} usable={len(records)}")
     con.close()
     frame = pd.DataFrame(records)
+    frame, feature_stats = add_structured_features(frame)
     if not frame.empty:
         parquet_con = duckdb.connect(":memory:")
         try:
@@ -487,6 +523,9 @@ def build_feature_frame(verbose: bool = True, *,
             )
         finally:
             parquet_con.close()
+        (DATA_DIR / "earnings_structured_feature_stats.json").write_text(
+            json.dumps(feature_stats, indent=2, default=str)
+        )
         write_con = connect()
         now = datetime.now(timezone.utc).replace(tzinfo=None)
         write_con.executemany("""
@@ -521,6 +560,53 @@ def _load_feature_frame() -> pd.DataFrame:
         return con.execute("SELECT * FROM read_parquet(?)", [str(FEATURE_PATH)]).df()
     finally:
         con.close()
+
+
+def add_structured_features(frame: pd.DataFrame,
+                            fit_mask: pd.Series | None = None) -> tuple[pd.DataFrame, dict]:
+    """Fit winsorization/scalers on training rows only and transform all rows."""
+    if frame.empty:
+        return frame, {}
+    result = frame.copy()
+    if fit_mask is None:
+        fit_mask = result["time_bucket"].eq("TRAIN_TIME")
+    raw_map = {
+        "eps_surprise_z": "eps_surprise_raw",
+        "revenue_surprise_z": "revenue_surprise_raw",
+        "guidance_surprise_z": "guidance_surprise_raw",
+        "analyst_dispersion_z": "analyst_dispersion_raw",
+    }
+    stats = {"feature_version": "structured-earnings-v1",
+             "fit_rows": int(fit_mask.sum()), "coverage_min": STRUCTURED_COVERAGE_MIN,
+             "features": {}}
+    for output, source in raw_map.items():
+        values = pd.to_numeric(result.loc[fit_mask, source], errors="coerce").dropna()
+        if values.empty:
+            result[output] = np.nan
+            stats["features"][output] = {"coverage": 0.0, "mean": None, "std": None}
+            continue
+        low, high = values.quantile([0.01, 0.99])
+        clipped = values.clip(low, high)
+        mean, std = float(clipped.mean()), float(clipped.std(ddof=0))
+        std = std if std > 1e-12 else 1.0
+        all_values = pd.to_numeric(result[source], errors="coerce").clip(low, high)
+        result[output] = (all_values - mean) / std
+        stats["features"][output] = {
+            "coverage": float(values.notna().mean()), "mean": mean, "std": std,
+            "winsor_low": float(low), "winsor_high": float(high),
+        }
+    result["liquidity"] = np.log1p(pd.to_numeric(result["trailing_adv"], errors="coerce"))
+    result["fundamental_surprise_score"] = result[
+        ["eps_surprise_z", "revenue_surprise_z", "guidance_surprise_z"]
+    ].mean(axis=1, skipna=True)
+    result["surprise_reaction_mismatch"] = (
+        result["fundamental_surprise_score"] - result["reaction_score"]
+    )
+    result["representative_consensus_coverage"] = result["has_point_in_time_consensus"]
+    stats["representative_coverage"] = float(
+        result.loc[fit_mask, "representative_consensus_coverage"].mean()
+    ) if fit_mask.any() else 0.0
+    return result, stats
 
 
 def descriptive_tables(frame: pd.DataFrame) -> dict:
@@ -559,9 +645,9 @@ def descriptive_tables(frame: pd.DataFrame) -> dict:
         return json.loads(grouped.to_json(orient="records"))
     return {
         "reaction_30m_deciles": decile("reaction_30m"),
-        "eps_surprise_deciles": decile("eps_surprise"),
-        "revenue_surprise_deciles": decile("revenue_surprise"),
-        "guidance_surprise_deciles": decile("guidance_revenue_surprise"),
+        "eps_surprise_deciles": decile("eps_surprise_z"),
+        "revenue_surprise_deciles": decile("revenue_surprise_z"),
+        "guidance_surprise_deciles": decile("guidance_surprise_z"),
         "surprise_reaction_mismatch_deciles": decile("surprise_reaction_mismatch"),
         "timestamp_tier": table(["timestamp_status"]),
         "release_session": table(["release_session"]),
@@ -706,16 +792,27 @@ def simulate_portfolio(frame: pd.DataFrame, predictions: np.ndarray, *,
                                "side": side, "asset_weight": POSITION_WEIGHT,
                                "gross": position_gross, "net": position_net})
     if not trades:
-        return {"n_trades": 0, "net_return": 0.0, "daily_returns": [], "trades": []}
+        return {"n_trades": 0, "net_return": 0.0, "daily_returns": [],
+                "max_drawdown": 0.0, "turnover": 0.0,
+                "avg_gross_exposure": 0.0, "max_gross_exposure": 0.0,
+                "trades": []}
     trade_frame = pd.DataFrame(trades)
     trade_frame["date"] = pd.to_datetime(trade_frame["exit_time"], utc=True).dt.date
     daily = trade_frame.groupby("date")["pnl"].sum()
     std = daily.std(ddof=1)
     sharpe = float(daily.mean() / std * np.sqrt(252)) if len(daily) > 1 and std > 0 else None
+    equity = daily.sort_index().cumsum()
+    peak = equity.cummax()
+    max_drawdown = float((equity - peak).min()) if len(equity) else 0.0
+    turnover = float((trade_frame["weight"].abs() * 2).sum())
+    gross = trade_frame["gross_exposure"]
     return {"n_trades": len(trades), "net_return": float(trade_frame["pnl"].sum()),
             "mean_pnl_bps": float(trade_frame["pnl"].mean() * 1e4),
             "hit_rate": float((trade_frame["pnl"] > 0).mean()),
             "sharpe_annual": sharpe,
+            "max_drawdown": max_drawdown, "turnover": turnover,
+            "avg_gross_exposure": float(gross.mean()),
+            "max_gross_exposure": float(gross.max()),
             "daily_returns": [float(value) for value in daily], "trades": trades}
 
 
@@ -739,8 +836,10 @@ def _deflated_sharpe(daily_returns: list[float], n_trials: int) -> dict:
 
 
 def _metrics(actual, predicted) -> dict:
+    actual, predicted = np.asarray(actual, dtype=float), np.asarray(predicted, dtype=float)
+    ic = float(np.corrcoef(actual, predicted)[0, 1]) if len(actual) > 1 and np.std(predicted) > 0 else None
     return {"n": len(actual), "rmse": float(np.sqrt(mean_squared_error(actual, predicted))),
-            "mae": float(mean_absolute_error(actual, predicted))}
+            "mae": float(mean_absolute_error(actual, predicted)), "ic": ic}
 
 
 def _stability_and_concentration(portfolio: dict) -> dict:
@@ -790,13 +889,19 @@ def _dataset_hash(frame: pd.DataFrame) -> str:
     return hashlib.sha256(values.encode()).hexdigest()[:16]
 
 
-def _available_model_specs(train: pd.DataFrame) -> dict[str, tuple[list[str], list[str]]]:
-    specs = {"price_only": (PRICE_NUMERIC, PRICE_CATEGORICAL)}
-    consensus_coverage = float(train["has_point_in_time_consensus"].mean())
-    if consensus_coverage >= 0.30:
-        specs["financial_plus_reaction"] = (
-            PRICE_NUMERIC + EARNINGS_NUMERIC + ["financial_surprise_composite",
-                                                "surprise_reaction_mismatch"],
+def _available_model_specs(train: pd.DataFrame, validation: pd.DataFrame | None = None) -> dict[str, tuple[list[str], list[str]]]:
+    specs = {"M0_price_reaction": (PRICE_NUMERIC, PRICE_CATEGORICAL)}
+    consensus_coverage = float(train["representative_consensus_coverage"].mean())
+    validation_coverage = consensus_coverage if validation is None else float(validation["representative_consensus_coverage"].mean())
+    if consensus_coverage >= STRUCTURED_COVERAGE_MIN and validation_coverage >= STRUCTURED_COVERAGE_MIN:
+        specs["M1_structured_surprise"] = (
+            STRUCTURED_NUMERIC,
+            PRICE_CATEGORICAL + EARNINGS_CATEGORICAL,
+        )
+        specs["M2_surprise_reaction_mismatch"] = (
+            STRUCTURED_NUMERIC + ["reaction_score", "residual_reaction_30m",
+                                  "abnormal_volume_30m", "fundamental_surprise_score",
+                                  "surprise_reaction_mismatch"],
             PRICE_CATEGORICAL + EARNINGS_CATEGORICAL,
         )
     return specs
@@ -912,7 +1017,10 @@ def run(frame: pd.DataFrame | None = None, verbose: bool = True, *,
         _persist_experiment(result, result["status"])
         return result
 
-    model_specs = _available_model_specs(train)
+    train_coverage = float(train["representative_consensus_coverage"].mean())
+    validation_coverage = float(validation["representative_consensus_coverage"].mean())
+    model_specs = _available_model_specs(train, validation)
+    structured_tested = "M1_structured_surprise" in model_specs
     models, params, validation_results, predictions = {}, {}, {}, {}
     for model_name, (numeric, categorical) in model_specs.items():
         models[model_name], params[model_name] = _fit(train, numeric, categorical)
@@ -922,6 +1030,23 @@ def run(frame: pd.DataFrame | None = None, verbose: bool = True, *,
         validation_results[model_name] = _evaluate_cell(
             validation, predictions[model_name]
         )
+        pred_frame = validation[["entry_time", "sector", "target_sector_residual_5d"]].copy()
+        pred_frame["prediction"] = predictions[model_name]
+        validation_results[model_name]["ic_by_year"] = {
+            str(year): _metrics(group["target_sector_residual_5d"], group["prediction"])["ic"]
+            for year, group in pred_frame.groupby(pd.to_datetime(pred_frame["entry_time"]).dt.year)
+        }
+        validation_results[model_name]["ic_by_sector"] = {
+            str(sector): _metrics(group["target_sector_residual_5d"], group["prediction"])["ic"]
+            for sector, group in pred_frame.groupby("sector") if len(group) >= 5
+        }
+        validation_results[model_name]["bootstrap_selection_stability"] = {
+            "status": "NOT_RUN_COVERAGE_GATE" if not structured_tested else "PENDING_REVIEW"
+        }
+        validation_results[model_name]["permutation_controls"] = {
+            "block_feature_permutation": "NOT_RUN_COVERAGE_GATE" if not structured_tested else "PENDING_REVIEW",
+            "shuffled_timestamp": "NOT_RUN_COVERAGE_GATE" if not structured_tested else "PENDING_REVIEW",
+        }
     selected = min(model_specs, key=lambda name:
                    validation_results[name]["predictive"]["rmse"])
     selected_result = validation_results[selected]
@@ -937,7 +1062,6 @@ def run(frame: pd.DataFrame | None = None, verbose: bool = True, *,
         "positive_with_30bps_per_side":
             selected_result["doubled_costs"]["net_return"] > 0,
     }
-    structured_tested = "financial_plus_reaction" in model_specs
     passed = all(screening_gates.values())
     experiment_id = hashlib.sha256(
         f"{SPRINT_VERSION}|{dataset_hash}|VALIDATION|{selected}|{_git_hash()}".encode()
@@ -950,10 +1074,12 @@ def run(frame: pd.DataFrame | None = None, verbose: bool = True, *,
         "models": validation_results, "elastic_net_params": params,
         "screening_gates": screening_gates,
         "structured_surprise_tested": structured_tested,
+        "structured_coverage": {"train": train_coverage, "validation": validation_coverage,
+                                 "minimum_required": STRUCTURED_COVERAGE_MIN,
+                                 "gate_passed": structured_tested},
         "structured_surprise_blocker": None if structured_tested else
-            "point-in-time consensus coverage below 30%",
-        "catboost_allowed": bool(passed and structured_tested and
-                                 selected == "financial_plus_reaction"),
+            "representative point-in-time EPS+revenue consensus coverage below 80%",
+        "catboost_allowed": False,
         "descriptive": descriptive_tables(prefinal),
         "final_test_outcomes_evaluated": False,
     }
