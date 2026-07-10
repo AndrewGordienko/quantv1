@@ -282,6 +282,12 @@ def research_intraday():
     return _read_json("intraday_meanrev.json", {"note": "run intraday_meanrev"})
 
 
+@app.get("/api/research/v4-replay")
+def research_v4_replay():
+    """V4 leak-free event-replay PoC (Federal Register -> sector ETF, hourly)."""
+    return _read_json("v4_event_reaction_poc.json", {"note": "run v4.event_reaction_poc"})
+
+
 @app.get("/api/forward/book")
 def forward_book():
     """The live paper book to trade: primary LARGE + the 4 observational shadows."""

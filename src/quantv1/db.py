@@ -122,6 +122,20 @@ CREATE TABLE IF NOT EXISTS bars_hourly (
     PRIMARY KEY (ticker, ts)
 );
 
+-- === V4: minute bars (Alpaca) for the intraday event-reaction engine =======
+CREATE TABLE IF NOT EXISTS bars_minute (
+    ticker VARCHAR,
+    ts     TIMESTAMP,        -- bar start, UTC
+    open   DOUBLE,
+    high   DOUBLE,
+    low    DOUBLE,
+    close  DOUBLE,
+    volume DOUBLE,
+    trades INTEGER,
+    vwap   DOUBLE,
+    PRIMARY KEY (ticker, ts)
+);
+
 -- === Forward paper-trading record (APPEND-ONLY, immutable) ================
 -- The scientifically-honest forward test. Decisions are recorded BEFORE
 -- execution and never edited or backfilled. A rule change must create a new
