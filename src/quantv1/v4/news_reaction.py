@@ -24,12 +24,27 @@ from .replay import BarPanel, ReplayParams, replay
 
 
 def news_events(con) -> pd.DataFrame:
-    rows = con.execute("""
+    """Catalyst-level events: ONE row per (catalyst, ticker) at the catalyst's
+    earliest public time — deduplicated so intraday updates of the same story
+    don't generate multiple trades. Falls back to raw events if not yet built."""
+    tables = [t[0] for t in con.execute("SHOW TABLES").fetchall()]
+    has_cat = "news_catalysts" in tables and con.execute(
+        "SELECT COUNT(*) FROM events WHERE layer='N' AND catalyst_id IS NOT NULL"
+    ).fetchone()[0] > 0
+    if has_cat:
+        return con.execute("""
+            SELECT catalyst_id, ticker, MIN(source_time) AS public_time
+            FROM events
+            WHERE layer='N' AND ticker IS NOT NULL AND catalyst_id IS NOT NULL
+              AND source_time IS NOT NULL
+            GROUP BY catalyst_id, ticker
+        """).df()
+    r = con.execute("""
         SELECT source_time AS public_time, ticker FROM events
-        WHERE layer='N' AND event_type='news' AND ticker IS NOT NULL
-          AND source_time IS NOT NULL
+        WHERE layer='N' AND event_type='news' AND ticker IS NOT NULL AND source_time IS NOT NULL
     """).df()
-    return rows
+    r["catalyst_id"] = None
+    return r
 
 
 # PRE-REGISTERED thresholds (fixed a priori, NOT tuned to the result). The AAPL+

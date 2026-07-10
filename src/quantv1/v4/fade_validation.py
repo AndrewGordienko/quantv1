@@ -90,9 +90,12 @@ def _fade_trades(ev: pd.DataFrame, panel: BarPanel, params: ReplayParams,
     cost = (params.spread_bps + params.slippage_bps + params.fees_bps) / 1e4
     e = ev.dropna(subset=["public_time"]).copy()
     e["pt_ns"] = to_ns(e["public_time"])
+    if "catalyst_id" not in e.columns:
+        e["catalyst_id"] = None
     e = e.sort_values("pt_ns")
     trades, last_exit = [], {}
-    for tk, pt in zip(e["ticker"].to_numpy(), e["pt_ns"].to_numpy()):
+    for tk, pt, cat in zip(e["ticker"].to_numpy(), e["pt_ns"].to_numpy(),
+                           e["catalyst_id"].to_numpy()):
         if not panel.has(tk) or last_exit.get(tk, 0) >= pt:
             continue
         d = panel.data[tk]
@@ -129,7 +132,7 @@ def _fade_trades(ev: pd.DataFrame, panel: BarPanel, params: ReplayParams,
         badj = _bench_return_timealigned(panel, BENCHMARK_TICKER, d["ts"][i_entry], d["ts"][exit_i])
         fadj = raw - side * badj                                   # market/factor-adjusted
         hedged = raw - side * badj - cost                          # incl. SPY-hedge round trip
-        trades.append({"ticker": tk, "entry_ns": int(d["ts"][i_entry]),
+        trades.append({"ticker": tk, "catalyst_id": cat, "entry_ns": int(d["ts"][i_entry]),
                        "exit_ns": int(d["ts"][exit_i]), "net": float(fadj),
                        "raw_net": float(raw), "fadj_net": float(fadj), "hedged_net": float(hedged),
                        "day": str(pd.Timestamp(int(d["ts"][i_entry]), unit="ns").date())})
@@ -176,25 +179,35 @@ def _matched_no_news_spikes(events, panel, obs_bars, residual, rng, cap=2000) ->
 
 
 def _shuffle_news(events, panel, rng) -> pd.DataFrame:
-    """Permute which calendar day each ticker's news-day maps to, preserving
-    time-of-day and per-day clustering (only the date identity is destroyed)."""
+    """Shuffle the calendar DAY of each CATALYST (moving all its tickers together,
+    preserving cross-ticker membership + time-of-day + per-day clustering). Only
+    the date identity is destroyed. Falls back to per-ticker-day if no catalyst."""
+    ev = events.copy()
+    ev["public_time"] = pd.to_datetime(ev["public_time"])
+    trade_dates = np.array(sorted({pd.Timestamp(int(x), unit="ns").date()
+                                   for x in panel.data[BENCHMARK_TICKER]["ts"][::390]})) \
+        if BENCHMARK_TICKER in panel.data else None
     out = []
-    for tk, g in events.groupby("ticker"):
+    if "catalyst_id" in ev.columns and ev["catalyst_id"].notna().any() and trade_dates is not None:
+        for cid, g in ev.groupby("catalyst_id"):
+            nd = rng.choice(trade_dates)                 # one new day for the whole catalyst
+            for r in g.itertuples(index=False):
+                t = r.public_time
+                out.append({"ticker": r.ticker, "catalyst_id": cid,
+                            "public_time": pd.Timestamp(datetime(nd.year, nd.month, nd.day, t.hour, t.minute))})
+        return pd.DataFrame(out)
+    # fallback: per-ticker day shuffle
+    for tk, g in ev.groupby("ticker"):
         if tk not in panel.data:
             continue
-        pt = pd.to_datetime(g["public_time"])
-        # trading dates available for this ticker
         bar_dates = np.array(sorted({pd.Timestamp(int(x), unit="ns").date()
                                      for x in panel.data[tk]["ts"][::390]}))
-        src_days = sorted(pt.dt.date.unique())
-        if len(bar_dates) < 2 or not src_days:
+        if len(bar_dates) < 2:
             continue
-        mapping = {sd: rng.choice(bar_dates) for sd in src_days}   # day -> random trading day
-        for ts_val in pt:
-            nd = mapping[ts_val.date()]
-            new = pd.Timestamp(datetime(nd.year, nd.month, nd.day,
-                                        ts_val.hour, ts_val.minute))
-            out.append({"ticker": tk, "public_time": new})
+        mp = {sd: rng.choice(bar_dates) for sd in g["public_time"].dt.date.unique()}
+        for t in g["public_time"]:
+            nd = mp[t.date()]
+            out.append({"ticker": tk, "public_time": pd.Timestamp(datetime(nd.year, nd.month, nd.day, t.hour, t.minute))})
     return pd.DataFrame(out)
 
 
@@ -213,6 +226,26 @@ def _day_block_ci(trades, rng, n_boot=3000) -> dict:
         pick = rng.choice(days, len(days), replace=True)
         boot[b] = np.concatenate([by_day[d] for d in pick]).mean()
     return {"n": int(len(trades)), "n_days": len(days),
+            "n_tickers": int(trades["ticker"].nunique()),
+            "mean_bps": float(trades["net"].mean() * 1e4),
+            "ci_low": float(np.percentile(boot, 2.5) * 1e4),
+            "ci_high": float(np.percentile(boot, 97.5) * 1e4)}
+
+
+def _catalyst_block_ci(trades, rng, n_boot=3000) -> dict:
+    """Mean net (bps) resampling CATALYSTS (a catalyst's trades — across tickers
+    and its intraday updates — stay together). Falls back to day-block if no
+    catalyst_id. This is the two-way clustering the review asked for."""
+    if trades.empty:
+        return {"n": 0, "mean_bps": None, "ci_low": None, "ci_high": None, "cluster": "none"}
+    key = "catalyst_id" if trades["catalyst_id"].notna().any() else "day"
+    by = {c: g["net"].to_numpy() for c, g in trades.groupby(key)}
+    keys = list(by)
+    boot = np.empty(n_boot)
+    for b in range(n_boot):
+        pick = rng.choice(keys, len(keys), replace=True)
+        boot[b] = np.concatenate([by[k] for k in pick]).mean()
+    return {"n": int(len(trades)), "n_clusters": len(keys), "cluster": key,
             "n_tickers": int(trades["ticker"].nunique()),
             "mean_bps": float(trades["net"].mean() * 1e4),
             "ci_low": float(np.percentile(boot, 2.5) * 1e4),
@@ -354,13 +387,13 @@ def run(verbose=True) -> dict:
     report = {}
     for g in ("discovery", "unseen", "combined"):
         rg, sg = _group(real, g), _group(shuf, g)
-        report[g] = {"real": _day_block_ci(rg, rng), "shuffled": _day_block_ci(sg, rng),
+        report[g] = {"real": _catalyst_block_ci(rg, rng), "shuffled": _catalyst_block_ci(sg, rng),
                      "lift": _lift_ci(rg, sg, rng),
                      "portfolio_raw": _portfolio(rg, panel, pnl_col="raw_net"),
                      "portfolio_factor_adj": _portfolio(rg, panel, pnl_col="fadj_net")}
-    robustness = {"matched_no_news": _day_block_ci(_group(nonews, "combined"), rng),
-                  "delayed_entry_3bar": _day_block_ci(_group(delayed, "combined"), rng),
-                  "double_cost": _day_block_ci(_group(cost2, "combined"), rng),
+    robustness = {"matched_no_news": _catalyst_block_ci(_group(nonews, "combined"), rng),
+                  "delayed_entry_3bar": _catalyst_block_ci(_group(delayed, "combined"), rng),
+                  "double_cost": _catalyst_block_ci(_group(cost2, "combined"), rng),
                   "stock_trade_counts": {"real": int(len(_group(real, "combined"))),
                                          "delayed": int(len(_group(delayed, "combined"))),
                                          "double_cost": int(len(_group(cost2, "combined"))),
@@ -416,7 +449,7 @@ def _print(out):
         rr = (praw.get("total_return") or 0) * 100
         fr = (pfa.get("total_return") or 0) * 100
         gx = praw.get("avg_gross_exposure_time_weighted") or 0
-        print(f"{g:10s} {cr['n']:6d} {cr['n_days']:5d} {cr['n_tickers']:3d} {cr['mean_bps']:9.2f} "
+        print(f"{g:10s} {cr['n']:6d} {cr.get('n_clusters',0):5d} {cr['n_tickers']:3d} {cr['mean_bps']:9.2f} "
               f"[{cr['ci_low']:7.2f},{cr['ci_high']:7.2f}] {(lf['lift_bps'] or 0):6.1f}{lci:>13s} "
               f"{rr:7.1f} {fr:7.1f} {gx:6.2f}")
     print("\nrobustness (stock-only, mean bps [day-block CI]):")

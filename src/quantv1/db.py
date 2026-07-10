@@ -109,6 +109,19 @@ CREATE TABLE IF NOT EXISTS events (
 CREATE INDEX IF NOT EXISTS idx_events_ticker ON events(ticker);
 CREATE INDEX IF NOT EXISTS idx_events_time ON events(source_time);
 
+-- News CATALYSTS: near-duplicate articles/updates of the same underlying story
+-- collapsed into one catalyst; one catalyst may span several tickers (cross-ticker
+-- membership). Every N-layer event carries a catalyst_id pointing here.
+CREATE TABLE IF NOT EXISTS news_catalysts (
+    catalyst_id        VARCHAR PRIMARY KEY,
+    earliest_public_time TIMESTAMP,
+    headline           VARCHAR,
+    primary_ticker     VARCHAR,
+    tickers            JSON,          -- all tickers this catalyst touches
+    n_tickers          INTEGER,
+    n_events           INTEGER
+);
+
 -- Intraday (hourly) bars for the fast-trigger proof-of-concept. Free yfinance
 -- history is ~2 years at 60m resolution; a true minute feed needs a paid source.
 CREATE TABLE IF NOT EXISTS bars_hourly (
