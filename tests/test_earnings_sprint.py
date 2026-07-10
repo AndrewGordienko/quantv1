@@ -242,6 +242,51 @@ class EarningsExecutionTests(unittest.TestCase):
         self.assertEqual((short_prices["benchmark_entry"],
                           short_prices["benchmark_exit"]), (52.0, 49.0))
 
+    def test_new_entries_use_marked_portfolio_exposure(self):
+        entry_days = pd.to_datetime([
+            "2025-01-02 15:00Z", "2025-01-03 15:00Z",
+            "2025-01-06 15:00Z", "2025-01-07 15:00Z",
+            "2025-01-08 15:00Z",
+        ])
+        mark_days = pd.to_datetime([
+            "2025-01-02", "2025-01-03", "2025-01-06", "2025-01-07",
+            "2025-01-08", "2025-01-09", "2025-01-10", "2025-01-13",
+            "2025-01-14", "2025-01-15", "2025-01-16", "2025-01-17",
+            "2025-01-20",
+        ])
+        rows = []
+        sectors = ["Technology", "Healthcare", "Energy", "Industrials",
+                   "Consumer Defensive"]
+        for index, entry_time in enumerate(entry_days):
+            asset_marks = [100.0] * len(mark_days)
+            if index == 0:
+                asset_marks[3:] = [300.0] * (len(mark_days) - 3)
+            marks = json.dumps([
+                {"date": str(day.date()), "asset_close": asset,
+                 "benchmark_close": 100.0}
+                for day, asset in zip(mark_days, asset_marks)
+            ])
+            rows.append({
+                "earnings_event_id": f"risk-{index}", "ticker": f"R{index}",
+                "sector": sectors[index], "release_session": "BMO",
+                "entry_time": entry_time,
+                "delayed_entry_time": entry_time + pd.Timedelta(minutes=30),
+                "exit_time": pd.Timestamp("2025-01-20 21:00Z"),
+                "delayed_exit_time": pd.Timestamp("2025-01-20 21:00Z"),
+                "entry_price": 100.0, "delayed_entry_price": 100.0,
+                "exit_price": 300.0 if index == 0 else 100.0,
+                "benchmark_entry_price": 100.0,
+                "benchmark_delayed_entry_price": 100.0,
+                "benchmark_exit_price": 100.0, "beta": 0.0,
+                "daily_marks": marks,
+            })
+        predictions = np.asarray([0.02, -0.02, 0.02, -0.02, 0.02])
+        result = simulate_portfolio(pd.DataFrame(rows), predictions)
+        self.assertEqual(result["n_trades"], 4)
+        self.assertEqual(result["risk_rejections"]["gross"], 1)
+        self.assertTrue(all(trade["entry_book_gross"] <= 0.25
+                            for trade in result["trades"]))
+
 
 if __name__ == "__main__":
     unittest.main()

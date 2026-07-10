@@ -30,7 +30,7 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from ..config import DATA_DIR, ROOT
 from ..db import connect
 from ..ingest.earnings import FINAL_TEST_START, SPRINT_VERSION, VALIDATION_START
-from ..portfolio.ledger import PortfolioLedger
+from ..portfolio.ledger import MarkedExposureBook, PortfolioLedger
 from .earnings_strategy import (
     COST_HURDLE_MULTIPLE,
     decision_from_prediction,
@@ -986,19 +986,22 @@ def simulate_portfolio(frame: pd.DataFrame, predictions: np.ndarray, *,
     data = frame.copy()
     data["prediction"] = predictions
     data = data.sort_values("delayed_entry_time" if delayed else "entry_time")
-    open_positions = []
+    cost_bps = BAR_COST_BPS_PER_SIDE * (2 if doubled_costs else 1)
+    risk_book = MarkedExposureBook(cost_bps_per_side=cost_bps)
+    risk_rejections = {"max_positions": 0, "duplicate_ticker": 0,
+                       "gross": 0, "sector_gross": 0, "net": 0}
     trades = []
     for row in data.to_dict(orient="records"):
         entry_time = pd.Timestamp(row["delayed_entry_time"] if delayed else row["entry_time"])
         exit_time = pd.Timestamp(row["delayed_exit_time"] if delayed else row["exit_time"])
-        open_positions = [position for position in open_positions
-                          if position["exit_time"] > entry_time]
-        if (len(open_positions) >= MAX_CONCURRENT or
-                any(position["ticker"] == row["ticker"]
-                    for position in open_positions)):
+        risk_book.advance(entry_time)
+        if len(risk_book.active) >= MAX_CONCURRENT:
+            risk_rejections["max_positions"] += 1
+            continue
+        if risk_book.has_ticker(row["ticker"]):
+            risk_rejections["duplicate_ticker"] += 1
             continue
         prediction = row["prediction"]
-        cost_bps = BAR_COST_BPS_PER_SIDE * (2 if doubled_costs else 1)
         decision = decision_from_prediction(
             prediction, row.get("beta"), cost_bps_per_side=cost_bps,
             hurdle_multiple=COST_HURDLE_MULTIPLE,
@@ -1009,30 +1012,17 @@ def simulate_portfolio(frame: pd.DataFrame, predictions: np.ndarray, *,
         hedge_multiplier = abs(float(row["beta"])) if np.isfinite(row["beta"]) else np.nan
         if not np.isfinite(hedge_multiplier):
             continue
-        position_gross = POSITION_WEIGHT * (1 + hedge_multiplier)
-        sector_gross = sum(position["asset_weight"] for position in open_positions
-                           if position["sector"] == row["sector"])
-        gross = sum(position["gross"] for position in open_positions)
-        net = sum(position["net"] for position in open_positions)
-        position_net = side * POSITION_WEIGHT * (1 - hedge_multiplier)
-        if (gross + position_gross > MAX_GROSS + 1e-12 or
-                sector_gross + POSITION_WEIGHT > MAX_SECTOR_GROSS + 1e-12):
-            continue
-        if abs(net + position_net) > MAX_NET + 1e-12:
-            continue
         leg_return = _bar_leg(row, side, delayed=delayed, doubled_costs=doubled_costs)
         if leg_return is None:
             continue
         execution_prices = _execution_prices(row, side, delayed)
         if execution_prices is None:
             continue
-        pnl = POSITION_WEIGHT * leg_return
         trade = {"earnings_event_id": row["earnings_event_id"], "ticker": row["ticker"],
                  "sector": row["sector"], "release_session": row["release_session"],
                  "entry_time": str(entry_time), "exit_time": str(exit_time),
                  "side": side, "weight": POSITION_WEIGHT, "leg_return": leg_return,
-                 "gross_exposure": position_gross,
-                 "pnl": pnl, "quarter": f"{entry_time.year}-Q{entry_time.quarter}",
+                 "quarter": f"{entry_time.year}-Q{entry_time.quarter}",
                  "beta": float(row["beta"]),
                  "entry_price": execution_prices["entry"],
                  "benchmark_entry_price": execution_prices["benchmark_entry"],
@@ -1041,20 +1031,36 @@ def simulate_portfolio(frame: pd.DataFrame, predictions: np.ndarray, *,
                  "execution_mode": execution_prices["mode"],
                  "daily_marks": row.get("daily_marks"),
                  "signal_hurdle_bps": decision["hurdle_bps"]}
+        projection = risk_book.project(trade, entry_time)
+        if projection["gross"] > MAX_GROSS + 1e-12:
+            risk_rejections["gross"] += 1
+            continue
+        if projection["sector_gross"] > MAX_SECTOR_GROSS + 1e-12:
+            risk_rejections["sector_gross"] += 1
+            continue
+        if abs(projection["net"]) > MAX_NET + 1e-12:
+            risk_rejections["net"] += 1
+            continue
+        trade.update({
+            "gross_exposure": ((projection["asset_notional"] +
+                                projection["hedge_notional"]) / projection["nav"]),
+            "entry_book_gross": projection["gross"],
+            "entry_book_net": projection["net"],
+            "entry_sector_gross": projection["sector_gross"],
+            "pnl": projection["asset_notional"] * leg_return,
+        })
+        risk_book.open(trade, projection)
         trades.append(trade)
-        open_positions.append({"exit_time": exit_time, "sector": row["sector"],
-                               "ticker": row["ticker"], "side": side,
-                               "asset_weight": POSITION_WEIGHT,
-                               "gross": position_gross, "net": position_net})
     calendar = set()
     for value in data.get("daily_marks", pd.Series(dtype=object)).dropna():
         records = json.loads(value) if isinstance(value, str) else value
         calendar.update(pd.Timestamp(record["date"]).date()
                         for record in records or [])
     portfolio = PortfolioLedger(
-        cost_bps_per_side=BAR_COST_BPS_PER_SIDE * (2 if doubled_costs else 1),
+        cost_bps_per_side=cost_bps,
         calendar=calendar,
     ).run(trades)
+    portfolio["risk_rejections"] = risk_rejections
     if not trades:
         return portfolio
     trade_frame = pd.DataFrame(trades)
@@ -1175,14 +1181,77 @@ def _available_model_specs(
     return specs
 
 
+def _grouped_permutation_order(frame: pd.DataFrame, *,
+                               random_state: int = 23) -> tuple[np.ndarray, dict]:
+    """Permute atomic ticker/event blocks only within year-sector strata."""
+    data = frame.reset_index(drop=True).copy()
+    if "year" not in data:
+        if "entry_time" not in data:
+            return np.arange(len(data)), {
+                "status": "MISSING_YEAR", "permuted_rows": 0,
+            }
+        data["year"] = pd.to_datetime(data["entry_time"], utc=True).dt.year
+    if "sector" not in data:
+        return np.arange(len(data)), {
+            "status": "MISSING_SECTOR", "permuted_rows": 0,
+        }
+    block_column = ("ticker" if "ticker" in data else
+                    "earnings_event_id" if "earnings_event_id" in data else None)
+    if block_column is None:
+        return np.arange(len(data)), {
+            "status": "MISSING_ATOMIC_BLOCK", "permuted_rows": 0,
+        }
+
+    rng = np.random.default_rng(random_state)
+    order = np.arange(len(data))
+    eligible_buckets = 0
+    total_buckets = 0
+    grouped = data.groupby(["year", "sector"], observed=True, dropna=False,
+                           sort=True).indices
+    for _, stratum_positions in grouped.items():
+        positions = np.asarray(sorted(stratum_positions), dtype=int)
+        blocks = {}
+        for position in positions:
+            blocks.setdefault(str(data.iloc[position][block_column]), []).append(position)
+        by_size = {}
+        for block_positions in blocks.values():
+            if "entry_time" in data:
+                block_positions = sorted(
+                    block_positions,
+                    key=lambda index: pd.Timestamp(data.iloc[index]["entry_time"]),
+                )
+            by_size.setdefault(len(block_positions), []).append(block_positions)
+        for block_size, destination_blocks in sorted(by_size.items()):
+            total_buckets += 1
+            if len(destination_blocks) < 2:
+                continue
+            eligible_buckets += 1
+            source_order = rng.permutation(len(destination_blocks))
+            if np.array_equal(source_order, np.arange(len(destination_blocks))):
+                source_order = np.roll(source_order, 1)
+            source_blocks = [destination_blocks[index] for index in source_order]
+            for destination, source in zip(destination_blocks, source_blocks):
+                if len(destination) != block_size or len(source) != block_size:
+                    raise EarningsStudyError("permutation block size changed")
+                order[np.asarray(destination, dtype=int)] = np.asarray(source, dtype=int)
+
+    return order, {
+        "status": "COMPLETE", "strata": ["year", "sector"],
+        "atomic_block": block_column, "equal_size_blocks_only": True,
+        "eligible_buckets": eligible_buckets, "total_buckets": total_buckets,
+        "permuted_rows": int((order != np.arange(len(data))).sum()),
+    }
+
+
 def permutation_controls(model: Pipeline, frame: pd.DataFrame,
                          numeric: list[str], categorical: list[str], *,
                          random_state: int = 23) -> dict:
     """Run deterministic null controls without refitting on validation data."""
     if len(frame) < 2:
         return {"status": "INSUFFICIENT_OBSERVATIONS"}
-    rng = np.random.default_rng(random_state)
-    order = rng.permutation(len(frame))
+    order, grouping = _grouped_permutation_order(
+        frame, random_state=random_state
+    )
     features = frame[numeric + categorical].copy()
     block_permuted = features.copy()
     block_permuted.loc[:, numeric] = features[numeric].iloc[order].to_numpy()
@@ -1192,6 +1261,7 @@ def permutation_controls(model: Pipeline, frame: pd.DataFrame,
     actual = frame["target_sector_residual_5d"]
     return {
         "status": "COMPLETE", "random_state": random_state,
+        "grouping": grouping,
         "block_feature_permutation": _metrics(actual, block_prediction),
         "shuffled_timestamp": _metrics(actual, timestamp_prediction),
     }

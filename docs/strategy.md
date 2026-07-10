@@ -64,6 +64,12 @@ Long positive tails and short negative tails; otherwise no trade.
 - 15% maximum net.
 - No leverage and no averaging down.
 
+Admission checks use the current marked book, not original weights. Before each
+candidate entry, expired positions settle and surviving stock/hedge quantities
+are marked with the latest close strictly available before that decision. The
+new position is sized from marked NAV and rejected if projected gross, net, or
+sector exposure breaches a limit.
+
 Portfolio statistics come from signed stock/hedge quantities in a daily ledger.
 NAV, returns, drawdown, gross/net/sector exposure, and stock/hedge turnover are
 marked every common session rather than booked only on exit dates.
@@ -73,7 +79,8 @@ marked every common session rather than booked only on exit dates.
 Validation compares M0 versus M1 and M1 versus M2 using RMSE, MAE, Spearman IC,
 net portfolio return, delayed entry, doubled costs, year/sector stability, and
 company/event/quarter concentration. Deterministic block-feature and timestamp
-permutation controls are recorded for every fitted model.
+permutation controls are recorded for every fitted model. Null permutations keep
+ticker/event blocks atomic and move them only within the same year and sector.
 
 The final period may be opened once, only after M2 has all of:
 

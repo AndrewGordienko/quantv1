@@ -11,6 +11,7 @@ from quantv1.research.earnings_alpha import (
     PRICE_CATEGORICAL,
     PRICE_NUMERIC,
     _available_model_specs,
+    _grouped_permutation_order,
     add_structured_features,
     calculate_fundamental_surprise,
     calculate_mismatch,
@@ -121,11 +122,34 @@ class StructuredResearchProtocolTests(unittest.TestCase):
         frame = pd.DataFrame({
             "signal": np.linspace(-1, 1, 40),
             "target_sector_residual_5d": np.linspace(-1, 1, 40),
+            "entry_time": pd.date_range("2025-01-02", periods=40, tz="UTC"),
+            "sector": ["Technology"] * 20 + ["Healthcare"] * 20,
+            "ticker": (["A"] * 10 + ["B"] * 10 +
+                       ["C"] * 10 + ["D"] * 10),
         })
         result = permutation_controls(IdentityModel(), frame, ["signal"], [])
         self.assertEqual(result["status"], "COMPLETE")
+        self.assertEqual(result["grouping"]["strata"], ["year", "sector"])
+        self.assertEqual(result["grouping"]["atomic_block"], "ticker")
+        self.assertEqual(result["grouping"]["permuted_rows"], 40)
         self.assertGreater(result["block_feature_permutation"]["rmse"], 0.1)
         self.assertGreater(result["shuffled_timestamp"]["rmse"], 0.1)
+
+    def test_grouped_permutation_keeps_ticker_blocks_in_year_sector(self):
+        frame = pd.DataFrame({
+            "entry_time": pd.date_range("2025-01-02", periods=8, tz="UTC"),
+            "sector": ["Technology"] * 4 + ["Healthcare"] * 4,
+            "ticker": ["A", "A", "B", "B", "C", "C", "D", "D"],
+        })
+        order, metadata = _grouped_permutation_order(frame)
+        self.assertEqual(metadata["permuted_rows"], 8)
+        years = pd.to_datetime(frame.entry_time, utc=True).dt.year
+        for destination, source in enumerate(order):
+            self.assertEqual(years.iloc[destination], years.iloc[source])
+            self.assertEqual(frame.sector.iloc[destination], frame.sector.iloc[source])
+        for ticker, positions in frame.groupby("ticker").indices.items():
+            source_tickers = set(frame.iloc[order[list(positions)]].ticker)
+            self.assertEqual(len(source_tickers), 1, ticker)
 
     def test_daily_ledger_marks_nav_and_includes_hedge_turnover(self):
         marks = json.dumps([

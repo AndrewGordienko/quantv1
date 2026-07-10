@@ -22,7 +22,9 @@ round-trip cost. Positions are beta hedged and close on the fifth common trading
 day.
 
 See [docs/strategy.md](docs/strategy.md) for the frozen protocol and
-[docs/data.md](docs/data.md) for the point-in-time data contract.
+[docs/data.md](docs/data.md) for the point-in-time data contract. Prior tested
+hypotheses and negative results are recorded in
+[docs/research_ledger.md](docs/research_ledger.md).
 
 ## Status
 

@@ -38,6 +38,123 @@ class _Position:
     last_benchmark: float
 
 
+class MarkedExposureBook:
+    """Point-in-time exposure state used to admit new trades.
+
+    Existing positions are marked with the latest session close strictly before
+    the candidate entry date. Same-session closes are future information at a
+    30/60-minute decision and are therefore never used for admission.
+    """
+
+    def __init__(self, *, initial_nav: float = 1.0,
+                 cost_bps_per_side: float = 15.0):
+        if initial_nav <= 0:
+            raise ValueError("initial_nav must be positive")
+        if cost_bps_per_side < 0:
+            raise ValueError("cost_bps_per_side cannot be negative")
+        self.cash = float(initial_nav)
+        self.cost_rate = float(cost_bps_per_side) / 1e4
+        self.active: list[_Position] = []
+
+    @staticmethod
+    def _position_marks(trade: dict) -> dict[date, tuple[float, float]]:
+        return PortfolioLedger._position_marks(trade)
+
+    @staticmethod
+    def _mark_before(position: _Position, timestamp) -> None:
+        current_day = _as_date(timestamp)
+        eligible = [day for day in position.marks if day < current_day]
+        if eligible:
+            position.last_asset, position.last_benchmark = position.marks[max(eligible)]
+
+    def _close_expired(self, timestamp) -> None:
+        remaining = []
+        for position in self.active:
+            if pd.Timestamp(position.trade["exit_time"]) <= pd.Timestamp(timestamp):
+                asset_exit = float(position.trade["exit_price"])
+                benchmark_exit = float(position.trade["benchmark_exit_price"])
+                asset_value = abs(position.asset_quantity * asset_exit)
+                hedge_value = abs(position.hedge_quantity * benchmark_exit)
+                self.cash += position.asset_quantity * asset_exit
+                self.cash += position.hedge_quantity * benchmark_exit
+                self.cash -= self.cost_rate * (asset_value + hedge_value)
+            else:
+                remaining.append(position)
+        self.active = remaining
+
+    def advance(self, timestamp) -> dict:
+        self._close_expired(timestamp)
+        for position in self.active:
+            self._mark_before(position, timestamp)
+        nav = self.cash + sum(
+            position.asset_quantity * position.last_asset +
+            position.hedge_quantity * position.last_benchmark
+            for position in self.active
+        )
+        return {"nav": nav, **PortfolioLedger._exposure(self.active, nav)}
+
+    def has_ticker(self, ticker: str) -> bool:
+        return any(position.trade["ticker"] == ticker for position in self.active)
+
+    def project(self, trade: dict, timestamp) -> dict:
+        current = self.advance(timestamp)
+        nav = float(current["nav"])
+        if nav <= 0:
+            return {"nav": nav, "gross": math.inf, "net": math.inf,
+                    "sector_gross": math.inf, "asset_notional": 0.0,
+                    "hedge_notional": 0.0}
+        weight = float(trade["weight"])
+        beta = float(trade["beta"])
+        side = int(trade["side"])
+        asset_notional = nav * weight
+        hedge_notional = asset_notional * abs(beta)
+        projected_nav = nav - self.cost_rate * (asset_notional + hedge_notional)
+        if projected_nav <= 0:
+            return {"nav": projected_nav, "gross": math.inf,
+                    "net": math.inf, "sector_gross": math.inf,
+                    "asset_notional": asset_notional,
+                    "hedge_notional": hedge_notional}
+        current_gross_value = current["gross"] * nav
+        current_net_value = current["net"] * nav
+        current_sector_value = current["sector_gross"].get(
+            str(trade["sector"]), 0.0
+        ) * nav
+        hedge_side = -side if beta >= 0 else side
+        position_net_value = side * asset_notional + hedge_side * hedge_notional
+        return {
+            "nav": projected_nav,
+            "gross": ((current_gross_value + asset_notional + hedge_notional) /
+                      projected_nav),
+            "net": ((current_net_value + position_net_value) / projected_nav),
+            "sector_gross": ((current_sector_value + asset_notional) /
+                             projected_nav),
+            "asset_notional": asset_notional,
+            "hedge_notional": hedge_notional,
+        }
+
+    def open(self, trade: dict, projection: dict) -> None:
+        asset_notional = float(projection["asset_notional"])
+        hedge_notional = float(projection["hedge_notional"])
+        side = int(trade["side"])
+        beta = float(trade["beta"])
+        asset_entry = float(trade["entry_price"])
+        benchmark_entry = float(trade["benchmark_entry_price"])
+        hedge_side = -side if beta >= 0 else side
+        asset_quantity = side * asset_notional / asset_entry
+        hedge_quantity = (hedge_side * hedge_notional / benchmark_entry
+                          if hedge_notional else 0.0)
+        self.cash -= asset_quantity * asset_entry
+        self.cash -= hedge_quantity * benchmark_entry
+        self.cash -= self.cost_rate * (asset_notional + hedge_notional)
+        trade["asset_notional"] = asset_notional
+        trade["hedge_notional"] = hedge_notional
+        self.active.append(_Position(
+            trade=trade, asset_quantity=asset_quantity,
+            hedge_quantity=hedge_quantity, marks=self._position_marks(trade),
+            last_asset=asset_entry, last_benchmark=benchmark_entry,
+        ))
+
+
 class PortfolioLedger:
     """Account for a set of pre-approved stock/sector-hedge trades.
 
@@ -122,8 +239,10 @@ class PortfolioLedger:
                 beta = float(trade["beta"])
                 asset_entry = float(trade["entry_price"])
                 benchmark_entry = float(trade["benchmark_entry_price"])
-                asset_notional = previous_nav * weight
-                hedge_notional = asset_notional * abs(beta)
+                asset_notional = float(trade.get("asset_notional",
+                                                 previous_nav * weight))
+                hedge_notional = float(trade.get("hedge_notional",
+                                                 asset_notional * abs(beta)))
                 hedge_side = -side if beta >= 0 else side
                 asset_quantity = side * asset_notional / asset_entry
                 hedge_quantity = (hedge_side * hedge_notional /
