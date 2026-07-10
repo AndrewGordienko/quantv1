@@ -48,6 +48,7 @@ class ReplayParams:
     obs_bars: int = 1          # bars observed after the event before deciding
     entry_delay: int = 0       # extra bars to wait AFTER the decision before entry
     max_hold: int = 6          # timeout barrier (bars)
+    allow_overnight: bool = False   # if False, force EOD liquidation (no gap crossing)
     tp: float = 0.03           # take-profit (fraction)
     sl: float = 0.015          # stop-loss (fraction)
     spread_bps: float = 3.0

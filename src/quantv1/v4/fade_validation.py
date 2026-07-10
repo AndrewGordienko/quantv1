@@ -43,12 +43,33 @@ REGISTRY = DATA_DIR / "experiment_registry.jsonl"
 _MIN_NS = 60_000_000_000
 
 
-# ---------------------------------------------------------------------------
-# ONE shared trigger (used by real events AND control detection)
-# ---------------------------------------------------------------------------
+_SESSION_NS = int(6.5 * 3600 * 1e9)
+_DAY_NS = 86_400_000_000_000
+
+
+def _day_id(ns):
+    return ns // _DAY_NS                     # integer calendar day (UTC)
+
+
+def attach_tod_volume(panel):
+    """Per-ticker TIME-OF-DAY volume profile: mean volume by minute-of-day, so
+    relative volume compares a bar to the same clock-minute historically (not to
+    premarket / the preceding 30 min, which behaves badly around the open)."""
+    panel.tod_vol = {}
+    for tk, d in panel.data.items():
+        minute = (d["ts"] // _MIN_NS) % 1440
+        vol = np.nan_to_num(d["vol"])
+        prof = np.zeros(1440)
+        cnt = np.zeros(1440)
+        np.add.at(prof, minute, vol)
+        np.add.at(cnt, minute, 1)
+        prof = prof / np.maximum(cnt, 1)
+        panel.tod_vol[tk] = (minute, prof)
+
+
 def _trigger(panel, tk, i_pub, obs_bars, residual):
-    """Return (fires, side). Move over [i_pub, i_dec); rel-vol vs the 30 bars
-    BEFORE the spike window. Identical logic wherever a spike is evaluated."""
+    """Return (fires, side). Move over [i_pub, i_dec); relative volume normalized
+    by the TIME-OF-DAY profile. One implementation for real events + control."""
     d = panel.data[tk]
     i_dec = i_pub + obs_bars
     if i_pub == 0 or i_dec > len(d["close"]):
@@ -56,8 +77,9 @@ def _trigger(panel, tk, i_pub, obs_bars, residual):
     r0 = d["close"][i_dec - 1] / d["open"][i_pub] - 1.0
     if residual and BENCHMARK_TICKER in panel.data:
         r0 -= _bench_return_timealigned(panel, BENCHMARK_TICKER, d["ts"][i_pub], d["ts"][i_dec - 1])
-    pre = d["vol"][max(0, i_pub - 30):i_pub]
-    rel = d["vol"][i_pub:i_dec].mean() / (np.nanmean(pre) + 1e-9) if len(pre) else 0.0
+    minute, prof = panel.tod_vol[tk]
+    expected = prof[minute[i_pub:i_dec]].mean()
+    rel = d["vol"][i_pub:i_dec].mean() / (expected + 1e-9) if expected else 0.0
     if not np.isfinite(r0) or abs(r0) < MOVE_THR or rel < VOL_THR:
         return False, 0
     return True, -int(np.sign(r0))          # FADE the move
@@ -84,8 +106,11 @@ def _fade_trades(ev: pd.DataFrame, panel: BarPanel, params: ReplayParams,
         if i_entry + 1 >= len(d["ts"]):
             continue
         entry = d["open"][i_entry] * (1 + side * cost)
+        entry_day = _day_id(d["ts"][i_entry])
         exit_px, exit_i = None, None
         for j in range(i_entry, min(i_entry + params.max_hold, len(d["ts"]))):
+            if not params.allow_overnight and _day_id(d["ts"][j]) != entry_day:
+                exit_px, exit_i = d["close"][j - 1], j - 1; break   # EOD liquidation
             up = entry * (1 + params.tp) if side > 0 else entry * (1 - params.tp)
             dn = entry * (1 - params.sl) if side > 0 else entry * (1 + params.sl)
             hit_tp = (side > 0 and d["high"][j] >= up) or (side < 0 and d["low"][j] <= up)
@@ -95,13 +120,18 @@ def _fade_trades(ev: pd.DataFrame, panel: BarPanel, params: ReplayParams,
             if hit_tp:
                 exit_px, exit_i = up, j; break
         if exit_px is None:
-            exit_i = min(i_entry + params.max_hold - 1, len(d["ts"]) - 1)
-            exit_px = d["close"][exit_i]
-        gross = side * (exit_px / entry - 1)
+            last = min(i_entry + params.max_hold - 1, len(d["ts"]) - 1)
+            # don't let the timeout exit cross the session either
+            while last > i_entry and _day_id(d["ts"][last]) != entry_day:
+                last -= 1
+            exit_i, exit_px = last, d["close"][last]
+        raw = side * (exit_px / entry - 1) - cost                  # executable long/short
         badj = _bench_return_timealigned(panel, BENCHMARK_TICKER, d["ts"][i_entry], d["ts"][exit_i])
-        net = gross - side * badj - cost
+        fadj = raw - side * badj                                   # market/factor-adjusted
+        hedged = raw - side * badj - cost                          # incl. SPY-hedge round trip
         trades.append({"ticker": tk, "entry_ns": int(d["ts"][i_entry]),
-                       "exit_ns": int(d["ts"][exit_i]), "net": float(net),
+                       "exit_ns": int(d["ts"][exit_i]), "net": float(fadj),
+                       "raw_net": float(raw), "fadj_net": float(fadj), "hedged_net": float(hedged),
                        "day": str(pd.Timestamp(int(d["ts"][i_entry]), unit="ns").date())})
         bar_ns = int(d["ts"][exit_i] - d["ts"][exit_i - 1]) if exit_i > 0 else _MIN_NS
         last_exit[tk] = int(d["ts"][exit_i]) + params.cooldown_bars * bar_ns
@@ -211,18 +241,17 @@ def _lift_ci(real, shuffled, rng, n_boot=3000) -> dict:
             "ci_high": float(np.percentile(boot, 97.5))}
 
 
-def _portfolio(trades, panel, max_concurrent=MAX_CONCURRENT) -> dict:
-    """Real portfolio: concurrency cap + full trading-calendar daily series
-    (zero on no-trade days) + average gross exposure + turnover."""
+def _portfolio(trades, panel, max_concurrent=MAX_CONCURRENT, pnl_col="raw_net") -> dict:
+    """Concurrency-capped portfolio on a chosen P&L column, over the FULL trading
+    calendar (zeros on no-trade days). Gross exposure is TIME-WEIGHTED from actual
+    entry/exit intervals (not count-of-trades-started)."""
     if trades.empty:
         return {"n": 0}
-    # trading-day calendar from SPY bars
-    cal = sorted({pd.Timestamp(int(x), unit="ns").date()
-                  for x in panel.data[BENCHMARK_TICKER]["ts"][::390]}) \
+    cal = sorted({int(_day_id(x)) for x in panel.data[BENCHMARK_TICKER]["ts"]}) \
         if BENCHMARK_TICKER in panel.data else None
     t = trades.sort_values("entry_ns")
     w = 1.0 / max_concurrent
-    open_intervals, day_pnl, day_exposure, taken, turnover = [], {}, {}, 0, 0.0
+    open_intervals, day_pnl, taken, turnover, open_time_ns = [], {}, 0, 0.0, 0
     for r in t.itertuples(index=False):
         open_intervals = [x for x in open_intervals if x > r.entry_ns]
         if len(open_intervals) >= max_concurrent:
@@ -230,25 +259,24 @@ def _portfolio(trades, panel, max_concurrent=MAX_CONCURRENT) -> dict:
         open_intervals.append(r.exit_ns)
         taken += 1
         turnover += 2 * w
-        day = pd.Timestamp(r.entry_ns, unit="ns").date()
-        day_pnl[day] = day_pnl.get(day, 0.0) + w * r.net
-        day_exposure[day] = day_exposure.get(day, 0) + 1
-    if cal:
-        idx = [d for d in cal if d >= min(day_pnl) and d <= max(day_pnl)]
-    else:
-        idx = sorted(day_pnl)
+        open_time_ns += (r.exit_ns - r.entry_ns)          # position-time for exposure
+        day = int(_day_id(r.entry_ns))
+        day_pnl[day] = day_pnl.get(day, 0.0) + w * getattr(r, pnl_col)
+    idx = [d for d in (cal or sorted(day_pnl)) if min(day_pnl) <= d <= max(day_pnl)]
     s = pd.Series({d: day_pnl.get(d, 0.0) for d in idx}).sort_index()
     if len(s) < 2:
         return {"n_taken": taken, "total_return": float(s.sum()), "active_days": len(day_pnl)}
     eq = (1 + s).cumprod()
-    yrs = max((s.index[-1] - s.index[0]).days / 365.25, 1e-6)
-    avg_gross = np.mean([min(day_exposure.get(d, 0), max_concurrent) * w for d in idx])
+    yrs = max((s.index[-1] - s.index[0]) / 365.25, 1e-6)
+    # time-weighted avg gross = (avg concurrent positions) * w, over session time
+    total_session_ns = len(s) * _SESSION_NS
+    avg_gross = (open_time_ns / total_session_ns) * w if total_session_ns else 0.0
     return {"n_taken": int(taken), "trading_days": int(len(s)), "active_days": int(len(day_pnl)),
-            "total_return": float(eq.iloc[-1] - 1),
+            "pnl_basis": pnl_col, "total_return": float(eq.iloc[-1] - 1),
             "cagr": float(eq.iloc[-1] ** (1 / yrs) - 1),
             "sharpe": float(s.mean() / s.std() * np.sqrt(252)) if s.std() > 0 else None,
             "max_dd": float((eq / eq.cummax() - 1).min()),
-            "avg_gross_exposure": float(avg_gross),
+            "avg_gross_exposure_time_weighted": float(avg_gross),
             "turnover_per_active_day": float(turnover / max(len(day_pnl), 1))}
 
 
@@ -267,20 +295,41 @@ def _excludes_zero(ci):
 # ---------------------------------------------------------------------------
 # Registry (proper trial ledger)
 # ---------------------------------------------------------------------------
+_DEP_FILES = [
+    "src/quantv1/v4/fade_validation.py", "src/quantv1/v4/replay.py",
+    "src/quantv1/v4/news_reaction.py", "src/quantv1/config.py",
+    "src/quantv1/v4/data_pipeline.py",
+]
+
+
+def _git_commit():
+    import subprocess
+    try:
+        g = subprocess.run(["git", "-C", str(ROOT), "rev-parse", "--short", "HEAD"],
+                           capture_output=True, text=True, timeout=5)
+        dirty = subprocess.run(["git", "-C", str(ROOT), "status", "--porcelain"],
+                               capture_output=True, text=True, timeout=5).stdout.strip()
+        return (g.stdout.strip() or "nogit") + ("+dirty" if dirty else "")
+    except Exception:  # noqa: BLE001
+        return "nogit"
+
+
 def _code_hash():
     h = hashlib.sha1()
-    for f in [ROOT / "src/quantv1/v4/fade_validation.py", ROOT / "src/quantv1/v4/replay.py"]:
+    for f in _DEP_FILES:                              # every strategy dependency
         try:
-            h.update(f.read_bytes())
+            h.update((ROOT / f).read_bytes())
         except OSError:
-            pass
+            h.update(b"missing")
     return h.hexdigest()[:12]
 
 
 def _dataset_hash(con):
+    from .data_pipeline import PARQUET
+    manifest = sorted((p.name, p.stat().st_size) for p in PARQUET.glob("*.parquet"))
     r = con.execute("SELECT COUNT(*), COUNT(DISTINCT ticker), MIN(ts), MAX(ts) FROM bars_minute").fetchone()
     n = con.execute("SELECT COUNT(*) FROM events WHERE layer='N'").fetchone()[0]
-    return hashlib.sha1(f"{r}|{n}".encode()).hexdigest()[:12]
+    return hashlib.sha1(f"{r}|{n}|{manifest}".encode()).hexdigest()[:12]
 
 
 def run(verbose=True) -> dict:
@@ -290,10 +339,11 @@ def run(verbose=True) -> dict:
     ds_hash = _dataset_hash(con)
     con.close()
     events = events[events["ticker"].isin(panel.data.keys())].reset_index(drop=True)
+    attach_tod_volume(panel)                          # time-of-day volume profiles
     rng = np.random.default_rng(17)
 
     base = ReplayParams(obs_bars=5, entry_delay=0, max_hold=30, tp=0.008, sl=0.008,
-                        spread_bps=2, slippage_bps=2, cooldown_bars=30)
+                        spread_bps=2, slippage_bps=2, cooldown_bars=30, allow_overnight=False)
 
     real = _fade_trades(events, panel, base)
     shuf = _fade_trades(_shuffle_news(events, panel, rng), panel, base)
@@ -305,7 +355,9 @@ def run(verbose=True) -> dict:
     for g in ("discovery", "unseen", "combined"):
         rg, sg = _group(real, g), _group(shuf, g)
         report[g] = {"real": _day_block_ci(rg, rng), "shuffled": _day_block_ci(sg, rng),
-                     "lift": _lift_ci(rg, sg, rng), "portfolio": _portfolio(rg, panel)}
+                     "lift": _lift_ci(rg, sg, rng),
+                     "portfolio_raw": _portfolio(rg, panel, pnl_col="raw_net"),
+                     "portfolio_factor_adj": _portfolio(rg, panel, pnl_col="fadj_net")}
     robustness = {"matched_no_news": _day_block_ci(_group(nonews, "combined"), rng),
                   "delayed_entry_3bar": _day_block_ci(_group(delayed, "combined"), rng),
                   "double_cost": _day_block_ci(_group(cost2, "combined"), rng),
@@ -314,10 +366,17 @@ def run(verbose=True) -> dict:
                                          "double_cost": int(len(_group(cost2, "combined"))),
                                          "no_news": int(len(_group(nonews, "combined")))}}
 
-    out = {"experiment": "fade_news_spike", "status": "ARCHIVED_NEGATIVE",
-           "code_hash": _code_hash(), "dataset_hash": ds_hash,
+    code_hash = _code_hash()
+    universe = sorted([t for t in panel.data if t not in ETFS])
+    experiment_id = hashlib.sha1(
+        f"fade_news_spike|{code_hash}|{ds_hash}|{base.__dict__}|{universe}|"
+        f"discovery={sorted(DISCOVERY)}".encode()).hexdigest()[:16]
+    out = {"experiment": "fade_news_spike", "experiment_id": experiment_id,
+           "status": "ARCHIVED_NEGATIVE",
+           "git_commit": _git_commit(), "code_hash": code_hash, "dataset_hash": ds_hash,
            "params": base.__dict__, "frozen_rule": {"move_thr": MOVE_THR, "vol_thr": VOL_THR},
-           "universe": sorted([t for t in panel.data if t not in ETFS]),
+           "universe": universe, "discovery_holdout": {"discovery": sorted(DISCOVERY),
+                                                       "validation": "unseen stocks"},
            "news_events": int(len(events)), "report": report, "robustness": robustness,
            "generated_at": datetime.now(timezone.utc).isoformat()}
     with open(DATA_DIR / "v4_fade_validation.json", "w") as f:
@@ -332,9 +391,11 @@ def _register(out):
     u = out["report"]["unseen"]
     with open(REGISTRY, "a") as f:
         f.write(json.dumps({
-            "ts": out["generated_at"], "experiment_id": out["experiment"],
-            "status": out["status"], "code_hash": out["code_hash"],
+            "ts": out["generated_at"], "experiment_id": out["experiment_id"],
+            "experiment": out["experiment"], "status": out["status"],
+            "git_commit": out["git_commit"], "code_hash": out["code_hash"],
             "dataset_hash": out["dataset_hash"], "params": out["params"],
+            "universe": out["universe"], "discovery_holdout": out["discovery_holdout"],
             "unseen_mean_bps": u["real"]["mean_bps"],
             "unseen_ci": [u["real"]["ci_low"], u["real"]["ci_high"]],
             "unseen_lift": u["lift"],
@@ -345,16 +406,19 @@ def _print(out):
     print(f"=== Fade validation v2 ({out['status']}) — mean net bps/trade, day-block 95% CI ===")
     print(f"code={out['code_hash']} data={out['dataset_hash']}  news={out['news_events']}\n")
     print(f"{'group':10s} {'trades':>6s} {'days':>5s} {'tk':>3s} {'real bps':>9s} "
-          f"{'95% CI':>18s} {'shuf':>7s} {'lift bps [CI]':>22s} {'port%':>7s}")
+          f"{'95% CI':>18s} {'lift[CI]':>20s} {'raw%':>7s} {'fadj%':>7s} {'gross':>6s}")
     for g in ("discovery", "unseen", "combined"):
-        r = out["report"][g]; cr, cs, lf, pt = r["real"], r["shuffled"], r["lift"], r["portfolio"]
+        r = out["report"][g]; cr, lf = r["real"], r["lift"]
+        praw, pfa = r["portfolio_raw"], r["portfolio_factor_adj"]
         if cr["mean_bps"] is None:
             print(f"{g:10s}  n/a"); continue
         lci = f"[{lf['ci_low']:.1f},{lf['ci_high']:.1f}]" if lf.get("ci_low") is not None else "[--]"
-        pr = pt.get("total_return")
+        rr = (praw.get("total_return") or 0) * 100
+        fr = (pfa.get("total_return") or 0) * 100
+        gx = praw.get("avg_gross_exposure_time_weighted") or 0
         print(f"{g:10s} {cr['n']:6d} {cr['n_days']:5d} {cr['n_tickers']:3d} {cr['mean_bps']:9.2f} "
-              f"[{cr['ci_low']:7.2f},{cr['ci_high']:7.2f}] {cs['mean_bps'] or 0:7.2f} "
-              f"{(lf['lift_bps'] or 0):7.2f}{lci:>15s} {(pr*100 if pr is not None else 0):7.1f}")
+              f"[{cr['ci_low']:7.2f},{cr['ci_high']:7.2f}] {(lf['lift_bps'] or 0):6.1f}{lci:>13s} "
+              f"{rr:7.1f} {fr:7.1f} {gx:6.2f}")
     print("\nrobustness (stock-only, mean bps [day-block CI]):")
     for k, v in out["robustness"].items():
         if k == "stock_trade_counts":
