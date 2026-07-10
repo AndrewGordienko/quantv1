@@ -1,0 +1,32 @@
+# data & generated artifacts (DuckDB is hundreds of MB; JSON/pkl are regenerable)
+/data/
+*.parquet
+*.duckdb
+*.duckdb.wal
+
+# secrets / local config
+.env
+.env.*
+*.local
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.uv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# node / frontend build
+frontend/node_modules/
+frontend/dist/
+frontend/*.log
+
+# logs & tmp
+*.log
+/tmp/
+
+# os / editor
+.DS_Store
+.vscode/
+.idea/
