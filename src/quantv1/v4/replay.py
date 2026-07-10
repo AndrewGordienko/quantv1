@@ -34,9 +34,19 @@ from ..db import connect
 EULER = 0.5772156649
 
 
+def to_ns(series) -> np.ndarray:
+    """Datetimes -> int64 NANOSECONDS, regardless of source resolution.
+
+    DuckDB returns datetime64[us]; a plain .astype('int64') then yields
+    MICROSECONDS, which silently corrupts any unit='ns' date math (the 1970
+    bucketing bug). Forcing [ns] first makes the unit unambiguous everywhere."""
+    return pd.to_datetime(series).values.astype("datetime64[ns]").astype("int64")
+
+
 @dataclass
 class ReplayParams:
     obs_bars: int = 1          # bars observed after the event before deciding
+    entry_delay: int = 0       # extra bars to wait AFTER the decision before entry
     max_hold: int = 6          # timeout barrier (bars)
     tp: float = 0.03           # take-profit (fraction)
     sl: float = 0.015          # stop-loss (fraction)
@@ -61,7 +71,7 @@ class BarPanel:
                          f"FROM {table} ORDER BY ticker, ts").df()
         if own:
             con.close()
-        df["ts"] = pd.to_datetime(df["ts"]).astype("int64")   # ns since epoch
+        df["ts"] = to_ns(df["ts"])                            # int64 NANOSECONDS
         self.data = {}
         for tk, g in df.groupby("ticker"):
             self.data[tk] = {
@@ -86,7 +96,7 @@ def replay(events: pd.DataFrame, panel: BarPanel, signal_fn,
     sector_map = sector_map or {}
     cost = (p.spread_bps + p.slippage_bps + p.fees_bps) / 1e4
     ev = events.sort_values("public_time").reset_index(drop=True)
-    ev["public_time"] = pd.to_datetime(ev["public_time"]).astype("int64")
+    ev["public_time"] = to_ns(ev["public_time"])
 
     trades = []
     last_exit_ns: dict[str, int] = {}
@@ -101,7 +111,7 @@ def replay(events: pd.DataFrame, panel: BarPanel, signal_fn,
             trades.append({"ticker": tk, "status": "reject_no_bar"})
             continue
         i_dec = i_pub + p.obs_bars
-        i_entry = i_dec
+        i_entry = i_dec + p.entry_delay      # delay is separate from observation
         d = panel.data[tk]
         if i_entry + 1 >= len(d["ts"]):
             trades.append({"ticker": tk, "status": "reject_eod"})
