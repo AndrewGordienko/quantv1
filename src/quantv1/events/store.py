@@ -29,18 +29,21 @@ def event_id(*parts) -> str:
 
 
 def upsert_events(rows: list[dict]) -> int:
-    """Insert/replace events by event_id. Each row must supply EVENT_COLS keys."""
+    """Insert events by event_id, skipping ones already present.
+
+    Uses ON CONFLICT DO NOTHING rather than a per-call DELETE scan against the
+    (growing) events table — the same fix applied to bar ingestion. Events are
+    effectively immutable, so skip-on-conflict is the correct semantics and keeps
+    high-volume news ingestion fast.
+    """
     if not rows:
         return 0
     con = connect()
-    con.execute("CREATE TEMP TABLE _ev AS SELECT * FROM events WHERE 0=1")
     con.executemany(
-        f"INSERT INTO _ev VALUES ({','.join(['?'] * len(EVENT_COLS))})",
+        f"INSERT INTO events VALUES ({','.join(['?'] * len(EVENT_COLS))}) "
+        f"ON CONFLICT DO NOTHING",
         [[r.get(c) for c in EVENT_COLS] for r in rows],
     )
-    con.execute("DELETE FROM events WHERE event_id IN (SELECT event_id FROM _ev)")
-    con.execute("INSERT INTO events SELECT * FROM _ev")
-    con.execute("DROP TABLE _ev")
     n = con.execute("SELECT COUNT(*) FROM events").fetchone()[0]
     con.close()
     return n
