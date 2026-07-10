@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
 import json
 from pathlib import Path
 import tempfile
@@ -13,7 +13,7 @@ import pandas as pd
 from quantv1.db import connect
 from quantv1.ingest import earnings
 from quantv1.research.earnings_alpha import (
-    _five_day_exit, _known_bar_close, _next_bar_open,
+    _execution_prices, _five_day_exit, _known_bar_close, _next_bar_open,
     purged_group_time_splits, simulate_portfolio,
 )
 from quantv1.v4.earnings_windows import window_bounds
@@ -120,6 +120,37 @@ class EarningsIngestTests(unittest.TestCase):
                 with self.assertRaises(earnings.EarningsDataError):
                     earnings.ingest_release_manifest(path)
 
+    def test_company_size_must_be_known_at_universe_formation(self):
+        with tempfile.TemporaryDirectory() as directory:
+            db_path = Path(directory) / "test.duckdb"
+            path = Path(directory) / "size.json"
+            with patch("quantv1.db.DB_PATH", db_path):
+                con = connect()
+                con.execute("""
+                    INSERT INTO earnings_universe_snapshots
+                        (universe_version,ticker,eligibility_as_of,company_bucket,
+                         included,first_seen_at)
+                    VALUES (?,?,?,'TRAIN_COMPANY',TRUE,?)
+                """, [earnings.UNIVERSE_VERSION, "TEST", "2021-06-30",
+                      datetime(2021, 6, 30)])
+                con.close()
+                record = {"ticker": "TEST", "market_cap": 12_000_000_000,
+                          "known_at": "2021-07-01T00:00:00Z", "source": "vendor",
+                          "source_record_id": "size-1"}
+                path.write_text(json.dumps([record]))
+                with self.assertRaises(earnings.EarningsDataError):
+                    earnings.ingest_universe_metadata_manifest(path)
+                record["known_at"] = "2021-06-29T20:00:00Z"
+                path.write_text(json.dumps([record]))
+                earnings.ingest_universe_metadata_manifest(path)
+                con = connect(read_only=True)
+                bucket = con.execute("""
+                    SELECT company_size_bucket FROM earnings_universe_snapshots
+                    WHERE ticker='TEST'
+                """).fetchone()[0]
+                con.close()
+                self.assertEqual(bucket, "large")
+
 
 class EarningsExecutionTests(unittest.TestCase):
     def test_cv_is_time_purged_and_company_grouped(self):
@@ -178,10 +209,38 @@ class EarningsExecutionTests(unittest.TestCase):
                 "benchmark_delayed_entry_price": 100.0,
                 "benchmark_exit_price": 100.0, "beta": 1.0,
             })
-        result = simulate_portfolio(pd.DataFrame(rows), np.full(8, 0.01))
+        result = simulate_portfolio(pd.DataFrame(rows), np.full(8, 0.02))
         # Each beta-one trade consumes 10% gross (5% asset + 5% ETF hedge).
         self.assertEqual(result["n_trades"], 2)
         self.assertGreater(result["net_return"], 0)
+        self.assertGreater(result["hedge_turnover"], 0)
+
+    def test_quote_execution_crosses_both_stock_and_hedge_spreads(self):
+        row = {
+            "beta": 1.0, "quote_complete": True,
+            "entry_bid": 99.0, "entry_ask": 101.0,
+            "delayed_entry_bid": 98.0, "delayed_entry_ask": 102.0,
+            "exit_bid": 109.0, "exit_ask": 111.0,
+            "benchmark_entry_bid": 49.0, "benchmark_entry_ask": 51.0,
+            "benchmark_delayed_entry_bid": 48.0,
+            "benchmark_delayed_entry_ask": 52.0,
+            "benchmark_exit_bid": 49.0, "benchmark_exit_ask": 51.0,
+            "entry_price": 100.0, "delayed_entry_price": 100.0,
+            "exit_price": 110.0, "benchmark_entry_price": 50.0,
+            "benchmark_delayed_entry_price": 50.0,
+            "benchmark_exit_price": 50.0,
+        }
+        long_prices = _execution_prices(row, 1)
+        self.assertEqual(long_prices["mode"], "NBBO")
+        self.assertEqual((long_prices["entry"], long_prices["exit"]),
+                         (101.0, 109.0))
+        self.assertEqual((long_prices["benchmark_entry"],
+                          long_prices["benchmark_exit"]), (49.0, 51.0))
+        short_prices = _execution_prices(row, -1, delayed=True)
+        self.assertEqual((short_prices["entry"], short_prices["exit"]),
+                         (98.0, 111.0))
+        self.assertEqual((short_prices["benchmark_entry"],
+                          short_prices["benchmark_exit"]), (52.0, 49.0))
 
 
 if __name__ == "__main__":

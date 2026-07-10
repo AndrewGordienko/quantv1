@@ -1,74 +1,65 @@
-# quantv1 — Congressional Trading Alpha Engine
+# quantv1
 
-Ingests US politicians' stock-trade disclosures, scores which members are
-actually skilled, models which disclosed purchases are likely to beat the
-market, and outputs a daily recommended portfolio — served on a localhost
-dashboard. See [PLAN.md](PLAN.md) for the full methodology and rationale.
+Research infrastructure for one primary hypothesis: earnings information can
+occasionally disagree with the market's first liquid reaction.
 
-## Why this is non-trivial (the traps it avoids)
+The project is deliberately blocked until it has licensed point-in-time
+expectations data. Current consensus, revised history, and final-period outcomes
+are not substitutes.
 
-- **Filing-date discipline.** The STOCK Act gives members 30–45 days to
-  disclose, so you only ever act on stale news. Every return, label, and
-  backtest entry is measured from the **filing date**, never the transaction
-  date. Using the transaction date is look-ahead bias and fakes alpha.
-- **Small-sample skill.** Most members have few trades, so ranking by raw
-  return surfaces luck. Skill is estimated with **empirical-Bayes shrinkage**
-  and shown with 95% credible intervals.
-- **Honest backtest.** The model is **refit at each rebalance** on
-  only-already-realized outcomes, member-skill is recomputed point-in-time, and
-  it is benchmarked against SPY *and* a naive copy-everything book.
+## Strategy
 
-## Architecture
+For every verified earnings release, wait 30 minutes into the first liquid
+regular session and measure:
 
-```
-Stock Watcher feeds (House: fresh + disclosure dates; Senate: historical)
-        │  ingest/
-        ▼
-     DuckDB  ──►  research/ (event study, empirical-Bayes skill)
-        │         model/    (features → LightGBM, walk-forward CV, native SHAP)
-        │         portfolio/(construction + point-in-time backtest)
-        ▼
-   FastAPI (read-only JSON)  ◄──  React + Vite dashboard (6 pages)
+```text
+mismatch = fundamental surprise - standardized residual reaction
 ```
 
-## Setup
+An elastic net predicts the five-day sector-adjusted return. A trade is allowed
+only when the absolute prediction exceeds twice the estimated stock-plus-hedge
+round-trip cost. Positions are beta hedged and close on the fifth common trading
+day.
+
+See [docs/strategy.md](docs/strategy.md) for the frozen protocol and
+[docs/data.md](docs/data.md) for the point-in-time data contract.
+
+## Status
+
+- M0: price and reaction baseline available.
+- M1/M2: blocked until representative EPS+revenue coverage reaches 80% in both
+  training and validation.
+- Final period: sealed. The code refuses to lock or open it unless M2 clears all
+  validation gates.
+- CatBoost: prohibited until M2 elastic net demonstrates signal.
+
+## Commands
 
 ```bash
-uv sync                       # Python deps
-cd frontend && npm install    # frontend deps
+uv sync
+uv run python -m unittest discover -s tests
+
+uv run python scripts/earnings_sprint.py audit
+uv run python scripts/earnings_sprint.py features
+uv run python scripts/earnings_sprint.py run
 ```
 
-## Run
+Manifest ingestion and market-window acquisition commands are listed by:
 
 ```bash
-# 1. Build/refresh all data + models (ingest → skill → model → portfolio → backtest)
-uv run python scripts/daily_update.py
-
-# 2. Start the API (terminal 1)
-uv run uvicorn quantv1.api.app:app --port 8000
-
-# 3. Start the dashboard (terminal 2)
-cd frontend && npm run dev        # http://localhost:5173
+uv run python scripts/earnings_sprint.py --help
 ```
 
-Individual stages can be run alone, e.g. `uv run python -m quantv1.research.skill`
-or `uv run python -m quantv1.research.event_study`.
+## Layout
 
-## Data sources
+```text
+src/quantv1/ingest/       point-in-time event and expectations intake
+src/quantv1/research/     feature construction and validation contest
+src/quantv1/portfolio/    constraints and daily mark-to-market ledger
+scripts/                  narrow command-line entry points
+tests/                    leakage, accounting, and protocol invariants
+docs/                     active strategy and data contracts
+```
 
-- **House** — `TattooedHead/house-stock-watcher-data` (fresh through 2026, has
-  disclosure dates — the point-in-time-clean primary source).
-- **Senate** — `timothycarambat/senate-stock-watcher-data` (historical through
-  ~2020, no disclosure date → filing date estimated and flagged).
-- **Prices** — yfinance (split/dividend-adjusted daily bars).
-- **Committees** — `unitedstates/congress-legislators` (public domain).
-
-## Notes / honest limitations
-
-- The Senate feed is stale and lacks disclosure dates; its rows carry
-  `filing_estimated = TRUE` and are excluded from the rigorous backtest.
-- Committee data covers **current** members only, so the committee-match feature
-  is weaker for members who have since left Congress.
-- Delisted/renamed tickers simply have no price and are treated as
-  non-investable — no survivorship fabrication.
-- yfinance sector lookups are slow; they fill in incrementally across daily runs.
+Generated data lives under `data/` and is never committed. Engineering
+conventions are in [STYLE.md](STYLE.md).

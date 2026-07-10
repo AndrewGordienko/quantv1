@@ -8,6 +8,7 @@ Examples:
   uv run python scripts/earnings_sprint.py consensus vendor_snapshots.jsonl
   uv run python scripts/earnings_sprint.py actuals vendor_actuals.jsonl
   uv run python scripts/earnings_sprint.py windows --max-events 25
+  uv run python scripts/earnings_sprint.py audit
   uv run python scripts/earnings_sprint.py run
 """
 
@@ -26,7 +27,8 @@ def main() -> None:
     classify = sub.add_parser("classify-sec")
     classify.add_argument("--max-events", type=int)
     classify.add_argument("--force", action="store_true")
-    for name in ("releases", "sec-classifications", "consensus", "actuals",
+    for name in ("releases", "sec-classifications", "universe-metadata",
+                 "consensus", "actuals",
                  "guidance", "options", "positioning", "calls"):
         command = sub.add_parser(name)
         command.add_argument("manifest")
@@ -41,6 +43,7 @@ def main() -> None:
     windows.add_argument("--force", action="store_true")
     sub.add_parser("preflight")
     sub.add_parser("features")
+    sub.add_parser("audit")
     run_parser = sub.add_parser("run")
     run_parser.add_argument("--lock-spec", action="store_true")
     run_parser.add_argument("--final-test", action="store_true")
@@ -60,6 +63,8 @@ def main() -> None:
         print(earnings.ingest_release_manifest(args.manifest))
     elif args.command == "sec-classifications":
         print(earnings.ingest_sec_classification_manifest(args.manifest))
+    elif args.command == "universe-metadata":
+        print(earnings.ingest_universe_metadata_manifest(args.manifest))
     elif args.command == "consensus":
         print(earnings.ingest_consensus_manifest(args.manifest))
     elif args.command == "actuals":
@@ -100,6 +105,10 @@ def main() -> None:
     elif args.command == "features":
         from quantv1.research.earnings_alpha import build_feature_frame
         print({"features": len(build_feature_frame())})
+    elif args.command == "audit":
+        import json
+        from quantv1.research.earnings_alpha import structured_data_audit
+        print(json.dumps(structured_data_audit(), indent=2))
     elif args.command == "run":
         from quantv1.research.earnings_alpha import run
         print(run(lock_spec=args.lock_spec, final_test=args.final_test))

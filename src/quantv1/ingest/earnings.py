@@ -701,6 +701,53 @@ def _load_manifest(path: str | Path) -> list[dict]:
     return payload if isinstance(payload, list) else payload.get("records", [])
 
 
+def _company_size_bucket(market_cap: float) -> str:
+    if market_cap < 2_000_000_000:
+        return "small"
+    if market_cap < 10_000_000_000:
+        return "mid"
+    if market_cap < 50_000_000_000:
+        return "large"
+    return "mega"
+
+
+def ingest_universe_metadata_manifest(path: str | Path) -> dict:
+    """Attach pre-sample company size without using current market cap."""
+    records = _load_manifest(path)
+    con = connect()
+    updated = 0
+    for record in records:
+        ticker = str(record["ticker"]).upper()
+        snapshot = con.execute("""
+            SELECT eligibility_as_of FROM earnings_universe_snapshots
+            WHERE universe_version=? AND ticker=?
+        """, [UNIVERSE_VERSION, ticker]).fetchone()
+        if not snapshot:
+            raise EarningsDataError(f"ticker is not in frozen universe: {ticker}")
+        known_at = _utc_naive(record["known_at"], "known_at")
+        if known_at.date() > snapshot[0]:
+            raise EarningsDataError(
+                "company size must be known no later than universe eligibility"
+            )
+        market_cap = float(record["market_cap"])
+        if market_cap <= 0:
+            raise EarningsDataError("market_cap must be positive")
+        source = str(record.get("source") or "")
+        source_record_id = str(record.get("source_record_id") or "")
+        if not source or not source_record_id:
+            raise EarningsDataError("company size requires source and source_record_id")
+        con.execute("""
+            UPDATE earnings_universe_snapshots
+            SET market_cap=?,company_size_bucket=?,size_known_at=?,size_source=?,
+                size_source_record_id=?
+            WHERE universe_version=? AND ticker=?
+        """, [market_cap, _company_size_bucket(market_cap), known_at, source,
+              source_record_id, UNIVERSE_VERSION, ticker])
+        updated += 1
+    con.close()
+    return {"universe_size_records": updated}
+
+
 def ingest_release_manifest(path: str | Path) -> dict:
     """Append reviewed company-IR/press-wire earliest-release records."""
     records = _load_manifest(path)
