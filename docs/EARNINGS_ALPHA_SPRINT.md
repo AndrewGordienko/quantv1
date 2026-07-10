@@ -3,6 +3,13 @@
 Frozen 2026-07-10. Do not tune these definitions against the untouched cells.
 The general actor graph is paused until this sprint is promoted or rejected.
 
+This sprint compares M0 price/reaction, M1 structured surprises, and M2
+surprise-versus-reaction mismatch using elastic net only. M1/M2 remain blocked
+unless both training and validation reach 80% representative EPS+revenue
+consensus coverage. All consensus, actual, and guidance records require
+`known_at`, source provenance, source record ID, and feature version; the
+2025-07 onward final period remains sealed.
+
 ## Sample and provenance
 
 - Sample window: 2021-07-01 through 2026-06-30.
