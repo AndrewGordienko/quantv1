@@ -3,13 +3,12 @@
 This module does not acquire data. It builds leak-free features from staged
 event windows, compares a price-only elastic net with a structured-earnings
 elastic net, simulates quote-side execution under capital constraints, and
-evaluates the frozen promotion gates in ``docs/EARNINGS_ALPHA_SPRINT.md``.
+evaluates the frozen promotion gates in ``docs/strategy.md``.
 """
 
 from __future__ import annotations
 
-from collections import defaultdict
-from datetime import date, datetime, time as wall_time, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from functools import lru_cache
 import hashlib
 import json
@@ -19,7 +18,7 @@ import subprocess
 import numpy as np
 import pandas as pd
 import duckdb
-from scipy.stats import kurtosis, norm, skew
+from scipy.stats import kurtosis, norm, skew, spearmanr
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import ElasticNet
@@ -31,7 +30,11 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 from ..config import DATA_DIR, ROOT
 from ..db import connect
 from ..ingest.earnings import FINAL_TEST_START, SPRINT_VERSION, VALIDATION_START
-from .earnings_strategy import decision_from_prediction
+from ..portfolio.ledger import PortfolioLedger
+from .earnings_strategy import (
+    COST_HURDLE_MULTIPLE,
+    decision_from_prediction,
+)
 
 FEATURE_PATH = DATA_DIR / "earnings_features.parquet"
 REPORT_PATH = DATA_DIR / "earnings_alpha_report.json"
@@ -45,7 +48,6 @@ TARGET_TRADING_DAYS = 5
 BAR_COST_BPS_PER_SIDE = 15.0
 MIN_TRAIN = 200
 MIN_VALIDATION = 100
-SIGNAL_THRESHOLD_BPS = 10.0
 MAX_CONCURRENT = 5
 POSITION_WEIGHT = 0.05
 MAX_GROSS = 0.25
@@ -74,6 +76,7 @@ POSITIONING_NUMERIC = [
     "institutional_ownership", "passive_ownership",
 ]
 STRUCTURED_COVERAGE_MIN = 0.80
+MIN_REPRESENTATIVE_GROUP_EVENTS = 20
 STRUCTURED_NUMERIC = [
     "eps_surprise_z", "revenue_surprise_z", "guidance_surprise_z",
     "analyst_dispersion_z", "revision_breadth", "pre_event_volatility",
@@ -195,14 +198,13 @@ def _five_day_exit(asset_bars: pd.DataFrame, benchmark_bars: pd.DataFrame,
     """Fifth subsequent common RTH close on the same Polygon adjustment basis."""
     asset = _rth(asset_bars)
     benchmark = _rth(benchmark_bars)
-    asset_dates = set(asset.loc[asset["local_date"] > session_date, "local_date"])
-    benchmark_dates = set(benchmark.loc[
-        benchmark["local_date"] > session_date, "local_date"
-    ])
+    asset_dates = set(asset["local_date"])
+    benchmark_dates = set(benchmark["local_date"])
     common_dates = sorted(asset_dates & benchmark_dates)
-    if len(common_dates) < TARGET_TRADING_DAYS:
+    future_dates = [day for day in common_dates if day > session_date]
+    if len(future_dates) < TARGET_TRADING_DAYS:
         return None
-    exit_date = common_dates[TARGET_TRADING_DAYS - 1]
+    exit_date = future_dates[TARGET_TRADING_DAYS - 1]
     asset_close = asset.loc[asset["local_date"] == exit_date, "close"].iloc[-1]
     benchmark_close = benchmark.loc[
         benchmark["local_date"] == exit_date, "close"
@@ -210,8 +212,23 @@ def _five_day_exit(asset_bars: pd.DataFrame, benchmark_bars: pd.DataFrame,
     if not all(np.isfinite(value) and value > 0 for value in
                (asset_close, benchmark_close)):
         return None
+    mark_dates = [day for day in common_dates
+                  if session_date <= day <= exit_date]
+    marks = [{
+        "date": str(day),
+        "asset_close": float(asset.loc[
+            asset["local_date"] == day, "close"
+        ].iloc[-1]),
+        "benchmark_close": float(benchmark.loc[
+            benchmark["local_date"] == day, "close"
+        ].iloc[-1]),
+    } for day in mark_dates]
+    if any(not all(np.isfinite(record[key]) and record[key] > 0
+                       for key in ("asset_close", "benchmark_close"))
+           for record in marks):
+        return None
     return {"date": exit_date, "asset_close": float(asset_close),
-            "benchmark_close": float(benchmark_close)}
+            "benchmark_close": float(benchmark_close), "marks": marks}
 
 
 def _prior_rth_close(bars: pd.DataFrame, session_date: date) -> float | None:
@@ -261,6 +278,10 @@ def _consensus_actuals(con, event_id: str, event_time, decision_time) -> dict:
         "bookings_surprise": np.nan, "guidance_eps_surprise": np.nan,
         "guidance_revenue_surprise": np.nan, "has_guidance": 0.0,
         "guidance_surprise_raw": np.nan, "guidance_status": "MISSING_DATA",
+        "guidance_eps_vs_prior": np.nan,
+        "guidance_eps_vs_consensus": np.nan,
+        "guidance_revenue_vs_prior": np.nan,
+        "guidance_revenue_vs_consensus": np.nan,
         "implied_move": np.nan, "implied_volatility": np.nan,
         "days_to_cover": np.nan, "institutional_ownership": np.nan,
         "passive_ownership": np.nan,
@@ -273,13 +294,13 @@ def _consensus_actuals(con, event_id: str, event_time, decision_time) -> dict:
             SELECT estimate_value,analyst_count,forecast_dispersion,revision_breadth
             FROM earnings_consensus_snapshots
             WHERE earnings_event_id=? AND metric=? AND is_point_in_time=TRUE
-              AND is_final_revised=FALSE AND estimate_as_of<?
-            ORDER BY estimate_as_of DESC LIMIT 1
+              AND is_final_revised=FALSE AND known_at<?
+            ORDER BY known_at DESC LIMIT 1
         """, [event_id, metric, decision_time]).fetchone()
         actual = con.execute("""
             SELECT actual_value FROM earnings_actuals
-            WHERE earnings_event_id=? AND metric=? AND public_time<=?
-            ORDER BY public_time DESC LIMIT 1
+            WHERE earnings_event_id=? AND metric=? AND known_at<=?
+            ORDER BY known_at DESC LIMIT 1
         """, [event_id, metric, decision_time]).fetchone()
         if estimate and actual:
             scale = max(abs(float(estimate[0])), 0.01 if metric == "diluted_eps" else 1.0)
@@ -295,32 +316,57 @@ def _consensus_actuals(con, event_id: str, event_time, decision_time) -> dict:
             if metric == "revenue":
                 result["has_revenue_consensus"] = 1.0
             result["has_point_in_time_consensus"] = 1.0
-    for metric, output in (("guidance_eps", "guidance_eps_surprise"),
-                           ("guidance_revenue", "guidance_revenue_surprise")):
+    guidance_composites = []
+    for metric, output, prefix in (
+            ("guidance_eps", "guidance_eps_surprise", "guidance_eps"),
+            ("guidance_revenue", "guidance_revenue_surprise", "guidance_revenue")):
         guidance = con.execute("""
-            SELECT (lower_value+upper_value)/2,guidance_status FROM earnings_guidance_snapshots
+            SELECT (lower_value+upper_value)/2,guidance_status
+            FROM earnings_guidance_snapshots
             WHERE earnings_event_id=? AND metric=? AND guidance_role='new'
-              AND public_time<=? AND guidance_status='AVAILABLE'
-            ORDER BY public_time DESC LIMIT 1
+              AND known_at<=? AND guidance_status='AVAILABLE'
+            ORDER BY known_at DESC LIMIT 1
         """, [event_id, metric, decision_time]).fetchone()
         previous = con.execute("""
             SELECT (lower_value+upper_value)/2 FROM earnings_guidance_snapshots
             WHERE earnings_event_id=? AND metric=? AND guidance_role='previous'
-              AND guidance_status='AVAILABLE' AND public_time<?
-            ORDER BY public_time DESC LIMIT 1
+              AND guidance_status='AVAILABLE' AND known_at<?
+            ORDER BY known_at DESC LIMIT 1
         """, [event_id, metric, event_time]).fetchone()
-        if guidance and guidance[0] is not None and previous and previous[0] is not None:
-            scale = max(abs(float(previous[0])), 0.01)
-            result[output] = (float(guidance[0]) - float(previous[0])) / scale
-            result["guidance_surprise_raw"] = result[output]
+        consensus = con.execute("""
+            SELECT estimate_value FROM earnings_consensus_snapshots
+            WHERE earnings_event_id=? AND metric=? AND is_point_in_time=TRUE
+              AND is_final_revised=FALSE AND known_at<?
+            ORDER BY known_at DESC LIMIT 1
+        """, [event_id, metric, event_time]).fetchone()
+        comparisons = []
+        if guidance and guidance[0] is not None:
+            new_value = float(guidance[0])
+            if previous and previous[0] is not None:
+                prior_value = float(previous[0])
+                value = (new_value - prior_value) / max(abs(prior_value), 0.01)
+                result[f"{prefix}_vs_prior"] = value
+                comparisons.append(value)
+            if consensus and consensus[0] is not None:
+                consensus_value = float(consensus[0])
+                value = ((new_value - consensus_value) /
+                         max(abs(consensus_value), 0.01))
+                result[f"{prefix}_vs_consensus"] = value
+                comparisons.append(value)
+        if comparisons:
+            result[output] = float(np.mean(comparisons))
+            guidance_composites.append(result[output])
             result["has_guidance"] = 1.0
             result["guidance_status"] = "AVAILABLE"
         elif con.execute("""
             SELECT 1 FROM earnings_guidance_snapshots
             WHERE earnings_event_id=? AND metric=? AND guidance_status='NO_GUIDANCE'
+              AND known_at<=?
             LIMIT 1
-        """, [event_id, metric]).fetchone():
+        """, [event_id, metric, decision_time]).fetchone():
             result["guidance_status"] = "NO_GUIDANCE"
+    if guidance_composites:
+        result["guidance_surprise_raw"] = float(np.mean(guidance_composites))
     result["has_point_in_time_consensus"] = float(
         result["has_eps_consensus"] and result["has_revenue_consensus"]
     )
@@ -379,7 +425,6 @@ def _window_features(con, row) -> dict | None:
                                        anchor.value, side="left"))
     event_open = float(session.iloc[anchor_index]["open"]) if anchor_index < len(session) else None
     p1 = _known_bar_close(session, anchor + pd.Timedelta(minutes=1))
-    p5 = _known_bar_close(session, decision)
     p30 = _known_bar_close(session, decision)
     prior_close = _prior_rth_close(bars, session_date)
     gap = session_open / prior_close - 1 if prior_close else np.nan
@@ -392,7 +437,8 @@ def _window_features(con, row) -> dict | None:
         benchmark_p30 / benchmark_event_open["price"] - 1
         if benchmark_p30 and benchmark_event_open["price"] else np.nan
     )
-    first5 = session[(session_ts >= anchor) & (session_ts < decision)]
+    first5 = session[(session_ts >= anchor) &
+                     (session_ts < anchor + pd.Timedelta(minutes=5))]
     expected_minute_volume = ((context["trailing_adv"] / prior_close / 390)
                               if context["trailing_adv"] and prior_close else None)
     volume_ratio = (float(first5["volume"].sum()) / (expected_minute_volume * 5)
@@ -427,7 +473,9 @@ def _window_features(con, row) -> dict | None:
                                    decision.to_pydatetime())
     # A validation event whose five-day exit reaches the final period would leak
     # final-time prices into model selection. Keep it out of both cells.
-    if exit_values["date"] >= FINAL_TEST_START:
+    if session_date >= FINAL_TEST_START:
+        time_bucket = "FINAL_TEST_TIME"
+    elif exit_values["date"] >= FINAL_TEST_START:
         time_bucket = "EMBARGOED_OUTCOME"
     elif session_date < VALIDATION_START:
         time_bucket = "TRAIN_TIME"
@@ -441,6 +489,7 @@ def _window_features(con, row) -> dict | None:
         "timestamp_status": row.timestamp_status, "fiscal_quarter": row.fiscal_quarter,
         "sector": row.sector or "Unknown", "benchmark_ticker": row.benchmark_ticker,
         "company_bucket": row.company_bucket, "time_bucket": time_bucket,
+        "company_size_bucket": row.company_size_bucket or "MISSING",
         "gap": gap, "reaction_1m": reaction1, "reaction_5m": reaction5,
         "reaction_30m": reaction30,
         "residual_reaction_30m": reaction30_residual,
@@ -460,20 +509,12 @@ def _window_features(con, row) -> dict | None:
         "benchmark_entry_price": benchmark_entry["price"],
         "benchmark_delayed_entry_price": benchmark_delayed["price"],
         "benchmark_exit_price": exit_values["benchmark_close"],
+        "daily_marks": json.dumps(exit_values["marks"]),
         "execution_mode": "NEXT_MINUTE_BAR_PLUS_ASSUMED_COST",
         "assumed_cost_bps_per_side": BAR_COST_BPS_PER_SIDE,
         "quote_complete": False, "quote_coverage": row.quote_coverage,
     }
     record.update(consensus)
-    surprise_values = [record[name] for name in ("eps_surprise", "revenue_surprise")
-                       if np.isfinite(record[name])]
-    record["financial_surprise_composite"] = (float(np.mean(surprise_values))
-                                               if surprise_values else np.nan)
-    record["surprise_reaction_mismatch"] = (
-        record["financial_surprise_composite"] - reaction30
-        if np.isfinite(record["financial_surprise_composite"]) and np.isfinite(reaction30)
-        else np.nan
-    )
     return record
 
 
@@ -486,7 +527,8 @@ def build_feature_frame(verbose: bool = True, *,
         SELECT e.earnings_event_id,e.ticker,e.earliest_public_time,e.release_session,
                e.timestamp_status,e.fiscal_quarter,w.bars_path,w.quotes_path,
                w.benchmark_ticker,w.benchmark_bars_path,w.benchmark_quotes_path,
-               w.quote_coverage,COALESCE(s.sector,'Unknown') sector,u.company_bucket
+               w.quote_coverage,COALESCE(s.sector,'Unknown') sector,u.company_bucket,
+               u.company_size_bucket
         FROM earnings_events e
         JOIN earnings_market_windows w USING(earnings_event_id)
         JOIN earnings_universe_snapshots u ON u.ticker=e.ticker AND u.universe_version=?
@@ -562,6 +604,123 @@ def _load_feature_frame() -> pd.DataFrame:
         con.close()
 
 
+def structured_data_audit(frame: pd.DataFrame | None = None) -> dict:
+    """Report whether licensed expectations data is ready for M1/M2."""
+    data = frame.copy() if frame is not None else _load_feature_frame()
+    con = connect(read_only=True)
+    tables = {}
+    for table in ("earnings_consensus_snapshots", "earnings_actuals",
+                  "earnings_guidance_snapshots", "earnings_options_expectations"):
+        tables[table] = int(con.execute(
+            f"SELECT COUNT(*) FROM {table}"
+        ).fetchone()[0])
+    con.close()
+    coverage = coverage_statistics(data)
+    return {
+        "status": "READY" if coverage["gate_passed"] else "BLOCKED",
+        "table_rows": tables, "coverage": coverage,
+        "required": [
+            "archived point-in-time EPS and revenue consensus",
+            "analyst count, dispersion, and revision breadth",
+            "timestamped actual EPS and revenue",
+            "previous/new guidance and pre-release guidance consensus",
+            "point-in-time company-size bucket for representativeness",
+        ],
+        "unsafe_substitutions_forbidden": [
+            "current consensus backfilled into historical events",
+            "final revised estimates", "records without known_at provenance",
+        ],
+    }
+
+
+def calculate_fundamental_surprise(frame: pd.DataFrame) -> pd.Series:
+    """Combine directional earnings information available by decision time."""
+    columns = ["eps_surprise_z", "revenue_surprise_z", "guidance_surprise_z",
+               "revision_breadth"]
+    available = [column for column in columns if column in frame]
+    if not available:
+        return pd.Series(np.nan, index=frame.index, dtype=float)
+    return frame[available].apply(pd.to_numeric, errors="coerce").mean(
+        axis=1, skipna=True
+    )
+
+
+def calculate_mismatch(fundamental_surprise: pd.Series,
+                       residual_reaction_score: pd.Series) -> pd.Series:
+    """Fundamental surprise less standardized beta-adjusted 30-minute reaction."""
+    fundamental = pd.to_numeric(fundamental_surprise, errors="coerce")
+    reaction = pd.to_numeric(residual_reaction_score, errors="coerce")
+    return fundamental - reaction
+
+
+def coverage_statistics(frame: pd.DataFrame, *,
+                        minimum: float = STRUCTURED_COVERAGE_MIN,
+                        min_group_events: int = MIN_REPRESENTATIVE_GROUP_EVENTS) -> dict:
+    """Audit overall and representative point-in-time EPS+revenue coverage."""
+    if frame.empty:
+        return {"minimum_required": minimum, "gate_passed": False,
+                "reason": "empty feature frame", "by_split": {}, "groups": {}}
+    data = frame.copy()
+    coverage_column = ("representative_consensus_coverage"
+                       if "representative_consensus_coverage" in data
+                       else "has_point_in_time_consensus")
+    data["_coverage"] = pd.to_numeric(data[coverage_column], errors="coerce").fillna(0.0)
+    data["year"] = pd.to_datetime(data["entry_time"], utc=True).dt.year
+    by_split = {}
+    for split, group in data.groupby("time_bucket", observed=True, dropna=False):
+        by_split[str(split)] = {"events": len(group),
+                                "coverage": float(group["_coverage"].mean())}
+
+    groups = {}
+    dimension_availability = {}
+    dimensions = ("year", "sector", "company_size_bucket")
+    representative_pass = True
+    missing_dimensions = []
+    for dimension in dimensions:
+        if dimension not in data:
+            groups[dimension] = []
+            missing_dimensions.append(dimension)
+            dimension_availability[dimension] = 0.0
+            representative_pass = False
+            continue
+        normalized = data[dimension].astype("string").str.strip().str.upper()
+        available = ~(normalized.isna() | normalized.isin(
+            {"", "MISSING", "UNKNOWN", "NAN", "NONE"}
+        ))
+        availability = float(available.mean())
+        dimension_availability[dimension] = availability
+        if availability < minimum:
+            missing_dimensions.append(dimension)
+            representative_pass = False
+        records = []
+        for (split, value), group in data.groupby(
+                ["time_bucket", dimension], observed=True, dropna=False):
+            eligible = len(group) >= min_group_events
+            value_coverage = float(group["_coverage"].mean())
+            passes = (not eligible) or value_coverage >= minimum
+            records.append({"split": str(split), "group": str(value),
+                            "events": len(group), "coverage": value_coverage,
+                            "eligible": eligible, "passes": passes})
+            if eligible and not passes:
+                representative_pass = False
+        groups[dimension] = records
+
+    required_splits = ("TRAIN_TIME", "VALIDATION_TIME")
+    split_pass = all(
+        split in by_split and by_split[split]["coverage"] >= minimum
+        for split in required_splits
+    )
+    return {
+        "minimum_required": minimum, "minimum_group_events": min_group_events,
+        "by_split": by_split, "groups": groups,
+        "missing_dimensions": missing_dimensions,
+        "dimension_availability": dimension_availability,
+        "split_coverage_passed": split_pass,
+        "representative_coverage_passed": representative_pass,
+        "gate_passed": split_pass and representative_pass,
+    }
+
+
 def add_structured_features(frame: pd.DataFrame,
                             fit_mask: pd.Series | None = None) -> tuple[pd.DataFrame, dict]:
     """Fit winsorization/scalers on training rows only and transform all rows."""
@@ -592,20 +751,20 @@ def add_structured_features(frame: pd.DataFrame,
         all_values = pd.to_numeric(result[source], errors="coerce").clip(low, high)
         result[output] = (all_values - mean) / std
         stats["features"][output] = {
-            "coverage": float(values.notna().mean()), "mean": mean, "std": std,
+            "coverage": float(len(values) / max(int(fit_mask.sum()), 1)),
+            "mean": mean, "std": std,
             "winsor_low": float(low), "winsor_high": float(high),
         }
     result["liquidity"] = np.log1p(pd.to_numeric(result["trailing_adv"], errors="coerce"))
-    result["fundamental_surprise_score"] = result[
-        ["eps_surprise_z", "revenue_surprise_z", "guidance_surprise_z"]
-    ].mean(axis=1, skipna=True)
-    result["surprise_reaction_mismatch"] = (
-        result["fundamental_surprise_score"] - result["reaction_score"]
+    result["fundamental_surprise_score"] = calculate_fundamental_surprise(result)
+    result["surprise_reaction_mismatch"] = calculate_mismatch(
+        result["fundamental_surprise_score"], result["reaction_score"]
     )
     result["representative_consensus_coverage"] = result["has_point_in_time_consensus"]
     stats["representative_coverage"] = float(
         result.loc[fit_mask, "representative_consensus_coverage"].mean()
     ) if fit_mask.any() else 0.0
+    stats["coverage"] = coverage_statistics(result)
     return result, stats
 
 
@@ -733,10 +892,9 @@ def _bar_leg(row, side: int, delayed: bool = False,
     values = [entry, exit_price, benchmark_entry, benchmark_exit, beta]
     if not all(np.isfinite(value) and value > 0 for value in values):
         return None
-    asset = exit_price / entry - 1 if side > 0 else entry / exit_price - 1
+    asset = side * (exit_price / entry - 1)
     hedge_side = -side if beta >= 0 else side
-    benchmark = (benchmark_exit / benchmark_entry - 1 if hedge_side > 0
-                 else benchmark_entry / benchmark_exit - 1)
+    benchmark = hedge_side * (benchmark_exit / benchmark_entry - 1)
     round_trip_cost = BAR_COST_BPS_PER_SIDE * 2 / 1e4
     if doubled_costs:
         round_trip_cost *= 2
@@ -756,10 +914,16 @@ def simulate_portfolio(frame: pd.DataFrame, predictions: np.ndarray, *,
         exit_time = pd.Timestamp(row["delayed_exit_time"] if delayed else row["exit_time"])
         open_positions = [position for position in open_positions
                           if position["exit_time"] > entry_time]
-        if len(open_positions) >= MAX_CONCURRENT:
+        if (len(open_positions) >= MAX_CONCURRENT or
+                any(position["ticker"] == row["ticker"]
+                    for position in open_positions)):
             continue
         prediction = row["prediction"]
-        decision = decision_from_prediction(prediction, SIGNAL_THRESHOLD_BPS)
+        cost_bps = BAR_COST_BPS_PER_SIDE * (2 if doubled_costs else 1)
+        decision = decision_from_prediction(
+            prediction, row.get("beta"), cost_bps_per_side=cost_bps,
+            hurdle_multiple=COST_HURDLE_MULTIPLE,
+        )
         if decision["side"] == 0:
             continue
         side = decision["side"]
@@ -786,34 +950,43 @@ def simulate_portfolio(frame: pd.DataFrame, predictions: np.ndarray, *,
                  "entry_time": str(entry_time), "exit_time": str(exit_time),
                  "side": side, "weight": POSITION_WEIGHT, "leg_return": leg_return,
                  "gross_exposure": position_gross,
-                 "pnl": pnl, "quarter": f"{entry_time.year}-Q{entry_time.quarter}"}
+                 "pnl": pnl, "quarter": f"{entry_time.year}-Q{entry_time.quarter}",
+                 "beta": float(row["beta"]),
+                 "entry_price": float(row["delayed_entry_price"] if delayed
+                                      else row["entry_price"]),
+                 "benchmark_entry_price": float(
+                     row["benchmark_delayed_entry_price"] if delayed
+                     else row["benchmark_entry_price"]),
+                 "exit_price": float(row["exit_price"]),
+                 "benchmark_exit_price": float(row["benchmark_exit_price"]),
+                 "daily_marks": row.get("daily_marks"),
+                 "signal_hurdle_bps": decision["hurdle_bps"]}
         trades.append(trade)
         open_positions.append({"exit_time": exit_time, "sector": row["sector"],
-                               "side": side, "asset_weight": POSITION_WEIGHT,
+                               "ticker": row["ticker"], "side": side,
+                               "asset_weight": POSITION_WEIGHT,
                                "gross": position_gross, "net": position_net})
+    calendar = set()
+    for value in data.get("daily_marks", pd.Series(dtype=object)).dropna():
+        records = json.loads(value) if isinstance(value, str) else value
+        calendar.update(pd.Timestamp(record["date"]).date()
+                        for record in records or [])
+    portfolio = PortfolioLedger(
+        cost_bps_per_side=BAR_COST_BPS_PER_SIDE * (2 if doubled_costs else 1),
+        calendar=calendar,
+    ).run(trades)
     if not trades:
-        return {"n_trades": 0, "net_return": 0.0, "daily_returns": [],
-                "max_drawdown": 0.0, "turnover": 0.0,
-                "avg_gross_exposure": 0.0, "max_gross_exposure": 0.0,
-                "trades": []}
+        return portfolio
     trade_frame = pd.DataFrame(trades)
-    trade_frame["date"] = pd.to_datetime(trade_frame["exit_time"], utc=True).dt.date
-    daily = trade_frame.groupby("date")["pnl"].sum()
+    daily = pd.Series(portfolio["daily_returns"], dtype=float)
     std = daily.std(ddof=1)
-    sharpe = float(daily.mean() / std * np.sqrt(252)) if len(daily) > 1 and std > 0 else None
-    equity = daily.sort_index().cumsum()
-    peak = equity.cummax()
-    max_drawdown = float((equity - peak).min()) if len(equity) else 0.0
-    turnover = float((trade_frame["weight"].abs() * 2).sum())
-    gross = trade_frame["gross_exposure"]
-    return {"n_trades": len(trades), "net_return": float(trade_frame["pnl"].sum()),
-            "mean_pnl_bps": float(trade_frame["pnl"].mean() * 1e4),
-            "hit_rate": float((trade_frame["pnl"] > 0).mean()),
-            "sharpe_annual": sharpe,
-            "max_drawdown": max_drawdown, "turnover": turnover,
-            "avg_gross_exposure": float(gross.mean()),
-            "max_gross_exposure": float(gross.max()),
-            "daily_returns": [float(value) for value in daily], "trades": trades}
+    portfolio.update({
+        "mean_pnl_bps": float(trade_frame["pnl"].mean() * 1e4),
+        "hit_rate": float((trade_frame["pnl"] > 0).mean()),
+        "sharpe_annual": (float(daily.mean() / std * np.sqrt(252))
+                           if len(daily) > 1 and std > 0 else None),
+    })
+    return portfolio
 
 
 def _deflated_sharpe(daily_returns: list[float], n_trials: int) -> dict:
@@ -837,9 +1010,15 @@ def _deflated_sharpe(daily_returns: list[float], n_trials: int) -> dict:
 
 def _metrics(actual, predicted) -> dict:
     actual, predicted = np.asarray(actual, dtype=float), np.asarray(predicted, dtype=float)
-    ic = float(np.corrcoef(actual, predicted)[0, 1]) if len(actual) > 1 and np.std(predicted) > 0 else None
+    variable = (len(actual) > 1 and np.ptp(predicted) > 1e-12 and
+                np.ptp(actual) > 1e-12)
+    pearson = float(np.corrcoef(actual, predicted)[0, 1]) if variable else None
+    rank = float(spearmanr(actual, predicted).statistic) if variable else None
+    pearson = pearson if pearson is not None and np.isfinite(pearson) else None
+    rank = rank if rank is not None and np.isfinite(rank) else None
     return {"n": len(actual), "rmse": float(np.sqrt(mean_squared_error(actual, predicted))),
-            "mae": float(mean_absolute_error(actual, predicted)), "ic": ic}
+            "mae": float(mean_absolute_error(actual, predicted)),
+            "spearman_ic": rank, "pearson_ic": pearson, "ic": rank}
 
 
 def _stability_and_concentration(portfolio: dict) -> dict:
@@ -889,22 +1068,53 @@ def _dataset_hash(frame: pd.DataFrame) -> str:
     return hashlib.sha256(values.encode()).hexdigest()[:16]
 
 
-def _available_model_specs(train: pd.DataFrame, validation: pd.DataFrame | None = None) -> dict[str, tuple[list[str], list[str]]]:
+def _unique(values: list[str]) -> list[str]:
+    return list(dict.fromkeys(values))
+
+
+def _available_model_specs(
+        train: pd.DataFrame,
+        validation: pd.DataFrame | None = None) -> dict[str, tuple[list[str], list[str]]]:
     specs = {"M0_price_reaction": (PRICE_NUMERIC, PRICE_CATEGORICAL)}
-    consensus_coverage = float(train["representative_consensus_coverage"].mean())
-    validation_coverage = consensus_coverage if validation is None else float(validation["representative_consensus_coverage"].mean())
-    if consensus_coverage >= STRUCTURED_COVERAGE_MIN and validation_coverage >= STRUCTURED_COVERAGE_MIN:
+    gate_frame = train if validation is None else pd.concat(
+        [train, validation], ignore_index=True
+    )
+    coverage = coverage_statistics(gate_frame)
+    if coverage["gate_passed"]:
         specs["M1_structured_surprise"] = (
-            STRUCTURED_NUMERIC,
-            PRICE_CATEGORICAL + EARNINGS_CATEGORICAL,
+            _unique(PRICE_NUMERIC + STRUCTURED_NUMERIC),
+            _unique(PRICE_CATEGORICAL + EARNINGS_CATEGORICAL),
         )
         specs["M2_surprise_reaction_mismatch"] = (
-            STRUCTURED_NUMERIC + ["reaction_score", "residual_reaction_30m",
-                                  "abnormal_volume_30m", "fundamental_surprise_score",
-                                  "surprise_reaction_mismatch"],
-            PRICE_CATEGORICAL + EARNINGS_CATEGORICAL,
+            _unique(PRICE_NUMERIC + STRUCTURED_NUMERIC + [
+                "reaction_score", "residual_reaction_30m",
+                "fundamental_surprise_score", "surprise_reaction_mismatch",
+            ]),
+            _unique(PRICE_CATEGORICAL + EARNINGS_CATEGORICAL),
         )
     return specs
+
+
+def permutation_controls(model: Pipeline, frame: pd.DataFrame,
+                         numeric: list[str], categorical: list[str], *,
+                         random_state: int = 23) -> dict:
+    """Run deterministic null controls without refitting on validation data."""
+    if len(frame) < 2:
+        return {"status": "INSUFFICIENT_OBSERVATIONS"}
+    rng = np.random.default_rng(random_state)
+    order = rng.permutation(len(frame))
+    features = frame[numeric + categorical].copy()
+    block_permuted = features.copy()
+    block_permuted.loc[:, numeric] = features[numeric].iloc[order].to_numpy()
+    block_prediction = model.predict(block_permuted)
+    baseline_prediction = model.predict(features)
+    timestamp_prediction = baseline_prediction[order]
+    actual = frame["target_sector_residual_5d"]
+    return {
+        "status": "COMPLETE", "random_state": random_state,
+        "block_feature_permutation": _metrics(actual, block_prediction),
+        "shuffled_timestamp": _metrics(actual, timestamp_prediction),
+    }
 
 
 def _evaluate_cell(frame: pd.DataFrame, prediction: np.ndarray) -> dict:
@@ -1017,8 +1227,7 @@ def run(frame: pd.DataFrame | None = None, verbose: bool = True, *,
         _persist_experiment(result, result["status"])
         return result
 
-    train_coverage = float(train["representative_consensus_coverage"].mean())
-    validation_coverage = float(validation["representative_consensus_coverage"].mean())
+    coverage = coverage_statistics(pd.concat([train, validation], ignore_index=True))
     model_specs = _available_model_specs(train, validation)
     structured_tested = "M1_structured_surprise" in model_specs
     models, params, validation_results, predictions = {}, {}, {}, {}
@@ -1040,73 +1249,107 @@ def run(frame: pd.DataFrame | None = None, verbose: bool = True, *,
             str(sector): _metrics(group["target_sector_residual_5d"], group["prediction"])["ic"]
             for sector, group in pred_frame.groupby("sector") if len(group) >= 5
         }
-        validation_results[model_name]["bootstrap_selection_stability"] = {
-            "status": "NOT_RUN_COVERAGE_GATE" if not structured_tested else "PENDING_REVIEW"
-        }
-        validation_results[model_name]["permutation_controls"] = {
-            "block_feature_permutation": "NOT_RUN_COVERAGE_GATE" if not structured_tested else "PENDING_REVIEW",
-            "shuffled_timestamp": "NOT_RUN_COVERAGE_GATE" if not structured_tested else "PENDING_REVIEW",
-        }
-    selected = min(model_specs, key=lambda name:
-                   validation_results[name]["predictive"]["rmse"])
-    selected_result = validation_results[selected]
+        validation_results[model_name]["permutation_controls"] = permutation_controls(
+            models[model_name], validation, numeric, categorical
+        )
+    best_by_rmse = min(model_specs, key=lambda name:
+                       validation_results[name]["predictive"]["rmse"])
+    candidate = ("M2_surprise_reaction_mismatch" if structured_tested
+                 else "M0_price_reaction")
+    candidate_result = validation_results[candidate]
     naive_rmse = float(np.sqrt(np.mean(
         np.square(validation["target_sector_residual_5d"].to_numpy())
     )))
+    con = connect(read_only=True)
+    trials = max(32, 32 + con.execute(
+        "SELECT COUNT(*) FROM earnings_experiments"
+    ).fetchone()[0])
+    con.close()
+    stability = _stability_and_concentration(candidate_result["portfolio"])
+    dsr = _deflated_sharpe(candidate_result["portfolio"]["daily_returns"], trials)
+    quote_coverage = float(pd.to_numeric(
+        validation.get("quote_complete", pd.Series(False, index=validation.index)),
+        errors="coerce",
+    ).fillna(0).mean())
+    if structured_tested:
+        m1 = validation_results["M1_structured_surprise"]
+        m2 = validation_results["M2_surprise_reaction_mismatch"]
+        m2_loss_lift = m2["predictive"]["rmse"] < m1["predictive"]["rmse"]
+        m1_ic = m1["predictive"]["spearman_ic"]
+        m2_ic = m2["predictive"]["spearman_ic"]
+        m2_ic_lift = (m1_ic is not None and m2_ic is not None and m2_ic > m1_ic)
+        m2_net_lift = (m2["portfolio"]["net_return"] >
+                       m1["portfolio"]["net_return"])
+    else:
+        m2_loss_lift = m2_ic_lift = m2_net_lift = False
     screening_gates = {
-        "predictive_lift_vs_zero": selected_result["predictive"]["rmse"] < naive_rmse,
+        "representative_structured_coverage": coverage["gate_passed"],
+        "m2_predictive_loss_lift_vs_m1": m2_loss_lift,
+        "m2_spearman_ic_lift_vs_m1": m2_ic_lift,
+        "m2_net_lift_vs_m1": m2_net_lift,
+        "predictive_lift_vs_zero":
+            candidate_result["predictive"]["rmse"] < naive_rmse,
         "positive_net_after_15bps_per_side":
-            selected_result["portfolio"]["net_return"] > 0,
+            candidate_result["portfolio"]["net_return"] > 0,
+        "net_sharpe_above_1":
+            (candidate_result["portfolio"].get("sharpe_annual") is not None and
+             candidate_result["portfolio"]["sharpe_annual"] > 1.0),
+        "deflated_sharpe_probability_above_0_95": dsr["passes"],
         "positive_with_60min_delayed_entry":
-            selected_result["delayed_entry"]["net_return"] > 0,
+            candidate_result["delayed_entry"]["net_return"] > 0,
         "positive_with_30bps_per_side":
-            selected_result["doubled_costs"]["net_return"] > 0,
+            candidate_result["doubled_costs"]["net_return"] > 0,
+        "stable_years_and_sectors":
+            stability.get("years_pass", False) and stability.get("sectors_pass", False),
+        "no_excessive_concentration": stability.get("concentration_pass", False),
+        "executable_quote_coverage_at_least_95pct":
+            quote_coverage >= MIN_QUOTE_COVERAGE,
     }
     passed = all(screening_gates.values())
     experiment_id = hashlib.sha256(
-        f"{SPRINT_VERSION}|{dataset_hash}|VALIDATION|{selected}|{_git_hash()}".encode()
+        f"{SPRINT_VERSION}|{dataset_hash}|VALIDATION|{candidate}|{_git_hash()}".encode()
     ).hexdigest()[:20]
     result = {
-        "status": "VALIDATION_BAR_SCREEN_PASSED" if passed
-                  else "VALIDATION_BAR_SCREEN_REJECTED",
+        "status": "VALIDATION_M2_PROMOTION_PASSED" if passed
+                  else "VALIDATION_M2_PROMOTION_BLOCKED",
         "experiment_id": experiment_id, "dataset_hash": dataset_hash,
-        "counts": counts, "splits": splits, "selected_model": selected,
+        "counts": counts, "splits": splits, "candidate_model": candidate,
+        "best_model_by_rmse": best_by_rmse,
         "models": validation_results, "elastic_net_params": params,
         "screening_gates": screening_gates,
+        "deflated_sharpe": dsr, "stability": stability,
+        "executable_quote_coverage": quote_coverage,
         "structured_surprise_tested": structured_tested,
-        "structured_coverage": {"train": train_coverage, "validation": validation_coverage,
-                                 "minimum_required": STRUCTURED_COVERAGE_MIN,
-                                 "gate_passed": structured_tested},
+        "structured_coverage": coverage,
         "structured_surprise_blocker": None if structured_tested else
-            "representative point-in-time EPS+revenue consensus coverage below 80%",
-        "catboost_allowed": False,
+            "point-in-time EPS+revenue coverage is below 80% or not representative by year, sector, and company size",
+        "catboost_allowed": passed,
         "descriptive": descriptive_tables(prefinal),
         "final_test_outcomes_evaluated": False,
     }
     if lock_spec:
-        numeric, categorical = model_specs[selected]
-        con = connect(read_only=True)
-        trials = max(32, 32 + con.execute(
-            "SELECT COUNT(*) FROM earnings_experiments"
-        ).fetchone()[0])
-        con.close()
-        lock = {
-            "locked_at": datetime.now(timezone.utc).isoformat(),
-            "validation_experiment_id": experiment_id,
-            "model_name": selected, "numeric": numeric,
-            "categorical": categorical,
-            "elastic_net_params": params[selected],
-            "signal_threshold_bps": SIGNAL_THRESHOLD_BPS,
-            "bar_cost_bps_per_side": BAR_COST_BPS_PER_SIDE,
-            "experiment_trials": trials, "splits": splits,
-        }
-        if SPEC_LOCK_PATH.exists():
-            raise EarningsStudyError("model specification is already locked")
-        SPEC_LOCK_PATH.write_text(json.dumps(lock, indent=2, default=str))
-        result["specification_locked"] = True
+        if not passed:
+            result["specification_locked"] = False
+            result["specification_lock_blocker"] = "M2 has not cleared every validation gate"
+        else:
+            numeric, categorical = model_specs[candidate]
+            lock = {
+                "locked_at": datetime.now(timezone.utc).isoformat(),
+                "validation_experiment_id": experiment_id,
+                "model_name": candidate, "numeric": numeric,
+                "categorical": categorical,
+                "elastic_net_params": params[candidate],
+                "cost_hurdle_multiple": COST_HURDLE_MULTIPLE,
+                "bar_cost_bps_per_side": BAR_COST_BPS_PER_SIDE,
+                "experiment_trials": trials, "splits": splits,
+            }
+            if SPEC_LOCK_PATH.exists():
+                raise EarningsStudyError("model specification is already locked")
+            SPEC_LOCK_PATH.write_text(json.dumps(lock, indent=2, default=str))
+            result["specification_locked"] = True
     _persist_experiment(result, result["status"])
     REPORT_PATH.write_text(json.dumps(result, indent=2, default=str))
     if verbose:
         print(f"Earnings five-day validation: {result['status']} "
-              f"selected={selected} gates={screening_gates}")
+              f"candidate={candidate} gates={screening_gates}")
     return result

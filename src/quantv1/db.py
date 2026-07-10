@@ -369,6 +369,11 @@ CREATE TABLE IF NOT EXISTS earnings_universe_snapshots (
     trailing_adv      DOUBLE,
     last_price        DOUBLE,
     company_bucket    VARCHAR,       -- TRAIN_COMPANY | UNSEEN_COMPANY
+    market_cap        DOUBLE,
+    company_size_bucket VARCHAR,
+    size_known_at     TIMESTAMP,
+    size_source       VARCHAR,
+    size_source_record_id VARCHAR,
     included          BOOLEAN,
     exclusion_reason  VARCHAR,
     first_seen_at     TIMESTAMP,
@@ -771,6 +776,14 @@ def _migrate_schema(con: duckdb.DuckDBPyConnection) -> None:
             "benchmark_ticker": "VARCHAR",
             "benchmark_bars_path": "VARCHAR",
             "benchmark_quotes_path": "VARCHAR",
+        })
+    if _table_exists(con, "earnings_universe_snapshots"):
+        _add_columns(con, "earnings_universe_snapshots", {
+            "market_cap": "DOUBLE",
+            "company_size_bucket": "VARCHAR",
+            "size_known_at": "TIMESTAMP",
+            "size_source": "VARCHAR",
+            "size_source_record_id": "VARCHAR",
         })
     if _table_exists(con, "earnings_consensus_snapshots"):
         _add_columns(con, "earnings_consensus_snapshots", {
