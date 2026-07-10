@@ -1,33 +1,31 @@
-"""Small real V4 ingest via Polygon free tier (2y minute + news).
+"""V4 ingest via the reliable pipeline: FETCH (Polygon->Parquet) then LOAD (bulk).
 
-Rate-limited (5 req/min) so we start with a compact liquid universe + a recent
-window to validate the full pipeline, then expand later.
+Resumable + watermarked + completeness-audited. News is separate (smaller).
 """
 
 from __future__ import annotations
 
+from quantv1.v4 import data_pipeline as DP
 from quantv1.ingest import polygon_data as P
 
-# Starter tier: unlimited calls + 5y history. Stocks first (SPY = benchmark);
-# ETFs already loaded. Ingester skips tickers already covered.
-STOCKS = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "LLY", "UNH", "JPM"]
-UNIVERSE = ["SPY", *STOCKS]
-NEWS_TICKERS = STOCKS
+STOCKS = ["AAPL", "MSFT", "NVDA", "AMZN", "GOOGL", "META", "TSLA", "LLY", "UNH", "JPM",
+          "AVGO", "AMD", "NFLX", "CRM", "BAC", "XOM", "COST", "WMT"]
+ETFS = ["SPY", "QQQ", "XLK", "XLV", "XLE", "XLF", "XLI", "XLY"]
+UNIVERSE = ETFS + STOCKS
 START = "2024-07-15"
 END = "2026-07-09"
 
 
 def main():
-    P.ingest_bars(UNIVERSE, START, END)
-    for tk in NEWS_TICKERS:
-        P.ingest_news(START, END, tickers=[tk])
+    DP.fetch(UNIVERSE, START, END)      # network -> parquet (no DB lock)
+    DP.load()                           # single bulk parquet -> bars_minute
+    DP.completeness()
+    for tk in STOCKS:                   # news for the tradeable names
+        P.ingest_news(START, END, tickers=[tk], verbose=False)
     from quantv1.db import connect
-    con = connect(read_only=True)
-    nb = con.execute("SELECT COUNT(*) FROM bars_minute").fetchone()[0]
-    nt = con.execute("SELECT COUNT(DISTINCT ticker) FROM bars_minute").fetchone()[0]
-    nn = con.execute("SELECT COUNT(*) FROM events WHERE layer='N'").fetchone()[0]
-    con.close()
-    print(f"DONE: {nb} minute bars ({nt} tickers), {nn} news events")
+    c = connect(read_only=True)
+    print("news events:", c.execute("SELECT COUNT(*) FROM events WHERE layer='N'").fetchone()[0])
+    c.close()
 
 
 if __name__ == "__main__":

@@ -122,7 +122,23 @@ CREATE TABLE IF NOT EXISTS bars_hourly (
     PRIMARY KEY (ticker, ts)
 );
 
--- === V4: minute bars (Alpaca) for the intraday event-reaction engine =======
+-- Ingestion watermarks: per (ticker, source) what range is loaded, so ingestion
+-- is resumable and completeness is auditable. Fetch stages to Parquet; a single
+-- bulk load brings Parquet -> bars_minute (no page-by-page conflict checks).
+CREATE TABLE IF NOT EXISTS ingest_watermarks (
+    ticker        VARCHAR,
+    source        VARCHAR,          -- 'polygon_minute'
+    req_start     DATE,
+    req_end       DATE,
+    loaded_through TIMESTAMP,       -- max bar ts staged
+    row_count     BIGINT,
+    trading_days  INTEGER,
+    status        VARCHAR,          -- complete | partial | failed
+    updated_at    TIMESTAMP,
+    PRIMARY KEY (ticker, source)
+);
+
+-- === V4: minute bars for the intraday event-reaction engine ================
 CREATE TABLE IF NOT EXISTS bars_minute (
     ticker VARCHAR,
     ts     TIMESTAMP,        -- bar start, UTC
