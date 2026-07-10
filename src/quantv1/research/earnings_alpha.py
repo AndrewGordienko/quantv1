@@ -99,7 +99,7 @@ def _read_frame_cached(path: str) -> pd.DataFrame:
 
 
 def _read_frame(path: str | None) -> pd.DataFrame:
-    if not path or not Path(path).exists():
+    if path is None or pd.isna(path) or not Path(str(path)).exists():
         return pd.DataFrame()
     return _read_frame_cached(str(path))
 
@@ -390,6 +390,8 @@ def _consensus_actuals(con, event_id: str, event_time, decision_time) -> dict:
 def _window_features(con, row) -> dict | None:
     bars = _read_frame(row.bars_path)
     benchmark_bars = _read_frame(row.benchmark_bars_path)
+    quotes = _read_frame(row.quotes_path)
+    benchmark_quotes = _read_frame(row.benchmark_quotes_path)
     if bars.empty or benchmark_bars.empty:
         return None
     anchor, session = _decision_anchor(bars, row.earliest_public_time, row.release_session)
@@ -416,6 +418,24 @@ def _window_features(con, row) -> dict | None:
         return None
     exit_time = pd.Timestamp(f"{exit_values['date']} 16:00",
                              tz="America/New_York").tz_convert("UTC")
+    entry_quote = _quote_at(quotes, decision)
+    delayed_entry_quote = _quote_at(quotes, delayed)
+    exit_quote = _quote_at(quotes, exit_time, after=False)
+    benchmark_entry_quote = (
+        _quote_at(benchmark_quotes, entry_quote["ts"])
+        if entry_quote else None
+    )
+    benchmark_delayed_quote = (
+        _quote_at(benchmark_quotes, delayed_entry_quote["ts"])
+        if delayed_entry_quote else None
+    )
+    benchmark_exit_quote = _quote_at(
+        benchmark_quotes, exit_time, after=False
+    )
+    quote_complete = all(value is not None for value in (
+        entry_quote, delayed_entry_quote, exit_quote,
+        benchmark_entry_quote, benchmark_delayed_quote, benchmark_exit_quote,
+    ))
 
     context = _daily_context(con, row.ticker, row.benchmark_ticker, session_date)
     session_open = float(session.iloc[0]["open"])
@@ -510,9 +530,31 @@ def _window_features(con, row) -> dict | None:
         "benchmark_delayed_entry_price": benchmark_delayed["price"],
         "benchmark_exit_price": exit_values["benchmark_close"],
         "daily_marks": json.dumps(exit_values["marks"]),
-        "execution_mode": "NEXT_MINUTE_BAR_PLUS_ASSUMED_COST",
+        "entry_bid": entry_quote["bid"] if entry_quote else np.nan,
+        "entry_ask": entry_quote["ask"] if entry_quote else np.nan,
+        "delayed_entry_bid": (delayed_entry_quote["bid"]
+                              if delayed_entry_quote else np.nan),
+        "delayed_entry_ask": (delayed_entry_quote["ask"]
+                              if delayed_entry_quote else np.nan),
+        "exit_bid": exit_quote["bid"] if exit_quote else np.nan,
+        "exit_ask": exit_quote["ask"] if exit_quote else np.nan,
+        "benchmark_entry_bid": (benchmark_entry_quote["bid"]
+                                if benchmark_entry_quote else np.nan),
+        "benchmark_entry_ask": (benchmark_entry_quote["ask"]
+                                if benchmark_entry_quote else np.nan),
+        "benchmark_delayed_entry_bid": (benchmark_delayed_quote["bid"]
+                                        if benchmark_delayed_quote else np.nan),
+        "benchmark_delayed_entry_ask": (benchmark_delayed_quote["ask"]
+                                        if benchmark_delayed_quote else np.nan),
+        "benchmark_exit_bid": (benchmark_exit_quote["bid"]
+                               if benchmark_exit_quote else np.nan),
+        "benchmark_exit_ask": (benchmark_exit_quote["ask"]
+                               if benchmark_exit_quote else np.nan),
+        "execution_mode": ("NEXT_EXECUTABLE_NBBO_PLUS_ASSUMED_COST"
+                           if quote_complete else
+                           "NEXT_MINUTE_BAR_PLUS_ASSUMED_COST"),
         "assumed_cost_bps_per_side": BAR_COST_BPS_PER_SIDE,
-        "quote_complete": False, "quote_coverage": row.quote_coverage,
+        "quote_complete": quote_complete, "quote_coverage": row.quote_coverage,
     }
     record.update(consensus)
     return record
@@ -881,16 +923,53 @@ def _fit(train: pd.DataFrame, numeric: list[str], categorical: list[str]):
     return search.best_estimator_, search.best_params_
 
 
+def _execution_prices(row: dict, side: int, delayed: bool = False) -> dict | None:
+    hedge_side = -side if row["beta"] >= 0 else side
+    quote_fields = {
+        "entry": ("delayed_entry_ask" if side > 0 else "delayed_entry_bid")
+        if delayed else ("entry_ask" if side > 0 else "entry_bid"),
+        "exit": "exit_bid" if side > 0 else "exit_ask",
+        "benchmark_entry": (
+            "benchmark_delayed_entry_ask" if hedge_side > 0
+            else "benchmark_delayed_entry_bid"
+        ) if delayed else (
+            "benchmark_entry_ask" if hedge_side > 0 else "benchmark_entry_bid"
+        ),
+        "benchmark_exit": (
+            "benchmark_exit_bid" if hedge_side > 0 else "benchmark_exit_ask"
+        ),
+    }
+    quote_values = {name: row.get(field) for name, field in quote_fields.items()}
+    if (bool(row.get("quote_complete", False)) and
+            all(value is not None and np.isfinite(value) and value > 0
+                for value in quote_values.values())):
+        return {**{name: float(value) for name, value in quote_values.items()},
+                "mode": "NBBO"}
+    values = {
+        "entry": row["delayed_entry_price"] if delayed else row["entry_price"],
+        "exit": row["exit_price"],
+        "benchmark_entry": (row["benchmark_delayed_entry_price"] if delayed
+                            else row["benchmark_entry_price"]),
+        "benchmark_exit": row["benchmark_exit_price"],
+    }
+    if not all(np.isfinite(value) and value > 0 for value in values.values()):
+        return None
+    return {**{name: float(value) for name, value in values.items()}, "mode": "BAR"}
+
+
 def _bar_leg(row, side: int, delayed: bool = False,
              doubled_costs: bool = False) -> float | None:
-    entry = row["delayed_entry_price"] if delayed else row["entry_price"]
-    benchmark_entry = (row["benchmark_delayed_entry_price"] if delayed
-                       else row["benchmark_entry_price"])
-    exit_price = row["exit_price"]
-    benchmark_exit = row["benchmark_exit_price"]
+    prices = _execution_prices(row, side, delayed)
+    if prices is None:
+        return None
+    entry = prices["entry"]
+    benchmark_entry = prices["benchmark_entry"]
+    exit_price = prices["exit"]
+    benchmark_exit = prices["benchmark_exit"]
     beta = row["beta"]
-    values = [entry, exit_price, benchmark_entry, benchmark_exit, beta]
-    if not all(np.isfinite(value) and value > 0 for value in values):
+    prices_to_check = [entry, exit_price, benchmark_entry, benchmark_exit]
+    if (not all(np.isfinite(value) and value > 0 for value in prices_to_check) or
+            not np.isfinite(beta)):
         return None
     asset = side * (exit_price / entry - 1)
     hedge_side = -side if beta >= 0 else side
@@ -944,6 +1023,9 @@ def simulate_portfolio(frame: pd.DataFrame, predictions: np.ndarray, *,
         leg_return = _bar_leg(row, side, delayed=delayed, doubled_costs=doubled_costs)
         if leg_return is None:
             continue
+        execution_prices = _execution_prices(row, side, delayed)
+        if execution_prices is None:
+            continue
         pnl = POSITION_WEIGHT * leg_return
         trade = {"earnings_event_id": row["earnings_event_id"], "ticker": row["ticker"],
                  "sector": row["sector"], "release_session": row["release_session"],
@@ -952,13 +1034,11 @@ def simulate_portfolio(frame: pd.DataFrame, predictions: np.ndarray, *,
                  "gross_exposure": position_gross,
                  "pnl": pnl, "quarter": f"{entry_time.year}-Q{entry_time.quarter}",
                  "beta": float(row["beta"]),
-                 "entry_price": float(row["delayed_entry_price"] if delayed
-                                      else row["entry_price"]),
-                 "benchmark_entry_price": float(
-                     row["benchmark_delayed_entry_price"] if delayed
-                     else row["benchmark_entry_price"]),
-                 "exit_price": float(row["exit_price"]),
-                 "benchmark_exit_price": float(row["benchmark_exit_price"]),
+                 "entry_price": execution_prices["entry"],
+                 "benchmark_entry_price": execution_prices["benchmark_entry"],
+                 "exit_price": execution_prices["exit"],
+                 "benchmark_exit_price": execution_prices["benchmark_exit"],
+                 "execution_mode": execution_prices["mode"],
                  "daily_marks": row.get("daily_marks"),
                  "signal_hurdle_bps": decision["hurdle_bps"]}
         trades.append(trade)
