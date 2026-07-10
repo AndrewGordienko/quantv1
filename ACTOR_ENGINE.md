@@ -3,11 +3,15 @@
 Not a "personality model" (that invites storytelling and overfitting). An engine
 that measures **observable public behavior** and its market consequences:
 
-```
-Expected impact = actor_power × event_importance × surprise_vs_actor_baseline
-                  × credibility/follow-through × company_exposure × market_receptivity
-Tradeable edge  = expected impact − reaction already priced
-```
+The primary falsifiable question is:
+
+> Conditional on what was said, the event type, the asset and market conditions,
+> does knowing who generated the public communication and how unusual it was for
+> them improve the predicted market-impact distribution?
+
+Hand-assigned authority scores are registry metadata only. They are not predictive
+features until replaced with measured components such as jurisdiction, ownership,
+historical follow-through and rolling out-of-sample impact.
 
 The falsifiable hypothesis (vs "news sentiment moves stocks"): the market
 processes the SAME public event differently depending on WHO generated it, how
@@ -31,8 +35,8 @@ company social channels as valid public disclosure.)
 ## Algorithm ladder (each stage must beat the prior on UNTOUCHED data)
 
 - **B0** price + market context only
-- **B1** + event text/type
-- **B2** + actor identity & power        ← does famous-person identity add edge?
+- **B1** + event type, stance, magnitude, ticker, sector and regime
+- **B2** + hierarchically-shrunk actor identity, actor×event type and actor×topic
 - **B3** + actor behavioral state         ← does "emotion"/state add anything?
 - **B4** + influence graph
 - **B5** + audio/video emotion (last, noisiest)
@@ -42,9 +46,10 @@ Build in this order; do NOT jump to graphs or multimodal first.
 
 ## Models (simplest first — NOT a GNN first)
 
-1. **Hierarchical Bayesian actor-impact** (Stage 1): residual return ~ event_type
-   + stance + actor_power + baseline_deviation + credibility + company_exposure +
-   regime + actor×topic. Partial pooling lets frequent actors get individual
+1. **Hierarchical actor-impact** (Stage 1): residual return ~ event_type + stance
+   + magnitude + ticker + sector + regime + baseline_deviation + measured
+   credibility + measured company exposure + actor×event_type + actor×topic.
+   Partial pooling lets frequent actors get individual
    effects while a 3-event politician can't look magically predictive.
 2. **Hidden semi-Markov / Bayesian change-point** (state, not emotion labels):
    routine → escalating → negotiating → committed → reversing. The TRANSITION is
@@ -88,10 +93,12 @@ mentioned / met_with / affects / exposes. EVERY edge carries `valid_from`,
 
 ## Controls (the whole point)
 
-Shuffle actor identity WITHIN role+event-type; shuffle state WITHIN actor; shift
-timestamps preserving time-of-day; scheduled meetings vs matched non-meeting dates;
-text-only vs +audio/video; hold out entire actors, companies AND time periods;
-cluster inference by catalyst/day AND actor.
+Compare B1 and B2 on untouched predictive loss and net trading outcomes. Match
+events within ticker, event type, stance, volatility, time of day and market
+regime. Shuffle actor identity only WITHIN actor-event role and event type;
+shuffle state within actor; shift timestamps preserving time of day; hold out
+entire speakers and time periods. Use multiway covariance/bootstrap across
+catalyst/day, ticker and actor.
 
 ## Where to start (~20 high-information actors, not everyone famous)
 
@@ -103,7 +110,7 @@ are a slower contextual layer (contents often disclosed later).
 
 ## First build (this is the concrete sequence)
 
-1. Actor + time-valid relationship tables.                    [schema — STARTED]
+1. Actor + time-valid alias/role/exposure tables.              [schema — DONE]
 2. Public actor-event ingestion with EXACT timestamps.        [data — the crux]
 3. Actor baseline + credibility features (rolling, within-actor).
 4. Hierarchical Bayesian actor-impact event study (Stage 1).
@@ -113,11 +120,26 @@ are a slower contextual layer (contents often disclosed later).
 
 ## The data crux (honest)
 
-Polygon news is COMPANY-tagged, not ACTOR-tagged — attribution is the hard part.
+Polygon news is COMPANY-tagged, not ACTOR-action-tagged. Its headline-mention
+audit is `INVALID_PROXY_STUDY`, not a B2 test and not evidence against actor
+effects. Every actor event needs a participation role: speaker/author, directly
+quoted, direct public action, verified decision maker, meeting participant,
+subject of story or merely mentioned. Only speaker/author, direct public action
+and verified decision-maker events enter the primary hypothesis.
+
 Cleanest sources with exact timestamps + asset exposure:
-- **Fed / central banks**: FOMC statements + press-conference times (public).
+- **Fed speaker panel (B2)**: public speeches and remarks from Chairs, Governors,
+  regional Reserve Bank presidents and other voting participants. Test semantic
+  B1 against hierarchical speaker B2 on held-out time and held-out speakers.
+- **Chair press conferences (B3)**: timestamped transcript/audio segments,
+  separated into prepared remarks, questions and answers. Test hawkish/dovish
+  change, certainty/hedging, deviation from personal baseline and within-event
+  state transitions.
 - **Earnings calls**: scheduled, timestamped, per-company (transcripts need a source).
-- Actor mentions extractable from headlines for a curated ~20 actors as a first proxy.
+
+The minimum Fed asset set is Treasury duration plus financials (for example IEF,
+TLT and XLF); a final study should use rates/futures data appropriate to monetary
+policy shocks, not SPY alone.
 
 Reuses everything already built: the catalyst store, the leak-free replay harness
 (next-open, catalyst-clustered bootstrap, pessimistic barriers, controls), the

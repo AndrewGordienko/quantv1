@@ -235,7 +235,8 @@ def _day_block_ci(trades, rng, n_boot=3000) -> dict:
 def _catalyst_block_ci(trades, rng, n_boot=3000) -> dict:
     """Mean net (bps) resampling CATALYSTS (a catalyst's trades — across tickers
     and its intraday updates — stay together). Falls back to day-block if no
-    catalyst_id. This is the two-way clustering the review asked for."""
+    catalyst_id. This is ONE clustering dimension; it does not separately absorb
+    persistent ticker or actor effects and must not be described as two-way."""
     if trades.empty:
         return {"n": 0, "mean_bps": None, "ci_low": None, "ci_high": None, "cluster": "none"}
     key = "catalyst_id" if trades["catalyst_id"].notna().any() else "day"
@@ -365,9 +366,9 @@ def _dataset_hash(con):
     return hashlib.sha1(f"{r}|{n}|{manifest}".encode()).hexdigest()[:12]
 
 
-def run(verbose=True) -> dict:
+def run(*, catalyst_build_id: str, verbose=True) -> dict:
     con = connect(read_only=True)
-    events = news_events(con)
+    events = news_events(con, build_id=catalyst_build_id)
     panel = BarPanel(con, table="bars_minute")
     ds_hash = _dataset_hash(con)
     con.close()
@@ -467,4 +468,7 @@ def _print(out):
 
 
 if __name__ == "__main__":
-    run()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--build-id", required=True)
+    run(catalyst_build_id=parser.parse_args().build_id)

@@ -125,7 +125,9 @@ def ingest_news(start: str, end: str, verbose=True) -> dict:
                     "magnitude": 0.5, "novelty": 1.0,
                     "effective_date": ct[:10] if ct else None,
                     "source_time": ct, "source_url": a.get("url"),
-                    "payload": json.dumps({"headline": a.get("headline"),
+                    "payload": json.dumps({"article_id": a.get("id"),
+                                           "provider": "alpaca",
+                                           "headline": a.get("headline"),
                                            "source": a.get("source"),
                                            "symbols": a.get("symbols")}),
                 })

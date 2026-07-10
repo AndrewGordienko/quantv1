@@ -22,6 +22,12 @@ def main():
     DP.completeness()
     for tk in STOCKS:                   # news for the tradeable names
         P.ingest_news(START, END, tickers=[tk], verbose=False)
+    # Normalize only after all ticker fan-out rows have landed. Catalyst writes
+    # are versioned/append-only and actor headline hits remain context-only.
+    from quantv1.events import catalysts, actors
+    catalysts.build()
+    actors.register()
+    actors.extract_from_news()
     from quantv1.db import connect
     c = connect(read_only=True)
     print("news events:", c.execute("SELECT COUNT(*) FROM events WHERE layer='N'").fetchone()[0])

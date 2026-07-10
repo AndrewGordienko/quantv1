@@ -116,16 +116,18 @@ One sparse political event conditions many later intraday decisions.
 
 ## Build sequence
 
-1. Historical minute bars, quotes, timestamped news.            [GATED: Alpaca keys]
-2. Unified real-time event bus.                                  [substrate exists]
-3. Leak-free intraday event-replay backtester.                   [THIS BUILD]
-4. Event continuation/reversal baseline.
-5. Earnings gap/drift model.
-6. Company/sector/government lead-lag graph.
-7. Cost-aware ensemble + regime gate.
-8. Alpaca paper execution.
-9. Frozen paper-forward record (reuse v3 tracker).
-10. $100 live canary — connectivity/fills/safety only, NOT profitability.
+The active path is frozen in `docs/EARNINGS_ALPHA_SPRINT.md`. General actor-graph
+expansion is paused.
+
+1. Five years of point-in-time earnings events for 200–500 liquid companies.
+2. Event-window minute bars and historical NBBO quotes only.
+3. Descriptive continuation/reversal tables.
+4. Price-only and structured-earnings elastic-net comparison.
+5. Quote-executable constrained portfolio on unseen companies and unseen time.
+6. CatBoost/quantile regression only if elastic net establishes signal.
+7. CEO/CFO behavioral features only after the structured event model.
+8. On failure: index reconstitutions/corporate actions, then event-conditioned
+   supplier/competitor lead-lag—not generic sentiment.
 
 Honest objective: demonstrate **net-positive alpha and Sharpe > 1 on untouched
 data after costs** BEFORE any target return. Chasing a monthly % before finding
@@ -137,5 +139,5 @@ and its frozen forward record; V4 is a separate engine and separate forward reco
 - Built this session: `v4/replay.py` (leak-free event-replay backtester),
   `ingest/alpaca_data.py` (minute bars + news ingester — needs keys), event-bus
   columns. Validated replay on Federal-Register→sector-ETF reactions (hourly).
-- Next when keys land: ingest minute bars + news → event-reaction baseline (strat A)
-  → earnings model (strat B) → lead/lag (strat C) → ensemble → paper.
+- Active sprint: earnings acquisition → elastic-net baseline → quote-executable
+  portfolio → promotion/rejection gates. Actor research is contextual only.

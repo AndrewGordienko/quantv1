@@ -23,28 +23,22 @@ from ..db import connect
 from .replay import BarPanel, ReplayParams, replay
 
 
-def news_events(con) -> pd.DataFrame:
+def news_events(con, *, build_id: str) -> pd.DataFrame:
     """Catalyst-level events: ONE row per (catalyst, ticker) at the catalyst's
-    earliest public time — deduplicated so intraday updates of the same story
-    don't generate multiple trades. Falls back to raw events if not yet built."""
-    tables = [t[0] for t in con.execute("SHOW TABLES").fetchall()]
-    has_cat = "news_catalysts" in tables and con.execute(
-        "SELECT COUNT(*) FROM events WHERE layer='N' AND catalyst_id IS NOT NULL"
-    ).fetchone()[0] > 0
-    if has_cat:
-        return con.execute("""
-            SELECT catalyst_id, ticker, MIN(source_time) AS public_time
-            FROM events
-            WHERE layer='N' AND ticker IS NOT NULL AND catalyst_id IS NOT NULL
-              AND source_time IS NOT NULL
-            GROUP BY catalyst_id, ticker
-        """).df()
-    r = con.execute("""
-        SELECT source_time AS public_time, ticker FROM events
-        WHERE layer='N' AND event_type='news' AND ticker IS NOT NULL AND source_time IS NOT NULL
-    """).df()
-    r["catalyst_id"] = None
-    return r
+    ticker-specific first-public link time.  A ticker added by a later revision
+    is never exposed at the catalyst's earlier timestamp. Falls back to raw
+    events if catalysts have not yet been built."""
+    build = con.execute("""
+        SELECT status FROM catalyst_builds WHERE build_id=?
+    """, [build_id]).fetchone()
+    if not build or build[0] != "COMPLETE":
+        raise ValueError(f"catalyst build is missing or incomplete: {build_id}")
+    return con.execute("""
+        SELECT DISTINCT ca.catalyst_id, ca.ticker,
+               ca.first_link_public_time AS public_time
+        FROM catalyst_assets ca
+        WHERE ca.build_id=? AND ca.first_link_public_time IS NOT NULL
+    """, [build_id]).df()
 
 
 # PRE-REGISTERED thresholds (fixed a priori, NOT tuned to the result). The AAPL+
@@ -69,9 +63,9 @@ def fade_spike_signal(event, panel, i_pub, i_dec) -> dict:
     return {"side": -int(np.sign(r0)), "reason": "fade_news_spike"}
 
 
-def run(hold_min: int = 30, verbose: bool = True) -> dict:
+def run(*, build_id: str, hold_min: int = 30, verbose: bool = True) -> dict:
     con = connect(read_only=True)
-    events = news_events(con)
+    events = news_events(con, build_id=build_id)
     panel = BarPanel(con, table="bars_minute")
     con.close()
     if not panel.data:
@@ -101,4 +95,7 @@ def run(hold_min: int = 30, verbose: bool = True) -> dict:
 
 
 if __name__ == "__main__":
-    run()
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--build-id", required=True)
+    run(build_id=parser.parse_args().build_id)
