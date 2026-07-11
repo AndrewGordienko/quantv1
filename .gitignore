@@ -30,3 +30,6 @@ frontend/*.log
 .DS_Store
 .vscode/
 .idea/
+
+# transient in-progress human-label drafts
+goldset/drafts/

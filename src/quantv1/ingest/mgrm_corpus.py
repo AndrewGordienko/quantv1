@@ -24,9 +24,12 @@ import hashlib
 import json
 from pathlib import Path
 
+from .. import net
 from ..config import ROOT
 from ..db import connect
-from .earnings import build_universe
+from .earnings import (
+    _SEC_ARCHIVES, _cached_sec_filing, _sec_documents, build_universe,
+)
 from .guidance import structured_extract
 
 
@@ -49,6 +52,16 @@ _DOC_PRIORITY = {"EX-99.1": 0, "EX-99.01": 0, "EX-99.2": 1, "EX-99.02": 1,
 
 def _key(value: str) -> str:
     return hashlib.sha256(f"{SELECTION_VERSION}|{value}".encode()).hexdigest()
+
+
+def _rel_raw_path(accession: str, sha256: str) -> str:
+    """Repository-relative, portable path (no absolute paths, no username)."""
+    return f"data/raw/mgrm/{accession}/{sha256}.html"
+
+
+def _primary_url(cik: str, accession: str, primary_document: str) -> str:
+    directory = f"{_SEC_ARCHIVES}/{int(cik)}/{accession.replace('-', '')}"
+    return f"{directory}/{primary_document}"
 
 
 def crawl_targets(per_sector: int = 4,
@@ -93,8 +106,9 @@ def eligible_documents() -> list[dict]:
     try:
         rows = con.execute("""
             SELECT d.document_id, d.accession_number, d.ticker, f.cik,
-                   d.earnings_event_id, d.document_type, d.source_url,
-                   d.public_time, d.source_sha256, d.raw_path, s.sector
+                   f.primary_document, d.earnings_event_id, d.document_type,
+                   d.source_url, d.public_time, d.source_sha256, d.raw_path,
+                   s.sector
             FROM mgrm_documents d
             JOIN mgrm_filings f USING (accession_number)
             LEFT JOIN ticker_sectors s ON s.ticker = d.ticker
@@ -103,8 +117,8 @@ def eligible_documents() -> list[dict]:
     finally:
         con.close()
     columns = ["document_id", "accession_number", "ticker", "cik",
-               "earnings_event_id", "document_type", "source_url", "public_time",
-               "source_sha256", "raw_path", "sector"]
+               "primary_document", "earnings_event_id", "document_type",
+               "source_url", "public_time", "source_sha256", "raw_path", "sector"]
     by_filing: dict[str, dict] = {}
     for row in rows:
         record = dict(zip(columns, row))
@@ -121,6 +135,11 @@ def eligible_documents() -> list[dict]:
         record["sector"] = record["sector"] or "UNKNOWN"
         record["format_hint"] = _format_hint(record["raw_path"])
         record["selection_key"] = _key(record["accession_number"])
+        record["relative_path"] = _rel_raw_path(record["accession_number"],
+                                                 record["source_sha256"])
+        record["primary_url"] = _primary_url(record["cik"],
+                                             record["accession_number"],
+                                             record["primary_document"])
         documents.append(record)
     return documents
 
@@ -178,10 +197,12 @@ def _manifest_record(document: dict, split: str) -> dict:
         "accession_number": document["accession_number"],
         "earnings_event_id": document["earnings_event_id"],
         "document_url": document["source_url"],
+        "primary_url": document["primary_url"],
         "document_type": document["document_type"],
         "public_time": str(document["public_time"]),
         "source_sha256": document["source_sha256"],
-        "raw_path": document["raw_path"], "format_hint": document["format_hint"],
+        "raw_path": document["relative_path"],
+        "format_hint": document["format_hint"],
         "split": split, "selection_rule_version": SELECTION_VERSION,
     }
 
@@ -231,8 +252,8 @@ def _skeleton(document: dict, split: str) -> dict:
         "sector": document["sector"], "format": document["format_hint"],
         "accession": document["accession_number"],
         "earnings_event_id": document["earnings_event_id"],
-        "source_url": document["source_url"], "raw_path": document["raw_path"],
-        "split": split,
+        "source_url": document["source_url"],
+        "raw_path": document["relative_path"], "split": split,
         # Human fills these. no_guidance=null means "not yet labelled".
         "no_guidance": None, "expected": [],
     }
@@ -266,6 +287,67 @@ def distribution(selection: dict | None = None) -> dict:
         "note_actions": "raised/lowered/reaffirmed/initiated/withdrawn counts are "
                         "a labelling outcome and are unknown until humans label.",
     }
+
+
+def load_manifest(path: Path | None = None) -> list[dict]:
+    path = path or MANIFEST_PATH
+    if not path.exists():
+        return []
+    records = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            records.append(json.loads(line))
+    return records
+
+
+def _reproduce(record: dict) -> str | None:
+    """Reproduce the exact saved exhibit content from the frozen primary URL."""
+    filing_text, _ = _cached_sec_filing(record["primary_url"],
+                                        f"sec:{record['accession_number']}")
+    for document in _sec_documents(filing_text):
+        raw = document["raw_text"]
+        if hashlib.sha256(raw.encode()).hexdigest() == record["source_sha256"]:
+            return raw
+    return None
+
+
+def rehydrate(*, verbose: bool = True) -> dict:
+    """Reconstruct missing corpus documents from the frozen manifest.
+
+    For each manifest entry: if the local file exists, verify its SHA-256
+    against the manifest; otherwise re-fetch the frozen primary URL, reproduce
+    the exact discovery parse, and write it ONLY if the SHA-256 matches
+    exactly. Never reruns selection or mutates the manifest.
+    """
+    records = load_manifest()
+    present = downloaded = refused = 0
+    problems = []
+    for record in records:
+        target = ROOT / record["raw_path"]
+        want = record["source_sha256"]
+        if target.exists():
+            if hashlib.sha256(target.read_bytes()).hexdigest() == want:
+                present += 1
+            else:
+                refused += 1
+                problems.append({"document_id": record["document_id"],
+                                 "reason": "LOCAL_SHA_MISMATCH"})
+            continue
+        content = _reproduce(record)
+        if content is None:
+            refused += 1
+            problems.append({"document_id": record["document_id"],
+                             "reason": "SHA_MISMATCH_ON_REFETCH"})
+            continue
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(content, encoding="utf-8")
+        downloaded += 1
+        if verbose:
+            print(f"  rehydrated {record['document_id']} ({record['ticker']})")
+    return {"documents": len(records), "present": present,
+            "downloaded": downloaded, "refused": refused,
+            "reselected": False, "problems": problems}
 
 
 def _write_jsonl(path: Path, records: list[dict], *, header: list[str]) -> None:

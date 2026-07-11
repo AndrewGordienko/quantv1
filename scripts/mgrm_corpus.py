@@ -36,6 +36,7 @@ def main() -> None:
     sub.add_parser("select")
     sub.add_parser("freeze")
     sub.add_parser("distribution")
+    sub.add_parser("rehydrate")
     args = parser.parse_args()
 
     if args.command == "targets":
@@ -58,6 +59,8 @@ def main() -> None:
         _print(mgrm_corpus.freeze())
     elif args.command == "distribution":
         _print(mgrm_corpus.distribution())
+    elif args.command == "rehydrate":
+        _print(mgrm_corpus.rehydrate())
 
 
 if __name__ == "__main__":
