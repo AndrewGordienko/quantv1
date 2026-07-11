@@ -157,6 +157,26 @@ def main() -> None:
         from quantv1.strategies import intraday_meanrev
         intraday_meanrev.run(verbose=False)
 
+        # MGRM: zero-vendor management-guidance revision vs reaction (EERM M1/M2
+        # stay BLOCKED_DATA_ECONOMICALLY_INACCESSIBLE). Report the data gate and
+        # append forward public guidance; fit only if the extraction gate passes.
+        print("[mgrm] guidance data gate + forward collector")
+        try:
+            import json as _json
+            from quantv1.config import DATA_DIR
+            from quantv1.ingest import guidance
+            from quantv1.research import mgrm
+            if not args.skip_ingest:
+                guidance.collect_forward()
+            audit = mgrm.extraction_audit()
+            (DATA_DIR / "mgrm_audit.json").write_text(
+                _json.dumps(audit, indent=2, default=str))
+            mgrm.run(verbose=False)
+            print(f"      MGRM gate: {audit['status']} "
+                  f"(fit allowed: {audit['g1_g2_fitting_allowed']})")
+        except Exception as e:  # noqa: BLE001 - SEC endpoint / empty gate is non-fatal
+            print(f"      MGRM skipped: {e}")
+
     print(f"=== done in {(datetime.now() - t0).total_seconds():.0f}s ===")
 
 

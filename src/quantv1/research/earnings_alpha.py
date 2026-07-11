@@ -750,6 +750,23 @@ def _load_feature_metadata() -> dict:
     return metadata
 
 
+# EERM mismatch models M1/M2 are anchored on point-in-time analyst consensus.
+# That data is only sold by vendors / WRDS and cannot be honestly reconstructed
+# for free, so the two models are paused. The frozen protocol below is preserved
+# verbatim and MUST NOT be weakened or reused; we only record the pause here so
+# the block is durable and auditable. See MGRM (research/mgrm.py) for the
+# zero-vendor pivot that reuses the reaction engine without analyst consensus.
+M1_M2_PROGRAM_STATUS = "BLOCKED_DATA_ECONOMICALLY_INACCESSIBLE"
+M1_M2_BLOCKED_REASON = (
+    "Point-in-time analyst consensus, actuals, and pre-release guidance consensus "
+    "for the sample window are only available through paid vendors or WRDS. We "
+    "cannot recreate historical analyst expectations for free without fabricating "
+    "provenance, so EERM M1 (fundamental surprise) and M2 (surprise-reaction "
+    "mismatch) are paused indefinitely. The frozen EERM protocol is retained "
+    "unchanged; no substitute or backfilled expectations data is admitted."
+)
+
+
 def structured_data_audit(frame: pd.DataFrame | None = None) -> dict:
     """Report whether licensed expectations data is ready for M1/M2."""
     data = frame.copy() if frame is not None else _load_feature_frame()
@@ -762,8 +779,18 @@ def structured_data_audit(frame: pd.DataFrame | None = None) -> dict:
         ).fetchone()[0])
     con.close()
     coverage = coverage_statistics(data)
+    # No admissible vendor expectations exist -> the models are economically
+    # blocked, not merely under-covered. Preserve the distinction explicitly.
+    economically_blocked = sum(tables.values()) == 0
+    program_status = (M1_M2_PROGRAM_STATUS if economically_blocked else
+                      "READY" if coverage["gate_passed"] else "BLOCKED")
     return {
         "status": "READY" if coverage["gate_passed"] else "BLOCKED",
+        "program_status": program_status,
+        "blocked_reason": (M1_M2_BLOCKED_REASON
+                           if program_status == M1_M2_PROGRAM_STATUS else None),
+        "protocol_preserved": True,
+        "pivot": "MGRM (Management Guidance Revision-Reaction Mismatch)",
         "feature_artifact": _load_feature_metadata(),
         "table_rows": tables, "coverage": coverage,
         "required": [

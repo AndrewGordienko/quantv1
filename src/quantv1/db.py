@@ -516,6 +516,100 @@ CREATE TABLE IF NOT EXISTS earnings_experiments (
     promotion_gates   JSON
 );
 
+-- === Management Guidance Revision-Reaction Mismatch ======================
+-- This is an independent public-data experiment. It never reads or writes the
+-- vendor-consensus tables used by EERM.
+CREATE TABLE IF NOT EXISTS mgrm_filings (
+    accession_number VARCHAR PRIMARY KEY,
+    earnings_event_id VARCHAR,
+    ticker           VARCHAR,
+    cik              VARCHAR,
+    form             VARCHAR,
+    items            VARCHAR,
+    acceptance_time  TIMESTAMP,
+    filing_date      DATE,
+    primary_document VARCHAR,
+    source_url       VARCHAR,
+    first_seen_at    TIMESTAMP,
+    discovery_version VARCHAR,
+    status           VARCHAR,
+    metadata         JSON
+);
+CREATE TABLE IF NOT EXISTS mgrm_documents (
+    document_id      VARCHAR PRIMARY KEY,
+    accession_number VARCHAR,
+    earnings_event_id VARCHAR,
+    ticker           VARCHAR,
+    document_type    VARCHAR,
+    source_url       VARCHAR,
+    source_sha256    VARCHAR,
+    raw_path         VARCHAR,
+    public_time      TIMESTAMP,
+    first_seen_at    TIMESTAMP,
+    status           VARCHAR,
+    metadata         JSON
+);
+CREATE TABLE IF NOT EXISTS mgrm_guidance_extractions (
+    extraction_id    VARCHAR PRIMARY KEY,
+    document_id      VARCHAR,
+    earnings_event_id VARCHAR,
+    ticker           VARCHAR,
+    metric           VARCHAR,
+    guidance_period  VARCHAR,
+    lower_value      DOUBLE,
+    upper_value      DOUBLE,
+    midpoint         DOUBLE,
+    units            VARCHAR,
+    currency         VARCHAR,
+    guidance_status  VARCHAR,
+    stated_action    VARCHAR,
+    supporting_sentence VARCHAR,
+    deterministic_confidence DOUBLE,
+    ai_confidence    DOUBLE,
+    deterministic_payload JSON,
+    ai_payload       JSON,
+    agreement_status VARCHAR,
+    extractor_version VARCHAR,
+    public_time      TIMESTAMP,
+    created_at       TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS mgrm_guidance_links (
+    extraction_id    VARCHAR PRIMARY KEY,
+    previous_extraction_id VARCHAR,
+    midpoint_revision DOUBLE,
+    range_width_change DOUBLE,
+    revision_classification VARCHAR,
+    link_status      VARCHAR,
+    linker_version   VARCHAR,
+    created_at       TIMESTAMP,
+    metadata         JSON
+);
+CREATE TABLE IF NOT EXISTS mgrm_experiments (
+    experiment_id    VARCHAR PRIMARY KEY,
+    created_at       TIMESTAMP,
+    status           VARCHAR,
+    dataset_hash     VARCHAR,
+    code_hash        VARCHAR,
+    model_name       VARCHAR,
+    holdout_definition JSON,
+    metrics          JSON,
+    promotion_gates  JSON
+);
+CREATE TABLE IF NOT EXISTS public_expectation_snapshots (
+    snapshot_id      VARCHAR PRIMARY KEY,
+    ticker           VARCHAR,
+    expectation_type VARCHAR,
+    metric           VARCHAR,
+    period           VARCHAR,
+    source           VARCHAR,
+    source_url       VARCHAR,
+    source_time      TIMESTAMP,
+    first_seen_at    TIMESTAMP,
+    raw_sha256       VARCHAR,
+    raw_path         VARCHAR,
+    payload          JSON
+);
+
 -- Independent V5 track 2: forced flows. Announcement, effective date and
 -- required-flow estimate are distinct point-in-time fields.
 CREATE TABLE IF NOT EXISTS forced_flow_events (
