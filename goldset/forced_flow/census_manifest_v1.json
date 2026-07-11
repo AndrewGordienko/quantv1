@@ -14,11 +14,14 @@
   },
   "timestamp_status": "EFFECTIVE_DATE_ONLY",
   "tradability": {
-    "testable_now": [
-      "effective_close_pressure",
-      "post_effective_reversal"
+    "testable_now_daily_bars": [
+      "effective_day_return",
+      "d1_d5_reversal"
     ],
-    "blocked_until_verified_announcement": [
+    "blocked_needs_intraday_coverage": [
+      "closing_auction_pressure"
+    ],
+    "blocked_needs_verified_announcement_time": [
       "announcement_to_effective_continuation"
     ]
   },

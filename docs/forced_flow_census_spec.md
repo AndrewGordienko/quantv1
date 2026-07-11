@@ -47,10 +47,18 @@ Inference clusters by effective date.
 - `timestamp_status` = `EFFECTIVE_DATE_ONLY` for the whole corpus.
 
 **Restriction:** without a verified public announcement time, pre-effective
-returns are **not** a leak-free trading strategy.
-- Testable now: **effective-close pressure**, **post-effective reversal**.
-- Blocked until verified announcement timestamps exist:
-  **announcement → effective continuation**.
+returns are **not** a leak-free trading strategy. Label the horizons accurately
+by the data that supports them:
+
+| test | data needed | status |
+|---|---|---|
+| Effective-day return (open→close, close→close) | daily bars | **testable now** |
+| D+1 → D+5 reversal | daily bars | **testable now** |
+| Closing-auction / last-hour pressure | minute or auction/quote data | **blocked** — daily OHLC cannot see it |
+| Announcement → effective continuation | verified announcement time | **blocked** until the announcement corpus is frozen |
+
+Daily OHLC does **not** support a closing-auction claim; calling an
+effective-day daily-bar result "closing-auction pressure" would overstate it.
 
 ## Schema (columns added to `forced_flow_events`)
 
@@ -80,10 +88,17 @@ Each test: market/sector residuals, matched non-added controls (sector, size,
 momentum, liquidity), placebo effective dates, **event-date-clustered** CIs,
 delayed entry + doubled costs, quarterly-vs-ad-hoc split, concentration checks.
 
-1. Announcement → effective continuation — **verified announcements only** (blocked).
-2. Effective-day pressure, especially the final hour / close.
-3. D+1 → D+5 reversal.
+1. Announcement → effective continuation — **verified announcements only** (blocked
+   until the announcement corpus is frozen; see
+   `docs/forced_flow_announcement_spec.md`).
+2. Effective-day return (open→close, close→close) — daily bars.
+3. D+1 → D+5 reversal — daily bars.
 4. Dose response: estimated index demand / ADV versus residual return.
+5. Closing-auction / last-hour pressure — **blocked** unless intraday coverage
+   exists for the added ticker.
+
+Results are reported **separately per horizon**, never combined across
+announcement / effective-day / multi-day windows.
 
 A candidate advances only through the scoreboard kill gates
 (`docs/strategy_scoreboard.md`).
