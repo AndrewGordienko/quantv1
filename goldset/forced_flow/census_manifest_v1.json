@@ -1,0 +1,2668 @@
+{
+  "census_version": "forced-flow-sp500-census-v1",
+  "index": "S&P 500",
+  "source": {
+    "repo": "fja05680/sp500",
+    "commit": "c403a121c2e766840f34837738cdd4725eeda818",
+    "url": "https://raw.githubusercontent.com/fja05680/sp500/c403a121c2e766840f34837738cdd4725eeda818/sp500_changes_since_2019.csv",
+    "sha256": "7766d1603ceacea9715feed55e0383b95f44903d2452e33bf73cca4d4381c036",
+    "role": "DISCOVERY_SOURCE_NOT_POINT_IN_TIME"
+  },
+  "window": {
+    "start": "2019-01-18",
+    "end": "2026-06-02"
+  },
+  "timestamp_status": "EFFECTIVE_DATE_ONLY",
+  "tradability": {
+    "testable_now": [
+      "effective_close_pressure",
+      "post_effective_reversal"
+    ],
+    "blocked_until_verified_announcement": [
+      "announcement_to_effective_continuation"
+    ]
+  },
+  "additions": {
+    "legs": 161,
+    "unique_tickers": 161,
+    "unique_effective_dates": 113,
+    "event_batches": 113,
+    "by_year": {
+      "2019": 28,
+      "2020": 20,
+      "2021": 21,
+      "2022": 22,
+      "2023": 19,
+      "2024": 20,
+      "2025": 21,
+      "2026": 10
+    },
+    "by_change_type": {
+      "AD_HOC": 102,
+      "QUARTERLY_REBALANCE": 59
+    },
+    "coverage": {
+      "COVERED": 142,
+      "MARKET_DATA_UNAVAILABLE": 19
+    }
+  },
+  "deletions": {
+    "legs": 163,
+    "unique_tickers": 163,
+    "unique_effective_dates": 113,
+    "event_batches": 113,
+    "by_year": {
+      "2019": 28,
+      "2020": 20,
+      "2021": 21,
+      "2022": 24,
+      "2023": 19,
+      "2024": 20,
+      "2025": 21,
+      "2026": 10
+    },
+    "by_change_type": {
+      "AD_HOC": 103,
+      "QUARTERLY_REBALANCE": 60
+    },
+    "coverage": {
+      "COVERED": 72,
+      "MARKET_DATA_UNAVAILABLE": 91
+    }
+  },
+  "census_sha256": "927685472fb0f554dbaf46cb114716b62214bcc277ee9ab70f95129f2795fd9f",
+  "corpus": [
+    {
+      "effective": "2019-01-18",
+      "ticker": "TFX",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-01-18",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-01-18",
+      "ticker": "PCG",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-01-18",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-02-15",
+      "ticker": "ATO",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-02-15",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-02-15",
+      "ticker": "NFX",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-02-15",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-02-27",
+      "ticker": "WAB",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-02-27",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-02-27",
+      "ticker": "GT",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-02-27",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-04-02",
+      "ticker": "DOW",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-04-02",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-04-02",
+      "ticker": "BHF",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-04-02",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-06-01",
+      "ticker": "LHX",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-06-01",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-06-01",
+      "ticker": "HRS",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-06-01",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-06-03",
+      "ticker": "CTVA",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-06-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-06-03",
+      "ticker": "DD",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-06-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-06-03",
+      "ticker": "DWDP",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-06-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-06-03",
+      "ticker": "FLR",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-06-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-06-07",
+      "ticker": "AMCR",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-06-07",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-06-07",
+      "ticker": "MAT",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-06-07",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-07-01",
+      "ticker": "MKTX",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-07-01",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-07-01",
+      "ticker": "LLL",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-07-01",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-07-15",
+      "ticker": "TMUS",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-07-15",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-07-15",
+      "ticker": "RHT",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-07-15",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-08-08",
+      "ticker": "GL",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-08-08",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-08-08",
+      "ticker": "TMK",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-08-08",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-08-09",
+      "ticker": "IEX",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-08-09",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-08-09",
+      "ticker": "LDOS",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-08-09",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-08-09",
+      "ticker": "APC",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-08-09",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-08-09",
+      "ticker": "FL",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-08-09",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-09-23",
+      "ticker": "CDW",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-09-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-09-23",
+      "ticker": "TSS",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-09-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-09-26",
+      "ticker": "NVR",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-09-26",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-09-26",
+      "ticker": "JEF",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-09-26",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-10-03",
+      "ticker": "LVS",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-10-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-10-03",
+      "ticker": "NKTR",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-10-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-10-18",
+      "ticker": "BKR",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-10-18",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-10-18",
+      "ticker": "BHGE",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-10-18",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-11-05",
+      "ticker": "NLOK",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-11-05",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-11-05",
+      "ticker": "PEAK",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-11-05",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-11-05",
+      "ticker": "HCP",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-11-05",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-11-05",
+      "ticker": "SYMC",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-11-05",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-11-21",
+      "ticker": "NOW",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-11-21",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-11-21",
+      "ticker": "CELG",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-11-21",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-12-05",
+      "ticker": "VIAC",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-12-05",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-12-05",
+      "ticker": "WRB",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-12-05",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-12-05",
+      "ticker": "CBS",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-12-05",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-12-05",
+      "ticker": "VIAB",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-12-05",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-12-09",
+      "ticker": "ODFL",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-12-09",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-12-09",
+      "ticker": "TFC",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-12-09",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-12-09",
+      "ticker": "BBT",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-12-09",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-12-09",
+      "ticker": "STI",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-12-09",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-12-10",
+      "ticker": "J",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-12-10",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-12-10",
+      "ticker": "JEC",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-12-10",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2019-12-23",
+      "ticker": "LYV",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-12-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-12-23",
+      "ticker": "STE",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-12-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-12-23",
+      "ticker": "ZBRA",
+      "event_type": "addition",
+      "batch_id": "SP500|2019-12-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-12-23",
+      "ticker": "AMG",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-12-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-12-23",
+      "ticker": "MAC",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-12-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2019-12-23",
+      "ticker": "TRIP",
+      "event_type": "deletion",
+      "batch_id": "SP500|2019-12-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-01-28",
+      "ticker": "PAYC",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-01-28",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-01-28",
+      "ticker": "WCG",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-01-28",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2020-03-03",
+      "ticker": "TT",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-03-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-03-03",
+      "ticker": "XEC",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-03-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2020-04-03",
+      "ticker": "CARR",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-04-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-04-03",
+      "ticker": "OTIS",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-04-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-04-03",
+      "ticker": "RTX",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-04-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-04-03",
+      "ticker": "UTX",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-04-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2020-04-06",
+      "ticker": "HWM",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-04-06",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-04-06",
+      "ticker": "ARNC",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-04-06",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2020-04-06",
+      "ticker": "M",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-04-06",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-04-06",
+      "ticker": "RTN",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-04-06",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2020-05-12",
+      "ticker": "DPZ",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-05-12",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-05-12",
+      "ticker": "DXCM",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-05-12",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-05-12",
+      "ticker": "AGN",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-05-12",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2020-05-12",
+      "ticker": "CPRI",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-05-12",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-05-22",
+      "ticker": "WST",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-05-22",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-05-22",
+      "ticker": "HP",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-05-22",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-06-22",
+      "ticker": "BIO",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-06-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-06-22",
+      "ticker": "TDY",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-06-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-06-22",
+      "ticker": "TYL",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-06-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-06-22",
+      "ticker": "ADS",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-06-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2020-06-22",
+      "ticker": "HOG",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-06-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-06-22",
+      "ticker": "JWN",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-06-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2020-09-18",
+      "ticker": "LUMN",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-09-18",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-09-18",
+      "ticker": "CTL",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-09-18",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2020-09-21",
+      "ticker": "CTLT",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-09-21",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2020-09-21",
+      "ticker": "ETSY",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-09-21",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-09-21",
+      "ticker": "TER",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-09-21",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-09-21",
+      "ticker": "COTY",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-09-21",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-09-21",
+      "ticker": "HRB",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-09-21",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-09-21",
+      "ticker": "KSS",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-09-21",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-10-07",
+      "ticker": "POOL",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-10-07",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-10-07",
+      "ticker": "ETFC",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-10-07",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2020-10-12",
+      "ticker": "VNT",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-10-12",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-10-12",
+      "ticker": "NBL",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-10-12",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2020-11-17",
+      "ticker": "VTRS",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-11-17",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-11-17",
+      "ticker": "MYL",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-11-17",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2020-12-21",
+      "ticker": "TSLA",
+      "event_type": "addition",
+      "batch_id": "SP500|2020-12-21",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2020-12-21",
+      "ticker": "AIV",
+      "event_type": "deletion",
+      "batch_id": "SP500|2020-12-21",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-01-07",
+      "ticker": "ENPH",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-01-07",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-01-07",
+      "ticker": "TIF",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-01-07",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2021-01-21",
+      "ticker": "TRMB",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-01-21",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-01-21",
+      "ticker": "CXO",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-01-21",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2021-02-12",
+      "ticker": "MPWR",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-02-12",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-02-12",
+      "ticker": "FTI",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-02-12",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-03-22",
+      "ticker": "CZR",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-03-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-03-22",
+      "ticker": "GNRC",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-03-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-03-22",
+      "ticker": "NXPI",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-03-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-03-22",
+      "ticker": "PENN",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-03-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-03-22",
+      "ticker": "FLS",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-03-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-03-22",
+      "ticker": "SLG",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-03-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-03-22",
+      "ticker": "VNT",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-03-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-03-22",
+      "ticker": "XRX",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-03-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-04-20",
+      "ticker": "PTC",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-04-20",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-04-20",
+      "ticker": "VAR",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-04-20",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2021-05-14",
+      "ticker": "CRL",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-05-14",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-05-14",
+      "ticker": "FLIR",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-05-14",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2021-06-04",
+      "ticker": "OGN",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-06-04",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2021-06-04",
+      "ticker": "HFC",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-06-04",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2021-07-21",
+      "ticker": "MRNA",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-07-21",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-07-21",
+      "ticker": "ALXN",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-07-21",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2021-08-03",
+      "ticker": "BBWI",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-08-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2021-08-03",
+      "ticker": "LB",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-08-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2021-08-30",
+      "ticker": "TECH",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-08-30",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-08-30",
+      "ticker": "MXIM",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-08-30",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2021-09-20",
+      "ticker": "BRO",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-09-20",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-09-20",
+      "ticker": "CDAY",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-09-20",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2021-09-20",
+      "ticker": "MTCH",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-09-20",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-09-20",
+      "ticker": "NOV",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-09-20",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-09-20",
+      "ticker": "PRGO",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-09-20",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-09-20",
+      "ticker": "UNM",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-09-20",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-10-04",
+      "ticker": "CTRA",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-10-04",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2021-10-04",
+      "ticker": "COG",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-10-04",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2021-12-14",
+      "ticker": "EPAM",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-12-14",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-12-14",
+      "ticker": "KSU",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-12-14",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2021-12-20",
+      "ticker": "FDS",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-12-20",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-12-20",
+      "ticker": "SBNY",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-12-20",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2021-12-20",
+      "ticker": "SEDG",
+      "event_type": "addition",
+      "batch_id": "SP500|2021-12-20",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-12-20",
+      "ticker": "HBI",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-12-20",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2021-12-20",
+      "ticker": "LEG",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-12-20",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2021-12-20",
+      "ticker": "WU",
+      "event_type": "deletion",
+      "batch_id": "SP500|2021-12-20",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-01-10",
+      "ticker": "WTW",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-01-10",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-01-10",
+      "ticker": "WLTW",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-01-10",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-02-02",
+      "ticker": "CEG",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-02-02",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-02-02",
+      "ticker": "GPS",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-02-02",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-02-15",
+      "ticker": "NDSN",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-02-15",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-02-15",
+      "ticker": "XLNX",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-02-15",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-02-17",
+      "ticker": "PARA",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-02-17",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-02-17",
+      "ticker": "VIAC",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-02-17",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-03-02",
+      "ticker": "MOH",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-03-02",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-03-02",
+      "ticker": "INFO",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-03-02",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-04-04",
+      "ticker": "CPT",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-04-04",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-04-04",
+      "ticker": "PBCT",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-04-04",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-04-11",
+      "ticker": "WBD",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-04-11",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-04-11",
+      "ticker": "DISCA",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-04-11",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-04-11",
+      "ticker": "DISCK",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-04-11",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-05-10",
+      "ticker": "BALL",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-05-10",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-05-10",
+      "ticker": "BLL",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-05-10",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-06-08",
+      "ticker": "VICI",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-06-08",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-06-08",
+      "ticker": "CERN",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-06-08",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-06-09",
+      "ticker": "META",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-06-09",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-06-09",
+      "ticker": "FB",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-06-09",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-06-21",
+      "ticker": "KDP",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-06-21",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-06-21",
+      "ticker": "ON",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-06-21",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-06-21",
+      "ticker": "IPGP",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-06-21",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-06-21",
+      "ticker": "UA",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-06-21",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-06-21",
+      "ticker": "UAA",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-06-21",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-06-28",
+      "ticker": "ELV",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-06-28",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-06-28",
+      "ticker": "ANTM",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-06-28",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-09-19",
+      "ticker": "CSGP",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-09-19",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-09-19",
+      "ticker": "INVH",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-09-19",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-09-19",
+      "ticker": "PENN",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-09-19",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-09-19",
+      "ticker": "PVH",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-09-19",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-10-03",
+      "ticker": "EQT",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-10-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-10-03",
+      "ticker": "PCG",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-10-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-10-03",
+      "ticker": "CTXS",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-10-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-10-03",
+      "ticker": "DRE",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-10-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-10-12",
+      "ticker": "TRGP",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-10-12",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-10-12",
+      "ticker": "NLSN",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-10-12",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-11-01",
+      "ticker": "ACGL",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-11-01",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-11-01",
+      "ticker": "TWTR",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-11-01",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-11-08",
+      "ticker": "GEN",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-11-08",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-11-08",
+      "ticker": "NLOK",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-11-08",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-12-19",
+      "ticker": "FSLR",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-12-19",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-12-19",
+      "ticker": "FBHS",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-12-19",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2022-12-22",
+      "ticker": "STLD",
+      "event_type": "addition",
+      "batch_id": "SP500|2022-12-22",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2022-12-22",
+      "ticker": "ABMD",
+      "event_type": "deletion",
+      "batch_id": "SP500|2022-12-22",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2023-01-04",
+      "ticker": "GEHC",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-01-04",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-01-04",
+      "ticker": "VNO",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-01-04",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-03-15",
+      "ticker": "BG",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-03-15",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-03-15",
+      "ticker": "PODD",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-03-15",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-03-15",
+      "ticker": "SBNY",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-03-15",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2023-03-15",
+      "ticker": "SIVB",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-03-15",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2023-03-20",
+      "ticker": "FICO",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-03-20",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-03-20",
+      "ticker": "LUMN",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-03-20",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-05-04",
+      "ticker": "AXON",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-05-04",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-05-04",
+      "ticker": "FRC",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-05-04",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2023-05-16",
+      "ticker": "RVTY",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-05-16",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-05-16",
+      "ticker": "PKI",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-05-16",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2023-06-07",
+      "ticker": "FI",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-06-07",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2023-06-07",
+      "ticker": "FISV",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-06-07",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-06-20",
+      "ticker": "PANW",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-06-20",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-06-20",
+      "ticker": "DISH",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-06-20",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2023-07-10",
+      "ticker": "EG",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-07-10",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-07-10",
+      "ticker": "RE",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-07-10",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2023-08-25",
+      "ticker": "KVUE",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-08-25",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-08-25",
+      "ticker": "AAP",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-08-25",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-08-30",
+      "ticker": "COR",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-08-30",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-08-30",
+      "ticker": "ABC",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-08-30",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2023-09-18",
+      "ticker": "ABNB",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-09-18",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-09-18",
+      "ticker": "BX",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-09-18",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-09-18",
+      "ticker": "LNC",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-09-18",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-09-18",
+      "ticker": "NWL",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-09-18",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-10-02",
+      "ticker": "VLTO",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-10-02",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-10-02",
+      "ticker": "DXC",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-10-02",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-10-18",
+      "ticker": "BLDR",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-10-18",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-10-18",
+      "ticker": "HUBB",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-10-18",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-10-18",
+      "ticker": "JBL",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-10-18",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-10-18",
+      "ticker": "LULU",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-10-18",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-10-18",
+      "ticker": "UBER",
+      "event_type": "addition",
+      "batch_id": "SP500|2023-10-18",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-10-18",
+      "ticker": "ALK",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-10-18",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-10-18",
+      "ticker": "ATVI",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-10-18",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2023-10-18",
+      "ticker": "OGN",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-10-18",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2023-10-18",
+      "ticker": "SEDG",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-10-18",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2023-10-18",
+      "ticker": "SEE",
+      "event_type": "deletion",
+      "batch_id": "SP500|2023-10-18",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2024-02-01",
+      "ticker": "DAY",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-02-01",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2024-02-01",
+      "ticker": "CDAY",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-02-01",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2024-03-04",
+      "ticker": "DOC",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-03-04",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-03-04",
+      "ticker": "PEAK",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-03-04",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2024-03-18",
+      "ticker": "DECK",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-03-18",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-03-18",
+      "ticker": "SMCI",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-03-18",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-03-18",
+      "ticker": "WHR",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-03-18",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-03-18",
+      "ticker": "ZION",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-03-18",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-03-25",
+      "ticker": "CPAY",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-03-25",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-03-25",
+      "ticker": "FLT",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-03-25",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2024-04-03",
+      "ticker": "GEV",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-04-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-04-03",
+      "ticker": "SOLV",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-04-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-04-03",
+      "ticker": "VFC",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-04-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-04-03",
+      "ticker": "XRAY",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-04-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-05-08",
+      "ticker": "VST",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-05-08",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-05-08",
+      "ticker": "PXD",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-05-08",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2024-06-24",
+      "ticker": "CRWD",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-06-24",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-06-24",
+      "ticker": "GDDY",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-06-24",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-06-24",
+      "ticker": "KKR",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-06-24",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-06-24",
+      "ticker": "CMA",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-06-24",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2024-06-24",
+      "ticker": "ILMN",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-06-24",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-06-24",
+      "ticker": "RHI",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-06-24",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-07-08",
+      "ticker": "SW",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-07-08",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2024-07-08",
+      "ticker": "WRK",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-07-08",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2024-09-23",
+      "ticker": "DELL",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-09-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-09-23",
+      "ticker": "ERIE",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-09-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-09-23",
+      "ticker": "PLTR",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-09-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-09-23",
+      "ticker": "AAL",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-09-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-09-23",
+      "ticker": "BIO",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-09-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-09-23",
+      "ticker": "ETSY",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-09-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-09-30",
+      "ticker": "AMTM",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-09-30",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-10-01",
+      "ticker": "BBWI",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-10-01",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2024-11-26",
+      "ticker": "TPL",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-11-26",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2024-11-26",
+      "ticker": "MRO",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-11-26",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2024-12-23",
+      "ticker": "APO",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-12-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-12-23",
+      "ticker": "LII",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-12-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-12-23",
+      "ticker": "WDAY",
+      "event_type": "addition",
+      "batch_id": "SP500|2024-12-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-12-23",
+      "ticker": "AMTM",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-12-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2024-12-23",
+      "ticker": "CTLT",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-12-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2024-12-23",
+      "ticker": "QRVO",
+      "event_type": "deletion",
+      "batch_id": "SP500|2024-12-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-03-24",
+      "ticker": "DASH",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-03-24",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-03-24",
+      "ticker": "EXE",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-03-24",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-03-24",
+      "ticker": "TKO",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-03-24",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-03-24",
+      "ticker": "WSM",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-03-24",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-03-24",
+      "ticker": "BWA",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-03-24",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-03-24",
+      "ticker": "CE",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-03-24",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-03-24",
+      "ticker": "FMC",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-03-24",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-03-24",
+      "ticker": "TFX",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-03-24",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-05-19",
+      "ticker": "COIN",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-05-19",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-05-19",
+      "ticker": "DFS",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-05-19",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2025-07-09",
+      "ticker": "DDOG",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-07-09",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-07-09",
+      "ticker": "JNPR",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-07-09",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2025-07-18",
+      "ticker": "TTD",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-07-18",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-07-18",
+      "ticker": "ANSS",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-07-18",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2025-07-23",
+      "ticker": "XYZ",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-07-23",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-07-23",
+      "ticker": "HES",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-07-23",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2025-08-08",
+      "ticker": "PSKY",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-08-08",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-08-08",
+      "ticker": "PARA",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-08-08",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2025-08-28",
+      "ticker": "IBKR",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-08-28",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-08-28",
+      "ticker": "WBA",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-08-28",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2025-09-22",
+      "ticker": "APP",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-09-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-09-22",
+      "ticker": "EME",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-09-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-09-22",
+      "ticker": "HOOD",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-09-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-09-22",
+      "ticker": "CZR",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-09-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-09-22",
+      "ticker": "ENPH",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-09-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-09-22",
+      "ticker": "MKTX",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-09-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-10-30",
+      "ticker": "SOLS",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-10-30",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-10-31",
+      "ticker": "KMX",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-10-31",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-11-03",
+      "ticker": "Q",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-11-03",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-11-04",
+      "ticker": "EMN",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-11-04",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-11-11",
+      "ticker": "FISV",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-11-11",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-11-11",
+      "ticker": "FI",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-11-11",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2025-11-28",
+      "ticker": "SNDK",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-11-28",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-11-28",
+      "ticker": "IPG",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-11-28",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2025-12-11",
+      "ticker": "ARES",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-12-11",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-12-11",
+      "ticker": "K",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-12-11",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2025-12-22",
+      "ticker": "CRH",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-12-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2025-12-22",
+      "ticker": "CVNA",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-12-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-12-22",
+      "ticker": "FIX",
+      "event_type": "addition",
+      "batch_id": "SP500|2025-12-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-12-22",
+      "ticker": "LKQ",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-12-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-12-22",
+      "ticker": "MHK",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-12-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2025-12-22",
+      "ticker": "SOLS",
+      "event_type": "deletion",
+      "batch_id": "SP500|2025-12-22",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2026-01-14",
+      "ticker": "MRSH",
+      "event_type": "addition",
+      "batch_id": "SP500|2026-01-14",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2026-01-14",
+      "ticker": "MMC",
+      "event_type": "deletion",
+      "batch_id": "SP500|2026-01-14",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2026-02-09",
+      "ticker": "CIEN",
+      "event_type": "addition",
+      "batch_id": "SP500|2026-02-09",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2026-02-09",
+      "ticker": "DAY",
+      "event_type": "deletion",
+      "batch_id": "SP500|2026-02-09",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2026-03-23",
+      "ticker": "COHR",
+      "event_type": "addition",
+      "batch_id": "SP500|2026-03-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2026-03-23",
+      "ticker": "LITE",
+      "event_type": "addition",
+      "batch_id": "SP500|2026-03-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2026-03-23",
+      "ticker": "SATS",
+      "event_type": "addition",
+      "batch_id": "SP500|2026-03-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2026-03-23",
+      "ticker": "VRT",
+      "event_type": "addition",
+      "batch_id": "SP500|2026-03-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2026-03-23",
+      "ticker": "LW",
+      "event_type": "deletion",
+      "batch_id": "SP500|2026-03-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2026-03-23",
+      "ticker": "MOH",
+      "event_type": "deletion",
+      "batch_id": "SP500|2026-03-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2026-03-23",
+      "ticker": "MTCH",
+      "event_type": "deletion",
+      "batch_id": "SP500|2026-03-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2026-03-23",
+      "ticker": "PAYC",
+      "event_type": "deletion",
+      "batch_id": "SP500|2026-03-23",
+      "change_type": "QUARTERLY_REBALANCE",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2026-04-09",
+      "ticker": "CASY",
+      "event_type": "addition",
+      "batch_id": "SP500|2026-04-09",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2026-04-09",
+      "ticker": "HOLX",
+      "event_type": "deletion",
+      "batch_id": "SP500|2026-04-09",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2026-05-07",
+      "ticker": "VEEV",
+      "event_type": "addition",
+      "batch_id": "SP500|2026-05-07",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2026-05-07",
+      "ticker": "CTRA",
+      "event_type": "deletion",
+      "batch_id": "SP500|2026-05-07",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2026-05-21",
+      "ticker": "BNY",
+      "event_type": "addition",
+      "batch_id": "SP500|2026-05-21",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2026-05-21",
+      "ticker": "BK",
+      "event_type": "deletion",
+      "batch_id": "SP500|2026-05-21",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    },
+    {
+      "effective": "2026-06-01",
+      "ticker": "FDXF",
+      "event_type": "addition",
+      "batch_id": "SP500|2026-06-01",
+      "change_type": "AD_HOC",
+      "coverage_status": "MARKET_DATA_UNAVAILABLE"
+    },
+    {
+      "effective": "2026-06-02",
+      "ticker": "EPAM",
+      "event_type": "deletion",
+      "batch_id": "SP500|2026-06-02",
+      "change_type": "AD_HOC",
+      "coverage_status": "COVERED"
+    }
+  ]
+}

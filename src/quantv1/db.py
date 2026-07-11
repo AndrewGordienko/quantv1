@@ -909,6 +909,21 @@ def _migrate_schema(con: duckdb.DuckDBPyConnection) -> None:
             "borrow_fee_bps_annual": "DOUBLE",
             "borrow_known_at": "TIMESTAMP",
         })
+    # Forced-flow census discipline: separate provenance/knowledge time from the
+    # market effective time, batch co-dated changes, and never fabricate an
+    # announcement time (see quantv1.ingest.forced_flow).
+    _add_columns(con, "forced_flow_events", {
+        "knowledge_time": "TIMESTAMP",
+        "event_batch_id": "VARCHAR",
+        "batch_size": "INTEGER",
+        "change_type": "VARCHAR",       # QUARTERLY_REBALANCE | AD_HOC (inferred)
+        "change_reason": "VARCHAR",     # UNVERIFIED until a reason source is reconciled
+        "timestamp_status": "VARCHAR",  # EFFECTIVE_DATE_ONLY | ANNOUNCEMENT_VERIFIED
+        "coverage_status": "VARCHAR",   # COVERED | MARKET_DATA_UNAVAILABLE
+        "historical_ticker": "VARCHAR",
+        "source_commit": "VARCHAR",
+        "source_sha256": "VARCHAR",
+    })
 
 
 def init_db() -> None:
