@@ -83,6 +83,35 @@ def generate_worklist(verbose: bool = True) -> dict:
     return summary
 
 
+def coverage_comparison(resolved_batch_ids: set[str]) -> dict:
+    """Selection-bias guard: compare resolved vs unresolved batches by year,
+    change type and number of additions. Return-blind (no prices)."""
+    con = connect(read_only=True)
+    batches = _addition_batches(con)
+    change_type = dict(con.execute("""
+        SELECT event_batch_id, MAX(change_type) FROM forced_flow_events
+        WHERE version=? AND event_type='addition' GROUP BY event_batch_id
+    """, [CENSUS_VERSION]).fetchall())
+    con.close()
+
+    def tally(ids):
+        by_year, by_type, n_add = {}, {}, []
+        for b in ids:
+            year = batches[b]["effective_date"][:4]
+            by_year[year] = by_year.get(year, 0) + 1
+            ct = change_type.get(b, "AD_HOC")
+            by_type[ct] = by_type.get(ct, 0) + 1
+            n_add.append(len(batches[b]["tickers"]))
+        return {"n_batches": len(ids), "by_year": dict(sorted(by_year.items())),
+                "by_change_type": by_type,
+                "mean_additions_per_batch": (sum(n_add) / len(n_add)) if n_add else None}
+
+    resolved = {b for b in batches if b in resolved_batch_ids}
+    unresolved = {b for b in batches if b not in resolved_batch_ids}
+    return {"total_batches": len(batches),
+            "resolved": tally(resolved), "unresolved": tally(unresolved)}
+
+
 def classify_entry(public_time: datetime) -> str:
     """Executable entry is the next session open (daily bars only for adds)."""
     utc = public_time.astimezone(timezone.utc)

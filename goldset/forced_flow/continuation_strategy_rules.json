@@ -1,0 +1,33 @@
+{
+  "strategy_version": "forced-flow-continuation-v1",
+  "hypothesis": "A verified S&P 500 addition announcement predicts a positive market-hedged residual return from the next executable open through the effective date -- the announcement->effective continuation ('index effect'). Independent of the reversal test (rejected) and the effective-day event study (null). Whether it survives recently, after costs, is unknown and is what this test answers.",
+  "frozen_before_outcomes": true,
+  "parent_census": "forced-flow-sp500-census-v1",
+  "parent_census_sha256": "927685472fb0f554dbaf46cb114716b62214bcc277ee9ab70f95129f2795fd9f",
+  "announcement_rules": "forced-flow-announcement-rules-v1",
+  "strategy": {
+    "signal": "Verified S&P 500 addition announcement (Tier 1/2/3, exact time).",
+    "entry": "Next regular-session OPEN after announcement_public_time -- even for intraday announcements. Conservative and executable with daily bars.",
+    "primary_exit": "Effective-date CLOSE.",
+    "secondary_exits_reported_separately": ["D_minus_1_close", "effective_date_open"],
+    "no_entry_when": ["announcement time is DATE_ONLY", "batch is UNRESOLVED"],
+    "hedge": "Stock leg market-hedged with the frozen pre-event beta vs SPY (same 60d pre-event daily-return beta, clipped [0,3], as Track A).",
+    "costs": "Paid on BOTH stock and hedge legs, at entry AND exit (15 bps/side baseline).",
+    "position": "Long the added name, short beta*SPY. Equal-weight within an announcement batch."
+  },
+  "inference": {
+    "cluster_by": "announcement batch",
+    "report_separately": ["quarterly", "ad_hoc"],
+    "stress_tests": ["delayed_entry (next+1 open)", "doubled_cost (30 bps/side)"],
+    "controls": "Matched non-added controls (momentum + dollar-ADV, uncontaminated by nearby index changes), and placebo announcements (shifted announcement dates).",
+    "separation": "Raw event-study residuals reported separately from after-cost portfolio returns."
+  },
+  "sample_classification_predeclared": {
+    "full_test": ">=75 exact-time, price-covered batches",
+    "underpowered_candidate_test": "50-74 exact-time, price-covered batches",
+    "descriptive_pilot_only": "<50 exact-time, price-covered batches"
+  },
+  "selection_bias_guard": "Compare RESOLVED vs UNRESOLVED batches by year, event type (quarterly/ad-hoc) and number of additions, so source availability does not silently create a selected sample. Report this before any outcome.",
+  "kill_gates": "The scoreboard kill gates apply (>=100 indep events after cost, Sharpe>1, delayed+ and doubled-cost+, bootstrap/HAC LB>0, no dominant ticker/batch, paper-forward+). Falling short of the sample thresholds downgrades the CLAIM (full/underpowered/pilot), never relaxes the gates.",
+  "blindness": "No returns, price charts, or rule changes based on coverage until the fixed denominator (all 113 batches) is resolved-or-unresolved and the announcement manifest is frozen."
+}

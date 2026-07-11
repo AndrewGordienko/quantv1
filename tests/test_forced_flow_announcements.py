@@ -129,6 +129,13 @@ class WorklistFreezeTests(unittest.TestCase):
                                  summary["total_batches"] - 1)
                 self.assertTrue(manifest.exists() and ledger.exists())
 
+                # selection-bias comparison partitions the same denominator
+                cmp = fa.coverage_comparison({"SP500|2019-01-18"})
+                self.assertEqual(cmp["resolved"]["n_batches"]
+                                 + cmp["unresolved"]["n_batches"],
+                                 cmp["total_batches"])
+                self.assertEqual(cmp["resolved"]["n_batches"], 1)
+
 
 if __name__ == "__main__":
     unittest.main()
