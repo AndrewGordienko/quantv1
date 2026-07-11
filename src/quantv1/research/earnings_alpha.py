@@ -43,6 +43,7 @@ from .protocol import (
     TARGET_VERSION,
     clustered_mean_ci,
     clustered_portfolio_bootstrap,
+    evaluate_power,
     execution_cost_estimate,
     first_session_after,
     hac_statistics,
@@ -1611,29 +1612,27 @@ def run(frame: pd.DataFrame | None = None, verbose: bool = True, *,
                         "effective_sample_size": 0, "passes": False}
     else:
         trade_frame["year"] = pd.to_datetime(trade_frame["entry_time"], utc=True).dt.year
-        events_by_year = trade_frame.groupby("year").size().to_dict()
-        bootstrap_effective = candidate_result["cluster_bootstrap"].get(
-            "effective_sample_size", 0
-        )
+        events_by_year = {str(key): int(value) for key, value in
+                          trade_frame.groupby("year").size().to_dict().items()}
+        unique_trades = int(trade_frame.earnings_event_id.nunique())
+        unique_tickers = int(trade_frame.ticker.nunique())
+        unique_dates = int(trade_frame.announcement_date.nunique())
+        gate = evaluate_power(power, unique_trades=unique_trades,
+                              unique_tickers=unique_tickers,
+                              unique_dates=unique_dates,
+                              events_by_year=events_by_year)
         sample_audit = {
-            "unique_executable_trades": int(trade_frame.earnings_event_id.nunique()),
-            "unique_tickers": int(trade_frame.ticker.nunique()),
-            "announcement_dates": int(trade_frame.announcement_date.nunique()),
-            "events_by_year": {str(key): int(value)
-                               for key, value in events_by_year.items()},
-            "effective_sample_size": int(bootstrap_effective),
+            "unique_executable_trades": unique_trades,
+            "unique_tickers": unique_tickers,
+            "announcement_dates": unique_dates,
+            "events_by_year": events_by_year,
+            "effective_sample_size": gate["effective_sample_size"],
+            "clustered_effective_sample_size": int(
+                candidate_result["cluster_bootstrap"].get("effective_sample_size", 0)
+            ),
+            "gate_checks": gate.get("checks", {}),
+            "passes": gate["passes"],
         }
-        sample_audit["passes"] = bool(
-            power.get("status") == "FROZEN" and
-            sample_audit["unique_executable_trades"] >=
-            power["minimum_unique_executable_trades"] and
-            sample_audit["unique_tickers"] >= power["minimum_unique_tickers"] and
-            sample_audit["announcement_dates"] >= power["minimum_announcement_dates"] and
-            sample_audit["effective_sample_size"] >=
-            power["minimum_effective_sample_size"] and
-            bool(events_by_year) and min(events_by_year.values()) >=
-            power["minimum_events_per_eligible_year"]
-        )
     permutation_rows = candidate_result["permutation_controls"].get(
         "grouping", {}
     ).get("permuted_rows", 0)

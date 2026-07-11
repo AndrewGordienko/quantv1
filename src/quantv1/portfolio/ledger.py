@@ -187,9 +187,15 @@ class PortfolioLedger:
     @staticmethod
     def _position_marks(trade: dict) -> dict[date, tuple[float, float]]:
         marks = _marks(trade.get("daily_marks"))
+        # daily_marks carry the exit session's *bar* close. The position is
+        # liquidated at the trade's execution prices (NBBO when quote-complete),
+        # so the exit-day mark MUST be the execution price, not the bar close.
+        # setdefault would keep the pre-populated bar close and silently exit at
+        # a price the stock/hedge may never have crossed; force the execution
+        # price instead so ledger P&L reconciles with the quote-side calculation.
         exit_day = _as_date(trade["exit_time"])
-        marks.setdefault(exit_day, (float(trade["exit_price"]),
-                                    float(trade["benchmark_exit_price"])))
+        marks[exit_day] = (float(trade["exit_price"]),
+                           float(trade["benchmark_exit_price"]))
         return marks
 
     @staticmethod

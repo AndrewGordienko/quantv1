@@ -124,6 +124,38 @@ def power_requirements(target_volatility: float, *,
     }
 
 
+def evaluate_power(power: dict, *, unique_trades: int, unique_tickers: int,
+                   unique_dates: int, events_by_year: dict) -> dict:
+    """Coherent power gate for the frozen design.
+
+    ``power_requirements`` already permits up to ``MAX_EVENTS_PER_TICKER`` and
+    ``MAX_EVENTS_PER_ANNOUNCEMENT_DATE`` events per cluster and inflates the
+    independent sample by ``CLUSTER_DESIGN_EFFECT``. The effective (independent)
+    sample size is therefore the executable-trade count deflated by that design
+    effect -- NOT ``min(trades, tickers, dates)``, which would silently demand
+    one ticker and one date per independent observation and contradict the
+    frozen ticker/date minimums. The clustered bootstrap CI is a separate,
+    complementary check reported alongside this gate.
+    """
+    if power.get("status") != "FROZEN":
+        return {"effective_sample_size": 0.0, "passes": False,
+                "reason": "power requirements unavailable"}
+    design_effect = float(power.get("cluster_design_effect", CLUSTER_DESIGN_EFFECT))
+    effective_n = unique_trades / design_effect if design_effect > 0 else 0.0
+    checks = {
+        "unique_executable_trades": unique_trades >=
+            power["minimum_unique_executable_trades"],
+        "unique_tickers": unique_tickers >= power["minimum_unique_tickers"],
+        "announcement_dates": unique_dates >= power["minimum_announcement_dates"],
+        "effective_sample_size": effective_n >=
+            power["minimum_effective_sample_size"],
+        "events_per_eligible_year": bool(events_by_year) and
+            min(events_by_year.values()) >= power["minimum_events_per_eligible_year"],
+    }
+    return {"effective_sample_size": float(effective_n),
+            "checks": checks, "passes": all(checks.values())}
+
+
 def _cluster_weights(frame: pd.DataFrame, rng) -> np.ndarray:
     dates = frame["announcement_date"].astype(str)
     tickers = frame["ticker"].astype(str)
