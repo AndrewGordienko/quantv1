@@ -1,25 +1,39 @@
 # quantv1
 
-Research infrastructure for one primary hypothesis: earnings information can
-occasionally disagree with the market's first liquid reaction.
+Research infrastructure for testing whether public information can occasionally
+disagree with the market's first liquid reaction to an earnings event.
 
-The project is deliberately blocked until it has licensed point-in-time
-expectations data. Current consensus, revised history, and final-period outcomes
-are not substitutes.
+The original hypothesis (EERM) is **economically data-blocked**: its M1/M2
+mismatch models need point-in-time analyst consensus, which is only sold by
+vendors or WRDS. That protocol is frozen and preserved as
+`BLOCKED_DATA_ECONOMICALLY_INACCESSIBLE`; current consensus, revised history, and
+final-period outcomes are not substitutes.
+
+The **active** hypothesis is MGRM — Management Guidance Revision-Reaction
+Mismatch — which reuses the same frozen reaction engine using only automatically
+retrievable public SEC 8-K Item 2.02/7.01 data, with no analyst consensus.
+
+> **No historical alpha test has been run.** MGRM extraction is currently
+> **uncertified**: the guidance extractor has not passed a frozen gold-set
+> accuracy audit, so no G1/G2 features are fit, no model is locked, and the
+> holdout stays sealed. If MGRM ultimately fails, **forced flows** remain the
+> next independent hypothesis.
 
 ## Strategy
 
-For every verified earnings release, wait 30 minutes into the first liquid
-regular session and measure:
+**EERM (blocked).** For every verified earnings release, wait 30 minutes into the
+first liquid regular session and measure `mismatch = fundamental surprise −
+standardized residual reaction`.
 
-```text
-mismatch = fundamental surprise - standardized residual reaction
-```
-
-An elastic net predicts the five-day frozen-beta-hedged return. A trade is allowed
-only when the absolute prediction exceeds twice the estimated stock-plus-hedge
-round-trip cost. Positions are beta hedged and close on the fifth common trading
-day.
+**MGRM (active, zero-vendor).** When management revises its *own* forward
+guidance, measure whether the initial reaction fully incorporated that change:
+`mismatch = normalized guidance revision − standardized residual reaction`. G0
+(reaction-only) is a diagnostic; G1 (structured guidance) and G2 (mismatch) are
+fit **only** after the extractor is certified against the gold set and the data
+gate passes. An elastic net predicts the five-day frozen-beta-hedged return;
+trades require the prediction to exceed twice the estimated round-trip cost, are
+beta hedged, and close on the fifth common session. No CatBoost until G2 shows
+incremental signal.
 
 See [docs/strategy.md](docs/strategy.md) for the frozen protocol and
 [docs/data.md](docs/data.md) for the point-in-time data contract. Prior tested
@@ -28,12 +42,16 @@ hypotheses and negative results are recorded in
 
 ## Status
 
-- M0: price and reaction baseline available.
-- M1/M2: blocked until representative EPS+revenue coverage reaches 80% in both
-  training and validation.
-- Retrospective 2025-07 holdout: sealed. A separate prospective record begins
-  only after the final model specification is locked.
-- CatBoost: prohibited until M2 elastic net demonstrates signal.
+- EERM M0: price and reaction baseline available.
+- EERM M1/M2: `BLOCKED_DATA_ECONOMICALLY_INACCESSIBLE` (paid consensus). Protocol
+  frozen, not reused.
+- MGRM extraction: **uncertified** — awaiting a human-labelled gold set (≥30 real
+  filings, ≥5 sectors, ≥2 formats) and a configured extraction backend so the
+  reconciled AGREED output can be certified.
+- MGRM G1/G2 fitting, model locking, and holdout opening: **fail closed** without
+  a valid certification.
+- Retrospective 2025-07 holdout: sealed for both tracks.
+- CatBoost, behavior embeddings, world models: prohibited until G2 shows signal.
 
 ## Commands
 
@@ -41,16 +59,24 @@ hypotheses and negative results are recorded in
 uv sync
 uv run python -m unittest discover -s tests
 
+# EERM (blocked) driver
 uv run python scripts/earnings_sprint.py audit
-uv run python scripts/earnings_sprint.py features --coarse  # development only
-uv run python scripts/earnings_sprint.py features --full    # promotion artifact
-uv run python scripts/earnings_sprint.py run
+
+# MGRM (active) driver
+uv run python scripts/mgrm_sprint.py discover --tickers AAPL,MSFT
+uv run python scripts/mgrm_sprint.py extract
+uv run python scripts/mgrm_sprint.py link
+uv run python scripts/mgrm_sprint.py goldset   # gold-set audit + certification
+uv run python scripts/mgrm_sprint.py audit     # data gate (incl. goldset_certified)
+uv run python scripts/mgrm_sprint.py run
 ```
 
-Manifest ingestion and market-window acquisition commands are listed by:
+Set the extraction backend with `MGRM_LLM_PROVIDER` (`openai` or `ollama`); with
+no backend the extractor fails closed and cannot certify. Full command lists:
 
 ```bash
 uv run python scripts/earnings_sprint.py --help
+uv run python scripts/mgrm_sprint.py --help
 ```
 
 ## Layout

@@ -20,6 +20,7 @@ from ..ingest.earnings import (
     VALIDATION_START,
 )
 from ..ingest.guidance import EXTRACTOR_VERSION, LINKER_VERSION
+from ..ingest.guidance_goldset import certification_status
 from .earnings_alpha import (
     MIN_TRAIN,
     MIN_VALIDATION,
@@ -41,6 +42,8 @@ from .protocol import (
     MIN_PERMUTATION_FRACTION,
     TARGET_VERSION,
     clustered_mean_ci,
+    evaluate_power,
+    execution_cost_estimate,
     first_session_after,
     power_requirements,
 )
@@ -48,7 +51,7 @@ from .protocol import (
 
 HYPOTHESIS = "Management Guidance Revision-Reaction Mismatch"
 VERSION = "mgrm-v1"
-ARTIFACT_VERSION = "mgrm-features-v1"
+ARTIFACT_VERSION = "mgrm-features-v2"
 FEATURE_PATH = DATA_DIR / "mgrm_features.parquet"
 METADATA_PATH = DATA_DIR / "mgrm_features_metadata.json"
 REPORT_PATH = DATA_DIR / "mgrm_report.json"
@@ -63,7 +66,7 @@ METRICS = ["revenue", "eps", "ebitda", "operating_income", "gross_margin",
 
 GUIDANCE_NUMERIC = [
     "guidance_metric_count", "raised_count", "lowered_count",
-    "reaffirmed_count", "withdrawn_count", "initiated_count",
+    "reaffirmed_count", "withdrawn_count", "initiated_count", "guidance_withdrawn",
     "mean_midpoint_revision", "mean_range_width_change",
 ] + [f"{metric}_revision" for metric in METRICS] + [
     f"{metric}_range_width_change" for metric in METRICS
@@ -108,18 +111,33 @@ def _guidance_rows() -> pd.DataFrame:
             FROM mgrm_guidance_extractions x
             LEFT JOIN mgrm_guidance_links l USING (extraction_id)
             WHERE x.agreement_status='AGREED' AND x.earnings_event_id IS NOT NULL
+              AND (l.link_status IS NULL OR
+                   l.link_status NOT IN ('DUPLICATE_EXHIBIT',
+                                         'UNKNOWN_PERIOD_NOT_LINKABLE'))
             ORDER BY x.public_time,x.ticker,x.metric,x.extraction_id
         """).df()
     finally:
         con.close()
 
 
-def _history_z(value: float, history: list[float]) -> float:
-    valid = np.asarray([item for item in history if np.isfinite(item)], dtype=float)
-    if len(valid) < 5:
-        return float(value)
-    std = valid.std(ddof=1)
-    return float((value - valid.mean()) / std) if std > 1e-12 else 0.0
+MIN_REVISION_HISTORY = 5
+
+
+def _hierarchical_z(revision: float, histories: list[list[float]]) -> float:
+    """Standardize a numeric revision using the finest level with enough history.
+
+    Frozen backoff: company -> sector -> metric. A level qualifies only with at
+    least ``MIN_REVISION_HISTORY`` past observations; if none qualifies the
+    normalized score is left missing (NaN) rather than returning the raw
+    revision as if it were already standardized.
+    """
+    for history in histories:
+        valid = np.asarray([item for item in history if np.isfinite(item)],
+                           dtype=float)
+        if len(valid) >= MIN_REVISION_HISTORY:
+            std = valid.std(ddof=1)
+            return float((revision - valid.mean()) / std) if std > 1e-12 else 0.0
+    return np.nan
 
 
 def structured_guidance_features(market: pd.DataFrame,
@@ -137,24 +155,19 @@ def structured_guidance_features(market: pd.DataFrame,
     metric_history: dict[str, list[float]] = defaultdict(list)
     scores = []
     for record in rows.to_dict(orient="records"):
+        # Only genuine numeric midpoint revisions are standardized. Non-numeric
+        # RAISED/LOWERED/WITHDRAWN language is NOT converted into a fabricated
+        # magnitude; it survives as the separate action counts and withdrawal
+        # indicator below. Missing revision -> missing normalized score.
         revision = record.get("midpoint_revision")
-        if revision is None or not np.isfinite(revision):
-            action = record.get("revision_classification") or record.get("stated_action")
-            revision = {"RAISED": 0.01, "LOWERED": -0.01,
-                        "REAFFIRMED": 0.0, "WITHDRAWN": -0.02}.get(action, np.nan)
-        if np.isfinite(revision):
+        if revision is not None and np.isfinite(revision):
             company_key = (str(record["ticker"]), str(record["metric"]))
             sector_key = (str(record.get("sector")), str(record["metric"]))
-            components = [
-                _history_z(revision, company_history[company_key]),
-                _history_z(revision, sector_history[sector_key]),
-                _history_z(revision, metric_history[str(record["metric"])]),
-            ]
-            width_change = record.get("range_width_change")
-            uncertainty = (-float(width_change)
-                           if width_change is not None and np.isfinite(width_change)
-                           else 0.0)
-            score = float(np.mean(components) + 0.25 * uncertainty)
+            score = _hierarchical_z(float(revision), [
+                company_history[company_key],
+                sector_history[sector_key],
+                metric_history[str(record["metric"])],
+            ])
             company_history[company_key].append(float(revision))
             sector_history[sector_key].append(float(revision))
             metric_history[str(record["metric"])].append(float(revision))
@@ -165,13 +178,18 @@ def structured_guidance_features(market: pd.DataFrame,
 
     event_records = []
     for event_id, group in rows.groupby("earnings_event_id", sort=False):
+        # The announcement date is the guidance's public time (SEC acceptance),
+        # NOT the entry session -- an AMC release enters the next session.
+        announcement = pd.to_datetime(group["public_time"], utc=True).min()
         record = {"earnings_event_id": event_id,
+                  "announcement_date": str(announcement.date()),
                   "guidance_metric_count": int(group.metric.nunique())}
         classifications = group["revision_classification"].fillna(
             group["stated_action"]
         )
         for action in ("RAISED", "LOWERED", "REAFFIRMED", "WITHDRAWN", "INITIATED"):
             record[f"{action.lower()}_count"] = int((classifications == action).sum())
+        record["guidance_withdrawn"] = int(record["withdrawn_count"] > 0)
         record["mean_midpoint_revision"] = float(group.midpoint_revision.mean()) \
             if group.midpoint_revision.notna().any() else np.nan
         record["mean_range_width_change"] = float(group.range_width_change.mean()) \
@@ -200,6 +218,106 @@ def structured_guidance_features(market: pd.DataFrame,
         result["guidance_revision_score"] - result["reaction_score"]
     )
     return result
+
+
+def _is_enriched(frame: pd.DataFrame) -> bool:
+    """A frame already carrying guidance features must not be re-merged."""
+    return "guidance_revision_score" in getattr(frame, "columns", [])
+
+
+def _executable_sample(market: pd.DataFrame | None,
+                       guidance: pd.DataFrame | None = None) -> pd.DataFrame:
+    """Return the executable MGRM rows (usable target) for power reporting.
+
+    Accepts either the base market/EERM frame (guidance is merged once) or an
+    already-enriched MGRM feature frame (used as-is, never merged again -- that
+    second merge would create duplicate suffixed guidance columns).
+    """
+    if market is None or len(market) == 0:
+        return pd.DataFrame()
+    if _is_enriched(market):
+        frame = market
+    else:
+        guidance = guidance if guidance is not None else _guidance_rows()
+        if guidance.empty:
+            return pd.DataFrame()
+        frame = structured_guidance_features(market, guidance)
+    if frame.empty or "target_beta_hedged_5d" not in frame:
+        return pd.DataFrame()
+    return frame.dropna(subset=["target_beta_hedged_5d"]).copy()
+
+
+def _announcement_dates(sample: pd.DataFrame) -> pd.Series:
+    """Announcement timestamps: prefer announcement_date, then public_time."""
+    for column in ("announcement_date", "public_time"):
+        if column in sample:
+            parsed = pd.to_datetime(sample[column], utc=True, errors="coerce")
+            if parsed.notna().any():
+                return parsed
+    return pd.to_datetime(sample["entry_time"], utc=True)
+
+
+def _empty_power() -> dict:
+    power = power_requirements(np.nan)
+    gate = evaluate_power(power, unique_trades=0, unique_tickers=0,
+                          unique_dates=0, events_by_year={})
+    return {"unique_executable_events": 0, "unique_tickers": 0,
+            "unique_announcement_dates": 0, "events_by_year": {},
+            "effective_sample_size": gate["effective_sample_size"],
+            "quote_complete_coverage": 0.0, "target_bearing_rows": 0,
+            "long_deployable": 0, "short_deployable": 0, "any_side_deployable": 0,
+            "power_requirements": power, "gate": gate}
+
+
+def _sample_power(sample: pd.DataFrame) -> dict:
+    """evaluate_power() on GENUINELY EXECUTABLE events, plus executability report.
+
+    Only events deployable in at least one permitted direction (per the frozen
+    cost model) count toward the power gate -- a target-bearing row missing its
+    execution inputs is not tradeable. Long/short/any-side counts and the total
+    target-bearing rows are reported separately.
+    """
+    if not len(sample):
+        return _empty_power()
+    records = sample.to_dict("records")
+    long_mask = np.array([bool(execution_cost_estimate(row, 1).get("deployable"))
+                          for row in records])
+    short_mask = np.array([bool(execution_cost_estimate(row, -1).get("deployable"))
+                           for row in records])
+    any_mask = long_mask | short_mask
+    long_deployable, short_deployable = int(long_mask.sum()), int(short_mask.sum())
+    any_side = int(any_mask.sum())
+    target_rows = int(len(sample))
+    if not any_side:
+        result = _empty_power()
+        result.update({"target_bearing_rows": target_rows,
+                       "long_deployable": long_deployable,
+                       "short_deployable": short_deployable})
+        return result
+    deployable = sample[any_mask].copy()
+    announcement = _announcement_dates(deployable)
+    events_by_year = {str(year): int(count)
+                      for year, count in announcement.dt.year.value_counts().items()}
+    unique_events = int(deployable.earnings_event_id.nunique())
+    unique_tickers = int(deployable.ticker.nunique())
+    unique_dates = int(announcement.dt.date.astype(str).nunique())
+    quote_coverage = float(pd.to_numeric(
+        deployable.get("quote_complete", pd.Series(False, index=deployable.index)),
+        errors="coerce").fillna(0).mean())
+    power = power_requirements(float(deployable["target_beta_hedged_5d"].std(ddof=1)))
+    gate = evaluate_power(power, unique_trades=unique_events,
+                          unique_tickers=unique_tickers, unique_dates=unique_dates,
+                          events_by_year=events_by_year)
+    return {"unique_executable_events": unique_events,
+            "unique_tickers": unique_tickers,
+            "unique_announcement_dates": unique_dates,
+            "events_by_year": events_by_year,
+            "effective_sample_size": gate["effective_sample_size"],
+            "quote_complete_coverage": quote_coverage,
+            "target_bearing_rows": target_rows,
+            "long_deployable": long_deployable, "short_deployable": short_deployable,
+            "any_side_deployable": any_side,
+            "power_requirements": power, "gate": gate}
 
 
 def extraction_audit(market: pd.DataFrame | None = None) -> dict:
@@ -242,31 +360,38 @@ def extraction_audit(market: pd.DataFrame | None = None) -> dict:
                  if counts["deterministic_extractions"] else 0.0)
     previous_match = (counts["linked_extractions"] / counts["agreed_extractions"]
                       if counts["agreed_extractions"] else 0.0)
-    target_volatility = (float(pd.to_numeric(
-        market.get("target_beta_hedged_5d", pd.Series(dtype=float)),
-        errors="coerce",
-    ).std(ddof=1)) if len(market) else np.nan)
-    power = power_requirements(target_volatility)
-    accepted_events = _guidance_rows().earnings_event_id.nunique()
-    power_pass = (power.get("status") == "FROZEN" and
-                  accepted_events >= power["minimum_unique_executable_trades"])
+
+    # Power is evaluated on the ACTUAL executable feature rows (target present),
+    # via the corrected protocol gate -- unique tickers, announcement dates,
+    # events-per-year and effective sample size, not a bare event count.
+    guidance = _guidance_rows()
+    accepted_events = int(guidance.earnings_event_id.nunique()) if len(guidance) else 0
+    sample = _executable_sample(market, guidance)
+    sample_power = _sample_power(sample)
+    power = sample_power.pop("power_requirements")
+    power_gate = sample_power.pop("gate")
+
+    certification = certification_status()
     gates = {
         "document_coverage": document_coverage >= MIN_DOCUMENT_COVERAGE,
         "deterministic_ai_agreement": agreement >= MIN_EXTRACTION_AGREEMENT,
         "previous_guidance_match": previous_match >= MIN_PREVIOUS_MATCH,
-        "power_derived_event_count": power_pass,
+        "power": bool(power_gate["passes"]),
+        "goldset_certified": bool(certification["certified"]),
     }
     return {
         "status": "READY" if all(gates.values()) else "BLOCKED",
         "counts": {**counts, "linked_earnings_events": int(events),
-                   "accepted_guidance_events": int(accepted_events)},
+                   "accepted_guidance_events": accepted_events},
         "rates": {"document_coverage": document_coverage,
                   "extraction_agreement": agreement,
                   "previous_guidance_match": previous_match},
         "thresholds": {"document_coverage": MIN_DOCUMENT_COVERAGE,
                        "extraction_agreement": MIN_EXTRACTION_AGREEMENT,
                        "previous_guidance_match": MIN_PREVIOUS_MATCH},
-        "power_requirements": power, "gates": gates,
+        "power_requirements": power, "power_gate": power_gate,
+        "sample_power": sample_power, "certification": certification,
+        "goldset_certified": bool(certification["certified"]), "gates": gates,
         "g1_g2_fitting_allowed": all(gates.values()),
         "extractor_version": EXTRACTOR_VERSION,
         "linker_version": LINKER_VERSION,
@@ -281,6 +406,15 @@ def build_features(*, mode: str, include_retrospective_holdout: bool = False) ->
     source_metadata = _load_feature_metadata()
     if mode == "full" and source_metadata.get("mode") != "full":
         raise MGRMError("MGRM full mode requires a full market feature artifact")
+    # G1/G2 feature promotion fails closed without a valid extractor
+    # certification (absent / stale / wrong provider / below threshold).
+    certification = certification_status()
+    if mode == "full" and not certification["certified"]:
+        raise MGRMError(
+            "MGRM full (promotable) features require a valid extractor "
+            f"certification; got {certification['reason']}. Coarse diagnostic "
+            "features remain available."
+        )
     market = _load_feature_frame()
     if not include_retrospective_holdout and not market.empty:
         market = market[market.time_bucket != "RETROSPECTIVE_HOLDOUT_TIME"].copy()
@@ -304,7 +438,12 @@ def build_features(*, mode: str, include_retrospective_holdout: bool = False) ->
         "source_market_artifact": source_metadata,
         "target_version": TARGET_VERSION, "beta_version": BETA_VERSION,
         "extractor_version": EXTRACTOR_VERSION, "linker_version": LINKER_VERSION,
-        "promotion_eligible": mode == "full" and source_metadata.get("mode") == "full",
+        "goldset_certification": certification,
+        "promotion_eligible": (mode == "full" and
+                               source_metadata.get("mode") == "full" and
+                               source_metadata.get("target_version") == TARGET_VERSION and
+                               source_metadata.get("beta_version") == BETA_VERSION and
+                               certification["certified"]),
         "code_hash": _git_hash(),
     }
     METADATA_PATH.write_text(json.dumps(metadata, indent=2, default=str))
@@ -339,6 +478,11 @@ def run(frame: pd.DataFrame | None = None, *, lock_spec: bool = False,
                 "result": json.loads(HOLDOUT_REPORT_PATH.read_text())}
     if retrospective_holdout and not SPEC_LOCK_PATH.exists():
         return {"status": "MGRM_HOLDOUT_BLOCKED_SPEC_NOT_LOCKED"}
+    if retrospective_holdout:
+        certification = certification_status()
+        if not certification["certified"]:
+            return {"status": "MGRM_HOLDOUT_BLOCKED_UNCERTIFIED",
+                    "certification": certification}
     data = frame.copy() if frame is not None else _read_frame()
     audit = extraction_audit(data)
     if data.empty:
@@ -425,8 +569,17 @@ def run(frame: pd.DataFrame | None = None, *, lock_spec: bool = False,
     bootstrap = candidate_result["cluster_bootstrap"].get("confidence_intervals", {})
     hac_ci = candidate_result["hac"].get("annualized_alpha_ci", [None, None])
     metadata = json.loads(METADATA_PATH.read_text()) if METADATA_PATH.exists() else {}
+    quote_coverage = float(pd.to_numeric(
+        validation.get("quote_complete", pd.Series(False, index=validation.index)),
+        errors="coerce").fillna(0).mean())
     gates.update({
         "full_artifact": metadata.get("promotion_eligible") is True,
+        "target_beta_version_frozen":
+            metadata.get("target_version") == TARGET_VERSION and
+            metadata.get("beta_version") == BETA_VERSION,
+        "executable_quote_coverage_at_least_95pct": quote_coverage >= 0.95,
+        "goldset_certified": audit["gates"]["goldset_certified"],
+        "power_gate_passed": bool(audit["power_gate"]["passes"]),
         "positive_net_return": candidate_result["portfolio"]["net_return"] > 0,
         "net_sharpe_above_1": (candidate_result["portfolio"].get("sharpe_annual") or 0) > 1,
         "deflated_sharpe_above_0_95": dsr["passes"],

@@ -84,7 +84,7 @@ def main() -> None:
         _print(audit)
     elif args.command == "goldset":
         from quantv1.ingest import guidance_goldset
-        result = guidance_goldset.audit()
+        result = guidance_goldset.certify()
         (DATA_DIR / "mgrm_goldset_audit.json").write_text(
             json.dumps(result, indent=2, default=str))
         _print(result)

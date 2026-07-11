@@ -2,6 +2,12 @@
 
 Frozen 2026-07-10. Do not tune this specification against the sealed holdout.
 
+> **Status:** EERM M1/M2 are `BLOCKED_DATA_ECONOMICALLY_INACCESSIBLE` — they need
+> paid point-in-time analyst consensus. This protocol is preserved verbatim and
+> not reused. The active zero-vendor reuse of the reaction engine is MGRM (see
+> the appendix below); its extraction is currently **uncertified** and no
+> historical alpha test has been run on either track.
+
 ## Event and decision
 
 1. Establish the earliest verified public earnings-release time from company IR
@@ -137,3 +143,41 @@ If properly measured M2 fails, retire it. The next independent strategy is force
 flow: index reconstitutions, ETF demand, corporate actions, and required shares
 divided by ADV. Behavior is an M3 incremental overlay; political context is a
 slow prior; world-model teachers remain shadow research only.
+
+## Appendix: MGRM (Management Guidance Revision-Reaction Mismatch)
+
+MGRM reuses this reaction engine — the same earliest-verified public time,
+next-executable NBBO entry, pre-event frozen beta, five-day beta-hedged target,
+cost model, XNYS ledger, cluster bootstrap, HAC, deflated Sharpe, and sealed
+holdout — but replaces analyst consensus with management's own forward guidance
+extracted from public SEC 8-K Item 2.02/7.01 exhibits.
+
+- **Signal.** `mismatch = normalized guidance revision − standardized residual
+  reaction`. The revision is the numeric midpoint change relative to management's
+  own prior guidance for the same fiscal period; it is left missing when no
+  numeric prior exists. Non-numeric raised/lowered/reaffirmed/withdrawn language
+  is never converted to a fabricated magnitude — it survives as separate action
+  counts and a withdrawal indicator. Normalization uses a frozen hierarchical
+  backoff (company → sector → metric, ≥5 prior observations) or stays missing.
+- **Ladder.** G0 reaction-only (diagnostic), G1 structured guidance, G2 mismatch.
+- **Extraction gate.** Deterministic table+prose parsing must AGREE with a
+  provider-agnostic LLM (OpenAI-compatible or local Ollama; provider/model
+  recorded). Agreement is only a precision filter; the scientific gate is a
+  frozen gold-set audit measuring field-level accuracy on the **reconciled AGREED
+  output** that enters the model. Certification records the gold-set SHA-256, code
+  hash, extractor version, provider/model, thresholds, and result.
+- **Fail-closed.** Without a valid certification (absent, stale, wrong
+  provider/model, or below threshold), G1/G2 feature promotion, fitting, model
+  locking, and holdout opening all refuse to run. G0 stays available.
+- **Linkage.** Previous-guidance links reject UNKNOWN periods, require a strictly
+  earlier public timestamp and a different earnings event and accession, and keep
+  one canonical record per event/ticker/metric/period so two documents from the
+  same filing can never form a false revision.
+- **Power.** `evaluate_power` on the actual eligible feature rows: executable
+  events, unique tickers and announcement dates, events per year, effective
+  sample size (executable trades / design effect), ≥95% executable quote
+  coverage, and long/short deployability.
+
+No CatBoost, behavior embeddings, world models, or unofficial transcripts. The
+full-universe acquisition is not run until the extractor is certified against an
+expanded, human-labelled gold set.
