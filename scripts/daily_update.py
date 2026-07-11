@@ -166,7 +166,7 @@ def main() -> None:
             from quantv1.config import DATA_DIR
             from quantv1.ingest import guidance, guidance_goldset
             from quantv1.research import mgrm
-            gold = guidance_goldset.audit()
+            gold = guidance_goldset.certify()
             (DATA_DIR / "mgrm_goldset_audit.json").write_text(
                 _json.dumps(gold, indent=2, default=str))
             if not args.skip_ingest:

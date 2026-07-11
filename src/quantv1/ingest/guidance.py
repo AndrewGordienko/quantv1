@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import Counter
 from datetime import date, datetime, timedelta, timezone
 import hashlib
 import json
@@ -32,7 +33,7 @@ from .earnings import (
 
 DISCOVERY_VERSION = "mgrm-sec-202-701-v1"
 EXTRACTOR_VERSION = "mgrm-guidance-numeric-ai-agreement-v1"
-LINKER_VERSION = "mgrm-previous-guidance-v1"
+LINKER_VERSION = "mgrm-previous-guidance-v2"
 RAW_ROOT = DATA_DIR / "raw" / "mgrm"
 ALLOWED_METRICS = {
     "revenue", "eps", "ebitda", "operating_income", "gross_margin",
@@ -549,59 +550,140 @@ def extract_documents(*, max_documents: int | None = None,
             "provider": provider_tag(config)}
 
 
-def link_previous_guidance() -> dict:
-    con = connect()
-    rows = con.execute("""
-        SELECT extraction_id,ticker,metric,guidance_period,midpoint,
-               lower_value,upper_value,guidance_status,stated_action,public_time
-        FROM mgrm_guidance_extractions WHERE agreement_status='AGREED'
-        ORDER BY ticker,metric,guidance_period,public_time,extraction_id
-    """).fetchall()
-    history: dict[tuple[str, str, str], tuple] = {}
-    linked = unmatched = 0
-    now = datetime.now(timezone.utc).replace(tzinfo=None)
-    for row in rows:
-        (extraction_id, ticker, metric, period, midpoint, low, high,
-         status, action, _) = row
-        key = (ticker, metric, period)
+def _unknown_period(period: str) -> bool:
+    return "UNKNOWN" in str(period).upper()
+
+
+def link_guidance_records(records: list[dict]) -> list[dict]:
+    """Pure previous-guidance linkage (no I/O) for a list of accepted records.
+
+    Guardrails against false revisions:
+      * UNKNOWN periods (FYUNKNOWN, PERIOD-UNKNOWN) are never linked.
+      * exactly one canonical record survives per (event, ticker, metric,
+        guided period); extra exhibits are marked DUPLICATE_EXHIBIT.
+      * a previous record must have a strictly earlier public timestamp AND a
+        different earnings event AND a different filing accession, so two
+        documents from the same filing can never form a revision pair.
+
+    Each input record needs: extraction_id, earnings_event_id, accession,
+    ticker, metric, period, midpoint, low, high, status, action, public_time.
+    Returns one link dict per record.
+    """
+    ordered_in = sorted(records, key=lambda r: (
+        str(r["ticker"]), str(r["metric"]), str(r["period"]),
+        str(r["public_time"]), str(r["extraction_id"])))
+    canonical: dict[tuple, dict] = {}
+    duplicates: list[dict] = []
+    for record in ordered_in:
+        key = (record["earnings_event_id"], record["ticker"],
+               record["metric"], record["period"])
+        if key in canonical:
+            duplicates.append(record)
+        else:
+            canonical[key] = record
+
+    links = []
+    for record in duplicates:
+        links.append({"extraction_id": record["extraction_id"],
+                      "previous_extraction_id": None, "midpoint_revision": None,
+                      "range_width_change": None,
+                      "revision_classification": record["action"],
+                      "link_status": "DUPLICATE_EXHIBIT",
+                      "metadata": {"earnings_event_id": record["earnings_event_id"],
+                                   "accession": record["accession"]}})
+
+    history: dict[tuple[str, str, str], dict] = {}
+    for record in sorted(canonical.values(), key=lambda r: (
+            str(r["ticker"]), str(r["metric"]), str(r["period"]),
+            str(r["public_time"]), str(r["extraction_id"]))):
+        period = record["period"]
+        metadata = {"join_key": [record["ticker"], record["metric"], period]}
+        if _unknown_period(period):
+            links.append({"extraction_id": record["extraction_id"],
+                          "previous_extraction_id": None, "midpoint_revision": None,
+                          "range_width_change": None,
+                          "revision_classification": record["action"],
+                          "link_status": "UNKNOWN_PERIOD_NOT_LINKABLE",
+                          "metadata": metadata})
+            continue
+        key = (record["ticker"], record["metric"], period)
         previous = history.get(key)
-        revision = width_change = None
+        midpoint, low, high = record["midpoint"], record["low"], record["high"]
+        status, action = record["status"], record["action"]
+        revision = width_change = previous_id = None
         classification = action
-        link_status = "NO_PREVIOUS_GUIDANCE"
-        previous_id = None
-        if previous:
-            previous_id, previous_mid, previous_low, previous_high = previous
+        eligible = previous is not None and (
+            previous["public_time"] is not None and
+            record["public_time"] is not None and
+            previous["public_time"] < record["public_time"] and
+            str(previous["earnings_event_id"]) != str(record["earnings_event_id"]) and
+            str(previous["accession"]) != str(record["accession"]))
+        if eligible:
+            previous_id = previous["extraction_id"]
+            previous_mid = previous["midpoint"]
             if status == "REAFFIRMED":
-                midpoint, low, high = previous_mid, previous_low, previous_high
+                midpoint, low, high = previous_mid, previous["low"], previous["high"]
                 revision, width_change, classification = 0.0, 0.0, "REAFFIRMED"
             elif status == "WITHDRAWN":
                 classification = "WITHDRAWN"
             elif midpoint is not None and previous_mid not in {None, 0}:
                 revision = (midpoint - previous_mid) / abs(previous_mid)
-                previous_width = ((previous_high - previous_low) /
+                previous_width = ((previous["high"] - previous["low"]) /
                                   max(abs(previous_mid), 1e-12))
                 current_width = ((high - low) / max(abs(midpoint), 1e-12))
                 width_change = current_width - previous_width
                 classification = ("RAISED" if revision > 1e-9 else
                                   "LOWERED" if revision < -1e-9 else "REAFFIRMED")
             link_status = "LINKED"
-            linked += 1
         else:
-            unmatched += 1
+            link_status = "NO_PREVIOUS_GUIDANCE"
+        links.append({"extraction_id": record["extraction_id"],
+                      "previous_extraction_id": previous_id,
+                      "midpoint_revision": revision,
+                      "range_width_change": width_change,
+                      "revision_classification": classification,
+                      "link_status": link_status, "metadata": metadata})
+        if status != "WITHDRAWN" and midpoint is not None:
+            history[key] = {**record, "midpoint": midpoint, "low": low, "high": high}
+    return links
+
+
+def link_previous_guidance() -> dict:
+    con = connect()
+    rows = con.execute("""
+        SELECT x.extraction_id,x.earnings_event_id,d.accession_number,x.ticker,
+               x.metric,x.guidance_period,x.midpoint,x.lower_value,x.upper_value,
+               x.guidance_status,x.stated_action,x.public_time
+        FROM mgrm_guidance_extractions x
+        LEFT JOIN mgrm_documents d USING (document_id)
+        WHERE x.agreement_status='AGREED'
+    """).fetchall()
+    records = [{"extraction_id": row[0], "earnings_event_id": row[1],
+                "accession": row[2], "ticker": row[3], "metric": row[4],
+                "period": row[5], "midpoint": row[6], "low": row[7],
+                "high": row[8], "status": row[9], "action": row[10],
+                "public_time": row[11]} for row in rows]
+    links = link_guidance_records(records)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
+    for link in links:
         con.execute("""
             INSERT OR REPLACE INTO mgrm_guidance_links
                 (extraction_id,previous_extraction_id,midpoint_revision,
                  range_width_change,revision_classification,link_status,
                  linker_version,created_at,metadata)
             VALUES (?,?,?,?,?,?,?,?,?)
-        """, [extraction_id, previous_id, revision, width_change,
-              classification, link_status, LINKER_VERSION, now,
-              json.dumps({"join_key": [ticker, metric, period]})])
-        if status != "WITHDRAWN" and midpoint is not None:
-            history[key] = (extraction_id, midpoint, low, high)
+        """, [link["extraction_id"], link["previous_extraction_id"],
+              link["midpoint_revision"], link["range_width_change"],
+              link["revision_classification"], link["link_status"],
+              LINKER_VERSION, now, json.dumps(link["metadata"])])
     con.close()
-    return {"accepted_extractions": len(rows), "linked": linked,
-            "unmatched": unmatched, "linker_version": LINKER_VERSION}
+    status_counts = Counter(link["link_status"] for link in links)
+    return {"accepted_extractions": len(rows),
+            "linked": status_counts["LINKED"],
+            "unmatched": status_counts["NO_PREVIOUS_GUIDANCE"],
+            "duplicate_exhibits": status_counts["DUPLICATE_EXHIBIT"],
+            "unknown_period": status_counts["UNKNOWN_PERIOD_NOT_LINKABLE"],
+            "linker_version": LINKER_VERSION}
 
 
 def snapshot_public_record(record: dict, *, first_seen_at: datetime | None = None) -> str:
