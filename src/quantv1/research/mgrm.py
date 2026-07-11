@@ -178,7 +178,11 @@ def structured_guidance_features(market: pd.DataFrame,
 
     event_records = []
     for event_id, group in rows.groupby("earnings_event_id", sort=False):
+        # The announcement date is the guidance's public time (SEC acceptance),
+        # NOT the entry session -- an AMC release enters the next session.
+        announcement = pd.to_datetime(group["public_time"], utc=True).min()
         record = {"earnings_event_id": event_id,
+                  "announcement_date": str(announcement.date()),
                   "guidance_metric_count": int(group.metric.nunique())}
         classifications = group["revision_classification"].fillna(
             group["stated_action"]
@@ -216,16 +220,41 @@ def structured_guidance_features(market: pd.DataFrame,
     return result
 
 
+def _is_enriched(frame: pd.DataFrame) -> bool:
+    """A frame already carrying guidance features must not be re-merged."""
+    return "guidance_revision_score" in getattr(frame, "columns", [])
+
+
 def _executable_sample(market: pd.DataFrame | None,
                        guidance: pd.DataFrame | None = None) -> pd.DataFrame:
-    """Join guidance onto the market frame and keep rows with a usable target."""
-    guidance = guidance if guidance is not None else _guidance_rows()
-    if market is None or len(market) == 0 or guidance.empty:
+    """Return the executable MGRM rows (usable target) for power reporting.
+
+    Accepts either the base market/EERM frame (guidance is merged once) or an
+    already-enriched MGRM feature frame (used as-is, never merged again -- that
+    second merge would create duplicate suffixed guidance columns).
+    """
+    if market is None or len(market) == 0:
         return pd.DataFrame()
-    frame = structured_guidance_features(market, guidance)
+    if _is_enriched(market):
+        frame = market
+    else:
+        guidance = guidance if guidance is not None else _guidance_rows()
+        if guidance.empty:
+            return pd.DataFrame()
+        frame = structured_guidance_features(market, guidance)
     if frame.empty or "target_beta_hedged_5d" not in frame:
         return pd.DataFrame()
     return frame.dropna(subset=["target_beta_hedged_5d"]).copy()
+
+
+def _announcement_dates(sample: pd.DataFrame) -> pd.Series:
+    """Announcement timestamps: prefer announcement_date, then public_time."""
+    for column in ("announcement_date", "public_time"):
+        if column in sample:
+            parsed = pd.to_datetime(sample[column], utc=True, errors="coerce")
+            if parsed.notna().any():
+                return parsed
+    return pd.to_datetime(sample["entry_time"], utc=True)
 
 
 def _sample_power(sample: pd.DataFrame) -> dict:
@@ -239,12 +268,12 @@ def _sample_power(sample: pd.DataFrame) -> dict:
                 "effective_sample_size": gate["effective_sample_size"],
                 "quote_complete_coverage": 0.0, "long_deployable": 0,
                 "short_deployable": 0, "power_requirements": power, "gate": gate}
-    entry = pd.to_datetime(sample["entry_time"], utc=True)
+    announcement = _announcement_dates(sample)
     events_by_year = {str(year): int(count)
-                      for year, count in entry.dt.year.value_counts().items()}
+                      for year, count in announcement.dt.year.value_counts().items()}
     unique_events = int(sample.earnings_event_id.nunique())
     unique_tickers = int(sample.ticker.nunique())
-    unique_dates = int(entry.dt.date.astype(str).nunique())
+    unique_dates = int(announcement.dt.date.astype(str).nunique())
     quote_coverage = float(pd.to_numeric(
         sample.get("quote_complete", pd.Series(False, index=sample.index)),
         errors="coerce").fillna(0).mean())

@@ -25,11 +25,13 @@ from __future__ import annotations
 
 from collections import Counter
 import hashlib
+import inspect
 import json
 from pathlib import Path
 import subprocess
 
 from ..config import DATA_DIR, ROOT
+from . import guidance
 from .guidance import (
     EXTRACTOR_VERSION, _same_number, ai_extract, llm_config, provider_tag,
     reconcile, structured_extract,
@@ -38,7 +40,7 @@ from .guidance import (
 
 GOLD_PATH = ROOT / "goldset" / "mgrm_guidance_gold.jsonl"
 CERTIFICATION_PATH = DATA_DIR / "mgrm_extractor_certification.json"
-AUDIT_VERSION = "mgrm-goldset-audit-v2"
+AUDIT_VERSION = "mgrm-goldset-audit-v3"
 
 # Frozen acceptance thresholds. Freeze BEFORE running historical MGRM.
 MIN_GOLD_DOCUMENTS = 30
@@ -67,6 +69,49 @@ def goldset_sha256(path: Path | None = None) -> str:
     if not path.exists():
         return "absent"
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _thresholds() -> dict:
+    return {"min_documents": MIN_GOLD_DOCUMENTS, "min_sectors": MIN_SECTORS,
+            "min_formats": MIN_FORMATS,
+            "detection_precision": MIN_DETECTION_PRECISION,
+            "detection_recall": MIN_DETECTION_RECALL,
+            "period_accuracy": MIN_PERIOD_ACCURACY,
+            "range_accuracy": MIN_RANGE_ACCURACY,
+            "units_accuracy": MIN_UNITS_ACCURACY,
+            "action_accuracy": MIN_ACTION_ACCURACY}
+
+
+# The exact implementation inputs a certification depends on. Only these change
+# it -- unrelated documentation or discovery-code edits do not invalidate a
+# certificate, but any change to extraction, reconciliation, the JSON schema,
+# the scoring code, or the frozen thresholds does.
+_IMPLEMENTATION_FUNCTIONS = (
+    "deterministic_extract", "extract_tables", "structured_extract", "_record",
+    "_number", "_action", "_period", "ai_extract", "_openai_extract",
+    "_ollama_extract", "_schema", "reconcile", "_same_number",
+)
+
+
+def _implementation_source() -> str:
+    parts = [inspect.getsource(getattr(guidance, name))
+             for name in _IMPLEMENTATION_FUNCTIONS]
+    parts.extend(inspect.getsource(fn) for fn in (_score, _predict_variants))
+    return "\n".join(parts)
+
+
+# Captured once at import from the real functions, so mocking a predictor in a
+# test cannot break the hash. Thresholds are read live so a threshold change
+# still invalidates a certificate.
+_IMPLEMENTATION_SOURCE: str | None = None
+
+
+def extractor_implementation_sha256() -> str:
+    global _IMPLEMENTATION_SOURCE
+    if _IMPLEMENTATION_SOURCE is None:
+        _IMPLEMENTATION_SOURCE = _implementation_source()
+    payload = _IMPLEMENTATION_SOURCE + "\n" + json.dumps(_thresholds(), sort_keys=True)
+    return hashlib.sha256(payload.encode()).hexdigest()
 
 
 def load_goldset(path: Path | None = None) -> list[dict]:
@@ -151,26 +196,34 @@ def _score(goldset: list[dict], predictions: list[list[dict]]) -> dict:
 def audit(goldset: list[dict] | None = None) -> dict:
     goldset = goldset if goldset is not None else load_goldset()
     config = llm_config()
-    det_preds, ai_preds, rec_preds = [], [], []
+    synthetic, real = [], []
+    det, ai, rec = [], [], []
     for document in goldset:
-        deterministic, ai, reconciled = _predict_variants(document, config)
-        det_preds.append(deterministic)
-        ai_preds.append(ai)
-        rec_preds.append(reconciled)
+        deterministic, ai_records, reconciled = _predict_variants(document, config)
+        target = synthetic if _is_synthetic(document) else real
+        target.append((document, deterministic, ai_records, reconciled))
+
+    def _split(bucket, index):
+        return ([item[0] for item in bucket], [item[index] for item in bucket])
+
+    # Synthetic fixtures validate the machinery only; certification accuracy is
+    # computed EXCLUSIVELY over real, non-synthetic documents so easy fixtures
+    # can never lift a marginal real result above threshold.
     evaluations = {
-        "deterministic": _score(goldset, det_preds),
-        "ai": _score(goldset, ai_preds),
-        "reconciled": _score(goldset, rec_preds),
+        "synthetic_machinery": _score(*_split(synthetic, 1)),
+        "real_deterministic": _score(*_split(real, 1)),
+        "real_ai": _score(*_split(real, 2)),
+        "real_reconciled": _score(*_split(real, 3)),
     }
-    certified_eval = evaluations["reconciled"]
+    certified_eval = evaluations["real_reconciled"]
     detection = certified_eval["detection"]
     field_accuracy = certified_eval["field_accuracy"]
 
-    real = [document for document in goldset if not _is_synthetic(document)]
-    real_sectors = {str(d.get("sector", "UNKNOWN")) for d in real}
-    real_formats = {str(d.get("format", "unknown")) for d in real}
+    real_documents = [item[0] for item in real]
+    real_sectors = {str(d.get("sector", "UNKNOWN")) for d in real_documents}
+    real_formats = {str(d.get("format", "unknown")) for d in real_documents}
     size_gate = {
-        "real_documents": len(real) >= MIN_GOLD_DOCUMENTS,
+        "real_documents": len(real_documents) >= MIN_GOLD_DOCUMENTS,
         "real_sectors": len(real_sectors) >= MIN_SECTORS,
         "real_formats": len(real_formats) >= MIN_FORMATS,
     }
@@ -197,21 +250,15 @@ def audit(goldset: list[dict] | None = None) -> dict:
     return {
         "status": status, "audit_version": AUDIT_VERSION,
         "extractor_version": EXTRACTOR_VERSION, "provider": provider_tag(config),
-        "goldset_sha256": goldset_sha256(), "code_hash": _git_hash(),
-        "documents": len(goldset), "real_documents": len(real),
+        "goldset_sha256": goldset_sha256(),
+        "extractor_implementation_sha256": extractor_implementation_sha256(),
+        "code_hash": _git_hash(),
+        "documents": len(goldset), "real_documents": len(real_documents),
+        "synthetic_documents": len(synthetic),
         "real_sectors": sorted(real_sectors), "real_formats": sorted(real_formats),
-        "certified_output": "reconciled", "evaluations": evaluations,
+        "certified_output": "real_reconciled", "evaluations": evaluations,
         "detection": detection, "field_accuracy": field_accuracy,
-        "thresholds": {
-            "min_documents": MIN_GOLD_DOCUMENTS, "min_sectors": MIN_SECTORS,
-            "min_formats": MIN_FORMATS,
-            "detection_precision": MIN_DETECTION_PRECISION,
-            "detection_recall": MIN_DETECTION_RECALL,
-            "period_accuracy": MIN_PERIOD_ACCURACY,
-            "range_accuracy": MIN_RANGE_ACCURACY,
-            "units_accuracy": MIN_UNITS_ACCURACY,
-            "action_accuracy": MIN_ACTION_ACCURACY,
-        },
+        "thresholds": _thresholds(),
         "gates": gates, "certified": certified,
         "pilot_justified": certified,
     }
@@ -234,10 +281,19 @@ def certification_status() -> dict:
         return {"certified": False, "reason": "CERTIFICATION_NOT_GRANTED"}
     if record.get("goldset_sha256") != goldset_sha256():
         return {"certified": False, "reason": "CERTIFICATION_STALE_GOLDSET"}
+    if record.get("extractor_implementation_sha256") != extractor_implementation_sha256():
+        return {"certified": False, "reason": "CERTIFICATION_STALE_IMPLEMENTATION"}
     if record.get("extractor_version") != EXTRACTOR_VERSION:
         return {"certified": False, "reason": "CERTIFICATION_WRONG_EXTRACTOR"}
     if record.get("provider") != provider_tag():
         return {"certified": False, "reason": "CERTIFICATION_WRONG_PROVIDER"}
     return {"certified": True, "reason": "CERTIFIED",
             "provider": record.get("provider"),
-            "goldset_sha256": record.get("goldset_sha256")}
+            "goldset_sha256": record.get("goldset_sha256"),
+            "extractor_implementation_sha256":
+                record.get("extractor_implementation_sha256")}
+
+
+# Capture the real implementation source at import, before any test can mock a
+# predictor, so extractor_implementation_sha256() never introspects a MagicMock.
+_IMPLEMENTATION_SOURCE = _implementation_source()

@@ -85,15 +85,17 @@ class LinkageGuardrailTests(unittest.TestCase):
 
 
 class CertificationGateTests(unittest.TestCase):
-    def test_audit_reports_three_evaluations_and_gates_on_reconciled(self):
+    def test_audit_reports_separate_evaluations_and_gates_on_real_reconciled(self):
         result = guidance_goldset.audit()
-        self.assertIn("deterministic", result["evaluations"])
-        self.assertIn("ai", result["evaluations"])
-        self.assertIn("reconciled", result["evaluations"])
-        self.assertEqual(result["certified_output"], "reconciled")
-        # No AI backend -> deterministic parses but reconciled AGREED is empty.
-        self.assertEqual(result["evaluations"]["deterministic"]["detection"]["recall"], 1.0)
-        self.assertEqual(result["evaluations"]["reconciled"]["detection"]["recall"], 0.0)
+        for key in ("synthetic_machinery", "real_deterministic", "real_ai",
+                    "real_reconciled"):
+            self.assertIn(key, result["evaluations"])
+        self.assertEqual(result["certified_output"], "real_reconciled")
+        # The synthetic fixtures parse perfectly (machinery), but they never
+        # count toward certification, which gates on real_reconciled.
+        self.assertEqual(result["evaluations"]["synthetic_machinery"]
+                         ["detection"]["recall"], 1.0)
+        self.assertEqual(result["real_documents"], 0)
 
     def test_synthetic_fixtures_do_not_count_as_real_documents(self):
         result = guidance_goldset.audit()
@@ -110,6 +112,8 @@ class CertificationGateTests(unittest.TestCase):
                                  "CERTIFICATION_ABSENT")
                 valid = {"certified": True,
                          "goldset_sha256": guidance_goldset.goldset_sha256(),
+                         "extractor_implementation_sha256":
+                             guidance_goldset.extractor_implementation_sha256(),
                          "extractor_version": guidance_goldset.EXTRACTOR_VERSION,
                          "provider": guidance.provider_tag()}
                 path.write_text(json.dumps(valid))

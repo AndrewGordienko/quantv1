@@ -166,9 +166,11 @@ def main() -> None:
             from quantv1.config import DATA_DIR
             from quantv1.ingest import guidance, guidance_goldset
             from quantv1.research import mgrm
-            gold = guidance_goldset.certify()
-            (DATA_DIR / "mgrm_goldset_audit.json").write_text(
-                _json.dumps(gold, indent=2, default=str))
+            # Certification is an explicit, frozen operation (mgrm_sprint.py
+            # goldset). Daily execution only READS the current certificate and
+            # fails closed if it is absent or stale -- it never reruns the LLM
+            # over the gold set.
+            cert = guidance_goldset.certification_status()
             if not args.skip_ingest:
                 guidance.collect_forward()
             audit = mgrm.extraction_audit()
@@ -177,7 +179,7 @@ def main() -> None:
             mgrm.run(verbose=False)
             print(f"      MGRM gate: {audit['status']} "
                   f"(fit allowed: {audit['g1_g2_fitting_allowed']}); "
-                  f"extractor gold-set: {gold['status']}")
+                  f"certification: {cert['reason']}")
         except Exception as e:  # noqa: BLE001 - SEC endpoint / empty gate is non-fatal
             print(f"      MGRM skipped: {e}")
 

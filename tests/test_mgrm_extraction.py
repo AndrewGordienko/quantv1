@@ -68,13 +68,15 @@ class TableExtractionTests(unittest.TestCase):
 class GoldSetAuditTests(unittest.TestCase):
     def test_seed_extractor_matches_labels_but_is_uncertified(self):
         result = guidance_goldset.audit()
-        # The deterministic parser correctly matches the labels (machinery ok)...
-        deterministic = result["evaluations"]["deterministic"]
-        self.assertEqual(deterministic["detection"]["precision"], 1.0)
-        self.assertEqual(deterministic["detection"]["recall"], 1.0)
+        # The parser correctly matches the synthetic labels (machinery ok)...
+        machinery = result["evaluations"]["synthetic_machinery"]
+        self.assertEqual(machinery["detection"]["precision"], 1.0)
+        self.assertEqual(machinery["detection"]["recall"], 1.0)
         for field in ("period", "units", "range", "action"):
-            self.assertEqual(deterministic["field_accuracy"][field], 1.0)
-        # ...but the seed is synthetic and too small, so it cannot certify.
+            self.assertEqual(machinery["field_accuracy"][field], 1.0)
+        # ...but every seed doc is synthetic, so there are zero real documents
+        # and it cannot certify.
+        self.assertEqual(result["real_documents"], 0)
         self.assertEqual(result["status"], "GOLDSET_TOO_SMALL")
         self.assertFalse(result["certified"])
         self.assertFalse(result["pilot_justified"])
