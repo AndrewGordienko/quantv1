@@ -27,6 +27,7 @@ from collections import Counter
 import hashlib
 import inspect
 import json
+import os
 from pathlib import Path
 import subprocess
 
@@ -82,35 +83,38 @@ def _thresholds() -> dict:
             "action_accuracy": MIN_ACTION_ACCURACY}
 
 
-# The exact implementation inputs a certification depends on. Only these change
-# it -- unrelated documentation or discovery-code edits do not invalidate a
-# certificate, but any change to extraction, reconciliation, the JSON schema,
-# the scoring code, or the frozen thresholds does.
-_IMPLEMENTATION_FUNCTIONS = (
+# Every material extraction and certification input the certificate depends on.
+# Unrelated documentation or discovery-code edits do not invalidate it, but any
+# change to extraction/reconciliation/schema source, the regex or enum
+# constants, the LLM prompt, the scoring or audit/certify policy, or the frozen
+# thresholds does. Read live so a runtime change is reflected.
+_GUIDANCE_FUNCTIONS = (
     "deterministic_extract", "extract_tables", "structured_extract", "_record",
     "_number", "_action", "_period", "ai_extract", "_openai_extract",
     "_ollama_extract", "_schema", "reconcile", "_same_number",
 )
 
 
-def _implementation_source() -> str:
-    parts = [inspect.getsource(getattr(guidance, name))
-             for name in _IMPLEMENTATION_FUNCTIONS]
-    parts.extend(inspect.getsource(fn) for fn in (_score, _predict_variants))
-    return "\n".join(parts)
-
-
-# Captured once at import from the real functions, so mocking a predictor in a
-# test cannot break the hash. Thresholds are read live so a threshold change
-# still invalidates a certificate.
-_IMPLEMENTATION_SOURCE: str | None = None
+def _implementation_manifest() -> dict:
+    g = guidance
+    sources = {name: inspect.getsource(getattr(g, name))
+               for name in _GUIDANCE_FUNCTIONS}
+    for fn in (_score, _predict_variants, _is_synthetic, _key, _document_html,
+               audit, certify):
+        sources[f"goldset.{fn.__name__}"] = inspect.getsource(fn)
+    return {
+        "sources": sources,
+        "metrics": [[name, pattern] for name, pattern in g._METRICS],
+        "guidance_regex": [g._GUIDANCE.pattern, int(g._GUIDANCE.flags)],
+        "number_regex": [g._NUMBER.pattern, int(g._NUMBER.flags)],
+        "allowed_metrics": sorted(g.ALLOWED_METRICS),
+        "statuses": sorted(g.STATUSES), "actions": sorted(g.ACTIONS),
+        "llm_system": g._LLM_SYSTEM, "thresholds": _thresholds(),
+    }
 
 
 def extractor_implementation_sha256() -> str:
-    global _IMPLEMENTATION_SOURCE
-    if _IMPLEMENTATION_SOURCE is None:
-        _IMPLEMENTATION_SOURCE = _implementation_source()
-    payload = _IMPLEMENTATION_SOURCE + "\n" + json.dumps(_thresholds(), sort_keys=True)
+    payload = json.dumps(_implementation_manifest(), sort_keys=True, default=str)
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
@@ -265,10 +269,18 @@ def audit(goldset: list[dict] | None = None) -> dict:
 
 
 def certify(goldset: list[dict] | None = None) -> dict:
-    """Audit and, only if CERTIFIED, write the frozen certification artifact."""
+    """Audit and atomically write the certification artifact -- pass OR fail.
+
+    A failed explicit recertification must never leave a prior success active,
+    so the artifact is always overwritten (atomically) with the fresh result.
+    On failure the stored ``certified`` is False, so certification_status()
+    returns CERTIFICATION_NOT_GRANTED rather than the older success.
+    """
     result = audit(goldset)
-    if result["certified"]:
-        CERTIFICATION_PATH.write_text(json.dumps(result, indent=2, default=str))
+    CERTIFICATION_PATH.parent.mkdir(parents=True, exist_ok=True)
+    tmp = CERTIFICATION_PATH.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(result, indent=2, default=str))
+    os.replace(tmp, CERTIFICATION_PATH)
     return result
 
 
@@ -292,8 +304,3 @@ def certification_status() -> dict:
             "goldset_sha256": record.get("goldset_sha256"),
             "extractor_implementation_sha256":
                 record.get("extractor_implementation_sha256")}
-
-
-# Capture the real implementation source at import, before any test can mock a
-# predictor, so extractor_implementation_sha256() never introspects a MagicMock.
-_IMPLEMENTATION_SOURCE = _implementation_source()

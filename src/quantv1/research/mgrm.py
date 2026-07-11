@@ -257,32 +257,54 @@ def _announcement_dates(sample: pd.DataFrame) -> pd.Series:
     return pd.to_datetime(sample["entry_time"], utc=True)
 
 
+def _empty_power() -> dict:
+    power = power_requirements(np.nan)
+    gate = evaluate_power(power, unique_trades=0, unique_tickers=0,
+                          unique_dates=0, events_by_year={})
+    return {"unique_executable_events": 0, "unique_tickers": 0,
+            "unique_announcement_dates": 0, "events_by_year": {},
+            "effective_sample_size": gate["effective_sample_size"],
+            "quote_complete_coverage": 0.0, "target_bearing_rows": 0,
+            "long_deployable": 0, "short_deployable": 0, "any_side_deployable": 0,
+            "power_requirements": power, "gate": gate}
+
+
 def _sample_power(sample: pd.DataFrame) -> dict:
-    """evaluate_power() on eligible feature rows, plus executability reporting."""
+    """evaluate_power() on GENUINELY EXECUTABLE events, plus executability report.
+
+    Only events deployable in at least one permitted direction (per the frozen
+    cost model) count toward the power gate -- a target-bearing row missing its
+    execution inputs is not tradeable. Long/short/any-side counts and the total
+    target-bearing rows are reported separately.
+    """
     if not len(sample):
-        power = power_requirements(np.nan)
-        gate = evaluate_power(power, unique_trades=0, unique_tickers=0,
-                              unique_dates=0, events_by_year={})
-        return {"unique_executable_events": 0, "unique_tickers": 0,
-                "unique_announcement_dates": 0, "events_by_year": {},
-                "effective_sample_size": gate["effective_sample_size"],
-                "quote_complete_coverage": 0.0, "long_deployable": 0,
-                "short_deployable": 0, "power_requirements": power, "gate": gate}
-    announcement = _announcement_dates(sample)
+        return _empty_power()
+    records = sample.to_dict("records")
+    long_mask = np.array([bool(execution_cost_estimate(row, 1).get("deployable"))
+                          for row in records])
+    short_mask = np.array([bool(execution_cost_estimate(row, -1).get("deployable"))
+                           for row in records])
+    any_mask = long_mask | short_mask
+    long_deployable, short_deployable = int(long_mask.sum()), int(short_mask.sum())
+    any_side = int(any_mask.sum())
+    target_rows = int(len(sample))
+    if not any_side:
+        result = _empty_power()
+        result.update({"target_bearing_rows": target_rows,
+                       "long_deployable": long_deployable,
+                       "short_deployable": short_deployable})
+        return result
+    deployable = sample[any_mask].copy()
+    announcement = _announcement_dates(deployable)
     events_by_year = {str(year): int(count)
                       for year, count in announcement.dt.year.value_counts().items()}
-    unique_events = int(sample.earnings_event_id.nunique())
-    unique_tickers = int(sample.ticker.nunique())
+    unique_events = int(deployable.earnings_event_id.nunique())
+    unique_tickers = int(deployable.ticker.nunique())
     unique_dates = int(announcement.dt.date.astype(str).nunique())
     quote_coverage = float(pd.to_numeric(
-        sample.get("quote_complete", pd.Series(False, index=sample.index)),
+        deployable.get("quote_complete", pd.Series(False, index=deployable.index)),
         errors="coerce").fillna(0).mean())
-    records = sample.to_dict("records")
-    long_deployable = int(sum(bool(execution_cost_estimate(row, 1).get("deployable"))
-                              for row in records))
-    short_deployable = int(sum(bool(execution_cost_estimate(row, -1).get("deployable"))
-                               for row in records))
-    power = power_requirements(float(sample["target_beta_hedged_5d"].std(ddof=1)))
+    power = power_requirements(float(deployable["target_beta_hedged_5d"].std(ddof=1)))
     gate = evaluate_power(power, unique_trades=unique_events,
                           unique_tickers=unique_tickers, unique_dates=unique_dates,
                           events_by_year=events_by_year)
@@ -292,7 +314,9 @@ def _sample_power(sample: pd.DataFrame) -> dict:
             "events_by_year": events_by_year,
             "effective_sample_size": gate["effective_sample_size"],
             "quote_complete_coverage": quote_coverage,
+            "target_bearing_rows": target_rows,
             "long_deployable": long_deployable, "short_deployable": short_deployable,
+            "any_side_deployable": any_side,
             "power_requirements": power, "gate": gate}
 
 

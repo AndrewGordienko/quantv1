@@ -48,6 +48,89 @@ class ImplementationHashTests(unittest.TestCase):
             after = guidance_goldset.extractor_implementation_sha256()
         self.assertNotEqual(before, after)
 
+    def _hash(self):
+        return guidance_goldset.extractor_implementation_sha256()
+
+    def test_regex_pattern_change_invalidates(self):
+        import re
+        before = self._hash()
+        with patch.object(guidance, "_GUIDANCE", re.compile("totally-different")):
+            self.assertNotEqual(before, self._hash())
+
+    def test_enum_constant_change_invalidates(self):
+        before = self._hash()
+        with patch.object(guidance, "ALLOWED_METRICS", {"revenue"}):
+            self.assertNotEqual(before, self._hash())
+
+    def test_system_prompt_change_invalidates(self):
+        before = self._hash()
+        with patch.object(guidance, "_LLM_SYSTEM", "a different instruction"):
+            self.assertNotEqual(before, self._hash())
+
+    def test_synthetic_rule_change_invalidates(self):
+        before = self._hash()
+
+        def other(document):  # a different synthetic-classification policy
+            return False
+
+        with patch.object(guidance_goldset, "_is_synthetic", other):
+            self.assertNotEqual(before, self._hash())
+
+    def test_audit_policy_change_invalidates(self):
+        before = self._hash()
+
+        def other(goldset=None):  # a different audit/gating policy
+            return {}
+
+        with patch.object(guidance_goldset, "audit", other):
+            self.assertNotEqual(before, self._hash())
+
+
+class FailedRecertificationTests(unittest.TestCase):
+    def test_failed_recertification_invalidates_prior_success(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "cert.json"
+            with patch.object(guidance_goldset, "CERTIFICATION_PATH", path):
+                path.write_text(json.dumps(_valid_cert()))
+                self.assertTrue(guidance_goldset.certification_status()["certified"])
+                # The seed gold set is synthetic-only -> this recert fails; it
+                # must overwrite the prior success, not leave it active.
+                result = guidance_goldset.certify()
+                self.assertFalse(result["certified"])
+                status = guidance_goldset.certification_status()
+                self.assertFalse(status["certified"])
+                self.assertIn(status["reason"],
+                              ("CERTIFICATION_NOT_GRANTED", "RECERTIFICATION_FAILED"))
+
+
+class ExecutablePowerTests(unittest.TestCase):
+    def _frame(self, beta: float) -> pd.DataFrame:
+        n = 40
+        return pd.DataFrame({
+            "earnings_event_id": [f"e{i}" for i in range(n)],
+            "ticker": [f"T{i}" for i in range(n)], "sector": ["X"] * n,
+            "entry_time": pd.to_datetime(["2024-01-02"] * n, utc=True),
+            "announcement_date": [f"2024-01-{(i % 27) + 1:02d}" for i in range(n)],
+            "target_beta_hedged_5d": [0.01 * (i % 5 + 1) for i in range(n)],
+            "quote_complete": [True] * n, "beta": [beta] * n,
+            "guidance_revision_score": [0.1] * n,
+        })
+
+    def test_target_rows_without_deployability_fail_power(self):
+        # Enough target-bearing rows, but no frozen beta -> deployable neither
+        # long nor short -> the power gate must fail.
+        power = mgrm._sample_power(self._frame(float("nan")))
+        self.assertEqual(power["target_bearing_rows"], 40)
+        self.assertEqual(power["any_side_deployable"], 0)
+        self.assertEqual(power["unique_executable_events"], 0)
+        self.assertFalse(power["gate"]["passes"])
+
+    def test_deployable_rows_are_counted(self):
+        power = mgrm._sample_power(self._frame(1.0))
+        self.assertEqual(power["target_bearing_rows"], 40)
+        self.assertGreater(power["any_side_deployable"], 0)
+        self.assertEqual(power["unique_executable_events"], 40)
+
 
 class RealOnlyAccuracyTests(unittest.TestCase):
     def _pred(self, expected):
@@ -74,7 +157,7 @@ class RealOnlyAccuracyTests(unittest.TestCase):
                             MIN_FORMATS=1), \
                 patch.object(guidance_goldset, "llm_config",
                              return_value={"provider": "x", "model": "y"}), \
-                patch.object(guidance_goldset, "_predict_variants", side_effect=fake):
+                patch.object(guidance_goldset, "_predict_variants", fake):
             result = guidance_goldset.audit(gold)
         self.assertEqual(result["certified_output"], "real_reconciled")
         self.assertEqual(result["evaluations"]["synthetic_machinery"]
