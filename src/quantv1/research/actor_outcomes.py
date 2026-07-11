@@ -57,10 +57,10 @@ def build(outcome_version: str = OUTCOME_VERSION, verbose: bool = True) -> dict:
           AND actor_event_role IN {PRIMARY_ROLES}
           AND ticker IS NOT NULL AND public_time IS NOT NULL
     """).df()
-    sectors = dict(con.execute("""
+    sectors = {str(ticker).upper(): sector for ticker, sector in con.execute("""
         SELECT ticker, lower(sector) FROM ticker_sectors
         WHERE ticker IS NOT NULL AND sector IS NOT NULL
-    """).fetchall())
+    """).fetchall()}
     panel = BarPanel(con, table="bars_minute")
     now = datetime.now(timezone.utc).replace(tzinfo=None)
 
