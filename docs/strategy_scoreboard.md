@@ -8,9 +8,31 @@ kill gates. Everything else is lab-building. Updated as verdicts land.
 
 | Strategy | Indep. validation trades | Net return | Net Sharpe | Delayed-entry | 2× costs | Decision |
 |---|---|---|---|---|---|---|
-| **Forced flow** (index effect) | — | — | — | — | — | **BUILD NEXT (flagship)** — data-viable |
+| **Forced flow — reversal** (D+1→D+5, executable) | 91 batches / 129 events | +16 bps/event, CI [−88, +123] | 0.03 | +17 bps, CI spans 0 | −14 bps/event | **FAIL** — no edge; placebo ≥ signal |
+| **Forced flow — continuation** (announce→effective) | — | — | — | — | — | **PENDING** — Track B sourcing (not killed by reversal) |
 | **MGRM** (guidance underreaction) | — | — | — | — | — | **TEST ONCE** — blocked on extraction cert |
 | **Actor B3** (Fed speaker deviation) | — | — | — | — | — | **SIDE EXPERIMENT (≤10%)** — census v1 frozen |
+
+### Track A result (2026-07-11) — executable reversal is a null
+
+Daily-bar tests on the frozen census (`forced-flow-sp500-census-v1`), market-model
+residual vs SPY, clustered by the 113 effective-date batches:
+
+| horizon | status | result |
+|---|---|---|
+| Effective-day open→close | descriptive event study (not executable) | +0.7 bps — the classic pop is **absent** on the effective day |
+| **D+1 open → D+5 close** | **executable reversal** | +33 bps, CI [−60, +130] — **spans zero, positive not reversing** |
+| matched minus control (momentum + dollar-ADV) | executable | +11 bps, CI [−89, +111] — event-specific effect ≈ 0 |
+| placebo (dates shifted −25d) | control | **+81 bps — larger than the real signal** |
+| fade strategy net (short the pop, after cost) | executable | +16 bps, Sharpe 0.03; **−14 bps at doubled cost** |
+| quarterly vs ad-hoc | split | −16 bps vs +69 bps — both span zero |
+
+**Verdict:** no executable reversal edge. The ≈0 effective-day residual is
+consistent with the move happening earlier (at announcement) — which is exactly
+why continuation (Track B) is a *different* mechanism and is **not** killed by
+this null. Caveats: market-model-only residual (no sector hedge for most mid-caps),
+dollar-ADV size proxy (no market cap), 91 batches (wide CIs rule out a large
+edge, not a tiny one).
 
 ## Kill gates (a candidate advances only if ALL hold)
 
