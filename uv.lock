@@ -815,6 +815,7 @@ name = "quantv1"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "beautifulsoup4" },
     { name = "duckdb" },
     { name = "exchange-calendars" },
     { name = "fastapi" },
@@ -832,6 +833,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "beautifulsoup4", specifier = ">=4.12.0" },
     { name = "duckdb", specifier = ">=1.5.4" },
     { name = "exchange-calendars", specifier = ">=4.13.2" },
     { name = "fastapi", specifier = ">=0.139.0" },

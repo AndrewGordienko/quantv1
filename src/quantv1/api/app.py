@@ -305,6 +305,15 @@ def research_mgrm_audit():
                                           "status": "BLOCKED"})
 
 
+@app.get("/api/research/mgrm-goldset")
+def research_mgrm_goldset():
+    """MGRM extractor gold-set audit: detection precision/recall and field-level
+    accuracy vs frozen labels; certification gates the historical pilot."""
+    return _read_json("mgrm_goldset_audit.json",
+                      {"note": "run scripts/mgrm_sprint.py goldset",
+                       "status": "NO_GOLDSET"})
+
+
 @app.get("/api/forward/book")
 def forward_book():
     """The live paper book to trade: primary LARGE + the 4 observational shadows."""

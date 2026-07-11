@@ -267,6 +267,88 @@ def deterministic_extract(text: str) -> list[dict]:
     return list(unique.values())
 
 
+def _record(metric: str, period: str, values: list, status: str, action: str,
+            evidence: str, source_kind: str) -> dict:
+    low = high = units = currency = None
+    if values:
+        numeric = [value[0] for value in values]
+        low, high = ((min(numeric[:2]), max(numeric[:2])) if len(numeric) > 1
+                     else (numeric[0], numeric[0]))
+        units = values[0][1]
+        currency = next((value[2] for value in values if value[2]), None)
+    return {
+        "metric": metric, "guidance_period": period,
+        "lower_value": low, "upper_value": high,
+        "midpoint": ((low + high) / 2 if low is not None else None),
+        "units": units, "currency": currency,
+        "guidance_status": status, "stated_action": action,
+        "supporting_sentence": evidence[:2000], "source_kind": source_kind,
+        "confidence": 0.95 if values or status != "AVAILABLE" else 0.0,
+    }
+
+
+def extract_tables(html: str) -> list[dict]:
+    """Extract guidance rows from HTML tables before falling back to prose.
+
+    Guidance is frequently published in an outlook table (metric rows, a
+    low/high or single-value column) rather than a prose sentence. Only tables
+    whose surrounding context signals guidance are read, and the exact row text
+    is preserved as evidence; ambiguous rows are skipped, never guessed.
+    """
+    try:
+        from bs4 import BeautifulSoup
+    except ImportError:
+        return []
+    soup = BeautifulSoup(html, "html.parser")
+    records = []
+    for table in soup.find_all("table"):
+        context = " ".join(table.get_text(" ", strip=True).split())
+        heading = table.find_previous(["p", "h1", "h2", "h3", "h4", "td", "span"])
+        heading_text = (" ".join(heading.get_text(" ", strip=True).split())
+                        if heading else "")
+        guided = bool(_GUIDANCE.search(context) or _GUIDANCE.search(heading_text))
+        if not guided:
+            continue
+        period_source = f"{heading_text} {context}"
+        for row in table.find_all("tr"):
+            cells = [" ".join(cell.get_text(" ", strip=True).split())
+                     for cell in row.find_all(["td", "th"])]
+            cells = [cell for cell in cells if cell]
+            if len(cells) < 2:
+                continue
+            label = cells[0]
+            metric = next((name for name, pattern in _METRICS
+                           if re.search(pattern, label, re.IGNORECASE)), None)
+            if not metric:
+                continue
+            joined = " ".join(cells[1:])
+            values = [parsed for match in _NUMBER.finditer(joined)
+                      if (parsed := _number(match, metric)) is not None]
+            if not values:
+                continue
+            status, action = _action(f"{heading_text} {label} {joined}")
+            evidence = " | ".join(cells)
+            records.append(_record(metric, _period(f"{label} {period_source}"),
+                                   values, status, action, evidence, "table"))
+    unique = {}
+    for record in records:
+        unique[(record["metric"], record["guidance_period"])] = record
+    return list(unique.values())
+
+
+def structured_extract(raw_html: str) -> list[dict]:
+    """Table-first, then prose. Table rows win ties on (metric, period)."""
+    from .earnings import _plain_text
+    table_records = extract_tables(raw_html)
+    prose_records = deterministic_extract(_plain_text(raw_html))
+    for record in prose_records:
+        record.setdefault("source_kind", "prose")
+    combined = {}
+    for record in table_records + prose_records:
+        combined.setdefault((record["metric"], record["guidance_period"]), record)
+    return list(combined.values())
+
+
 def _schema() -> dict:
     nullable_number = {"anyOf": [{"type": "number"}, {"type": "null"}]}
     nullable_string = {"anyOf": [{"type": "string"}, {"type": "null"}]}
@@ -288,26 +370,61 @@ def _schema() -> dict:
             }}}, "required": ["records"]}
 
 
-def ai_extract(text: str) -> list[dict] | None:
-    """Optional schema-constrained AI extraction; absent credentials fail closed."""
-    key = os.getenv("OPENAI_API_KEY")
-    if not key:
+_LLM_SYSTEM = (
+    "Extract only explicit forward management guidance. Copy the exact "
+    "supporting sentence. Never infer missing numbers or periods."
+)
+
+
+def llm_config() -> dict | None:
+    """Resolve the active extraction backend; no backend -> fail closed (None).
+
+    MGRM_LLM_PROVIDER selects the backend: 'openai' (or any OpenAI-compatible
+    /responses endpoint via OPENAI_BASE_URL) or 'ollama' (local, no key). When
+    unset it is inferred from OPENAI_API_KEY, otherwise disabled. The provider
+    and model version are recorded on every extraction for reproducibility.
+    """
+    provider = os.getenv("MGRM_LLM_PROVIDER", "").strip().lower()
+    if not provider:
+        provider = "openai" if os.getenv("OPENAI_API_KEY") else "none"
+    if provider in {"none", "off", "disabled", ""}:
         return None
-    model = os.getenv("MGRM_LLM_MODEL", "gpt-5.4-mini")
-    base = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1").rstrip("/")
+    if provider == "openai":
+        key = os.getenv("OPENAI_API_KEY")
+        if not key:
+            return None
+        return {"provider": "openai",
+                "model": os.getenv("MGRM_LLM_MODEL", "gpt-5.4-mini"),
+                "base_url": os.getenv("OPENAI_BASE_URL",
+                                      "https://api.openai.com/v1").rstrip("/"),
+                "api_key": key}
+    if provider == "ollama":
+        return {"provider": "ollama",
+                "model": os.getenv("MGRM_OLLAMA_MODEL", "llama3.1"),
+                "base_url": os.getenv("OLLAMA_BASE_URL",
+                                      "http://localhost:11434").rstrip("/"),
+                "api_key": None}
+    raise ValueError(f"unknown MGRM_LLM_PROVIDER: {provider!r}")
+
+
+def provider_tag(config: dict | None = None) -> str:
+    config = config if config is not None else llm_config()
+    return (f"{config['provider']}:{config['model']}" if config else "none:none")
+
+
+def _openai_extract(config: dict, text: str) -> list[dict]:
     payload = {
-        "model": model,
-        "input": [{"role": "system", "content": (
-            "Extract only explicit forward management guidance. Copy the exact "
-            "supporting sentence. Never infer missing numbers or periods."
-        )}, {"role": "user", "content": text[:100_000]}],
+        "model": config["model"],
+        "input": [{"role": "system", "content": _LLM_SYSTEM},
+                  {"role": "user", "content": text[:100_000]}],
         "text": {"format": {"type": "json_schema", "name": "mgrm_guidance",
                              "strict": True, "schema": _schema()}},
     }
     request = urllib.request.Request(
-        f"{base}/responses", data=json.dumps(payload).encode(), method="POST",
-        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json",
-                 "User-Agent": net.DEFAULT_UA},
+        f"{config['base_url']}/responses", data=json.dumps(payload).encode(),
+        method="POST", headers={"Authorization": f"Bearer {config['api_key']}",
+                                "Content-Type": "application/json",
+                                "User-Agent": net.DEFAULT_UA},
     )
     with urllib.request.urlopen(request, timeout=180) as response:
         result = json.load(response)
@@ -316,6 +433,34 @@ def ai_extract(text: str) -> list[dict] | None:
         for part in item.get("content", []) if part.get("type") == "output_text"
     )
     return json.loads(output_text).get("records", [])
+
+
+def _ollama_extract(config: dict, text: str) -> list[dict]:
+    payload = {
+        "model": config["model"], "stream": False,
+        "messages": [{"role": "system", "content": _LLM_SYSTEM},
+                     {"role": "user", "content": text[:100_000]}],
+        "format": _schema(), "options": {"temperature": 0},
+    }
+    request = urllib.request.Request(
+        f"{config['base_url']}/api/chat", data=json.dumps(payload).encode(),
+        method="POST", headers={"Content-Type": "application/json",
+                                "User-Agent": net.DEFAULT_UA},
+    )
+    with urllib.request.urlopen(request, timeout=300) as response:
+        result = json.load(response)
+    content = (result.get("message") or {}).get("content", "")
+    return json.loads(content).get("records", []) if content else []
+
+
+def ai_extract(text: str, config: dict | None = None) -> list[dict] | None:
+    """Provider-agnostic schema-constrained extraction; no backend -> None."""
+    config = config if config is not None else llm_config()
+    if config is None:
+        return None
+    if config["provider"] == "ollama":
+        return _ollama_extract(config, text)
+    return _openai_extract(config, text)
 
 
 def _same_number(left, right) -> bool:
@@ -357,20 +502,22 @@ def extract_documents(*, max_documents: int | None = None,
     """).fetchall()
     extracted = agreed_count = disagreed = pending = 0
     now = datetime.now(timezone.utc).replace(tzinfo=None)
+    config = llm_config() if use_ai else None
+    version = f"{EXTRACTOR_VERSION}|{provider_tag(config)}"
     for document_id, event_id, ticker, raw_path, public_time in rows:
         if not force and con.execute("""
             SELECT 1 FROM mgrm_guidance_extractions
             WHERE document_id=? AND extractor_version=? LIMIT 1
-        """, [document_id, EXTRACTOR_VERSION]).fetchone():
+        """, [document_id, version]).fetchone():
             continue
         raw = Path(raw_path).read_text(encoding="utf-8", errors="replace")
         from .earnings import _plain_text
-        plain = _plain_text(raw)
-        deterministic = deterministic_extract(plain)
-        ai_records = ai_extract(plain) if use_ai and deterministic else None
+        deterministic = structured_extract(raw)
+        ai_records = (ai_extract(_plain_text(raw), config)
+                      if config is not None and deterministic else None)
         for record in reconcile(deterministic, ai_records):
             extraction_id = _hash(
-                f"{document_id}|{EXTRACTOR_VERSION}|{record['metric']}|"
+                f"{document_id}|{version}|{record['metric']}|"
                 f"{record['guidance_period']}|{record['supporting_sentence']}"
             )
             ai_record = record.pop("ai_record")
@@ -390,7 +537,7 @@ def extract_documents(*, max_documents: int | None = None,
                   record["stated_action"], record["supporting_sentence"],
                   record["confidence"], ai_record.get("confidence") if ai_record else None,
                   json.dumps(record), json.dumps(ai_record) if ai_record else None,
-                  agreement, EXTRACTOR_VERSION, public_time, now])
+                  agreement, version, public_time, now])
             extracted += 1
             agreed_count += int(agreement == "AGREED")
             disagreed += int(agreement == "DISAGREED")
@@ -398,7 +545,8 @@ def extract_documents(*, max_documents: int | None = None,
     con.close()
     return {"documents": len(rows), "extractions": extracted,
             "agreed": agreed_count, "disagreed": disagreed,
-            "pending_ai": pending, "extractor_version": EXTRACTOR_VERSION}
+            "pending_ai": pending, "extractor_version": version,
+            "provider": provider_tag(config)}
 
 
 def link_previous_guidance() -> dict:

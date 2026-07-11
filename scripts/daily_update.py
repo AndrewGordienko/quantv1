@@ -164,8 +164,11 @@ def main() -> None:
         try:
             import json as _json
             from quantv1.config import DATA_DIR
-            from quantv1.ingest import guidance
+            from quantv1.ingest import guidance, guidance_goldset
             from quantv1.research import mgrm
+            gold = guidance_goldset.audit()
+            (DATA_DIR / "mgrm_goldset_audit.json").write_text(
+                _json.dumps(gold, indent=2, default=str))
             if not args.skip_ingest:
                 guidance.collect_forward()
             audit = mgrm.extraction_audit()
@@ -173,7 +176,8 @@ def main() -> None:
                 _json.dumps(audit, indent=2, default=str))
             mgrm.run(verbose=False)
             print(f"      MGRM gate: {audit['status']} "
-                  f"(fit allowed: {audit['g1_g2_fitting_allowed']})")
+                  f"(fit allowed: {audit['g1_g2_fitting_allowed']}); "
+                  f"extractor gold-set: {gold['status']}")
         except Exception as e:  # noqa: BLE001 - SEC endpoint / empty gate is non-fatal
             print(f"      MGRM skipped: {e}")
 

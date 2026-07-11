@@ -45,6 +45,7 @@ def main() -> None:
 
     sub.add_parser("link")
     sub.add_parser("audit")
+    sub.add_parser("goldset")
     sub.add_parser("forward")
 
     features = sub.add_parser("features")
@@ -81,6 +82,12 @@ def main() -> None:
         audit = mgrm.extraction_audit()
         (DATA_DIR / "mgrm_audit.json").write_text(json.dumps(audit, indent=2, default=str))
         _print(audit)
+    elif args.command == "goldset":
+        from quantv1.ingest import guidance_goldset
+        result = guidance_goldset.audit()
+        (DATA_DIR / "mgrm_goldset_audit.json").write_text(
+            json.dumps(result, indent=2, default=str))
+        _print(result)
     elif args.command == "forward":
         _print(guidance.collect_forward())
     elif args.command == "features":
