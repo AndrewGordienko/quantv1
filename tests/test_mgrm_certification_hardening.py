@@ -86,6 +86,20 @@ class RealOnlyAccuracyTests(unittest.TestCase):
 
 
 class FrameContractTests(unittest.TestCase):
+    def setUp(self):
+        # extraction_audit() reads the DuckDB; isolate to a fresh temp database
+        # with the schema initialized (CI has no committed data/ database).
+        self._tmp = tempfile.TemporaryDirectory()
+        self._patcher = patch("quantv1.db.DB_PATH",
+                              Path(self._tmp.name) / "quantv1.duckdb")
+        self._patcher.start()
+        from quantv1.db import connect
+        connect().close()
+
+    def tearDown(self):
+        self._patcher.stop()
+        self._tmp.cleanup()
+
     def _enriched(self) -> pd.DataFrame:
         return pd.DataFrame({
             "earnings_event_id": ["e1", "e2", "e3"],
