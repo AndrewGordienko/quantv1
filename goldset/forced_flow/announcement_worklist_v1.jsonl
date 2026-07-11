@@ -1,0 +1,113 @@
+{"event_batch_id": "SP500|2019-01-18", "effective_date": "2019-01-18", "affected_tickers": ["TFX"], "covered_tickers": ["TFX"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-02-15", "effective_date": "2019-02-15", "affected_tickers": ["ATO"], "covered_tickers": ["ATO"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-02-27", "effective_date": "2019-02-27", "affected_tickers": ["WAB"], "covered_tickers": ["WAB"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-04-02", "effective_date": "2019-04-02", "affected_tickers": ["DOW"], "covered_tickers": ["DOW"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-06-01", "effective_date": "2019-06-01", "affected_tickers": ["LHX"], "covered_tickers": ["LHX"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-06-03", "effective_date": "2019-06-03", "affected_tickers": ["CTVA", "DD"], "covered_tickers": ["CTVA", "DD"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-06-07", "effective_date": "2019-06-07", "affected_tickers": ["AMCR"], "covered_tickers": ["AMCR"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-07-01", "effective_date": "2019-07-01", "affected_tickers": ["MKTX"], "covered_tickers": ["MKTX"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-07-15", "effective_date": "2019-07-15", "affected_tickers": ["TMUS"], "covered_tickers": ["TMUS"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-08-08", "effective_date": "2019-08-08", "affected_tickers": ["GL"], "covered_tickers": ["GL"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-08-09", "effective_date": "2019-08-09", "affected_tickers": ["IEX", "LDOS"], "covered_tickers": ["IEX", "LDOS"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-09-23", "effective_date": "2019-09-23", "affected_tickers": ["CDW"], "covered_tickers": ["CDW"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-09-26", "effective_date": "2019-09-26", "affected_tickers": ["NVR"], "covered_tickers": ["NVR"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-10-03", "effective_date": "2019-10-03", "affected_tickers": ["LVS"], "covered_tickers": ["LVS"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-10-18", "effective_date": "2019-10-18", "affected_tickers": ["BKR"], "covered_tickers": ["BKR"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-11-05", "effective_date": "2019-11-05", "affected_tickers": ["NLOK", "PEAK"], "covered_tickers": [], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-11-21", "effective_date": "2019-11-21", "affected_tickers": ["NOW"], "covered_tickers": ["NOW"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-12-05", "effective_date": "2019-12-05", "affected_tickers": ["VIAC", "WRB"], "covered_tickers": ["WRB"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-12-09", "effective_date": "2019-12-09", "affected_tickers": ["ODFL", "TFC"], "covered_tickers": ["ODFL", "TFC"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-12-10", "effective_date": "2019-12-10", "affected_tickers": ["J"], "covered_tickers": ["J"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2019-12-23", "effective_date": "2019-12-23", "affected_tickers": ["LYV", "STE", "ZBRA"], "covered_tickers": ["LYV", "STE", "ZBRA"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2020-01-28", "effective_date": "2020-01-28", "affected_tickers": ["PAYC"], "covered_tickers": ["PAYC"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2020-03-03", "effective_date": "2020-03-03", "affected_tickers": ["TT"], "covered_tickers": ["TT"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2020-04-03", "effective_date": "2020-04-03", "affected_tickers": ["CARR", "OTIS", "RTX"], "covered_tickers": ["CARR", "OTIS", "RTX"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2020-04-06", "effective_date": "2020-04-06", "affected_tickers": ["HWM"], "covered_tickers": ["HWM"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2020-05-12", "effective_date": "2020-05-12", "affected_tickers": ["DPZ", "DXCM"], "covered_tickers": ["DPZ", "DXCM"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2020-05-22", "effective_date": "2020-05-22", "affected_tickers": ["WST"], "covered_tickers": ["WST"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2020-06-22", "effective_date": "2020-06-22", "affected_tickers": ["BIO", "TDY", "TYL"], "covered_tickers": ["BIO", "TDY", "TYL"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2020-09-18", "effective_date": "2020-09-18", "affected_tickers": ["LUMN"], "covered_tickers": ["LUMN"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2020-09-21", "effective_date": "2020-09-21", "affected_tickers": ["CTLT", "ETSY", "TER"], "covered_tickers": ["ETSY", "TER"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2020-10-07", "effective_date": "2020-10-07", "affected_tickers": ["POOL"], "covered_tickers": ["POOL"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2020-10-12", "effective_date": "2020-10-12", "affected_tickers": ["VNT"], "covered_tickers": ["VNT"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2020-11-17", "effective_date": "2020-11-17", "affected_tickers": ["VTRS"], "covered_tickers": ["VTRS"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2020-12-21", "effective_date": "2020-12-21", "affected_tickers": ["TSLA"], "covered_tickers": ["TSLA"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2021-01-07", "effective_date": "2021-01-07", "affected_tickers": ["ENPH"], "covered_tickers": ["ENPH"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2021-01-21", "effective_date": "2021-01-21", "affected_tickers": ["TRMB"], "covered_tickers": ["TRMB"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2021-02-12", "effective_date": "2021-02-12", "affected_tickers": ["MPWR"], "covered_tickers": ["MPWR"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2021-03-22", "effective_date": "2021-03-22", "affected_tickers": ["CZR", "GNRC", "NXPI", "PENN"], "covered_tickers": ["CZR", "GNRC", "NXPI", "PENN"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2021-04-20", "effective_date": "2021-04-20", "affected_tickers": ["PTC"], "covered_tickers": ["PTC"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2021-05-14", "effective_date": "2021-05-14", "affected_tickers": ["CRL"], "covered_tickers": ["CRL"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2021-06-04", "effective_date": "2021-06-04", "affected_tickers": ["OGN"], "covered_tickers": [], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2021-07-21", "effective_date": "2021-07-21", "affected_tickers": ["MRNA"], "covered_tickers": ["MRNA"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2021-08-03", "effective_date": "2021-08-03", "affected_tickers": ["BBWI"], "covered_tickers": [], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2021-08-30", "effective_date": "2021-08-30", "affected_tickers": ["TECH"], "covered_tickers": ["TECH"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2021-09-20", "effective_date": "2021-09-20", "affected_tickers": ["BRO", "CDAY", "MTCH"], "covered_tickers": ["BRO", "MTCH"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2021-10-04", "effective_date": "2021-10-04", "affected_tickers": ["CTRA"], "covered_tickers": [], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2021-12-14", "effective_date": "2021-12-14", "affected_tickers": ["EPAM"], "covered_tickers": ["EPAM"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2021-12-20", "effective_date": "2021-12-20", "affected_tickers": ["FDS", "SBNY", "SEDG"], "covered_tickers": ["FDS", "SEDG"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-01-10", "effective_date": "2022-01-10", "affected_tickers": ["WTW"], "covered_tickers": ["WTW"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-02-02", "effective_date": "2022-02-02", "affected_tickers": ["CEG"], "covered_tickers": ["CEG"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-02-15", "effective_date": "2022-02-15", "affected_tickers": ["NDSN"], "covered_tickers": ["NDSN"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-02-17", "effective_date": "2022-02-17", "affected_tickers": ["PARA"], "covered_tickers": [], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-03-02", "effective_date": "2022-03-02", "affected_tickers": ["MOH"], "covered_tickers": ["MOH"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-04-04", "effective_date": "2022-04-04", "affected_tickers": ["CPT"], "covered_tickers": [], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-04-11", "effective_date": "2022-04-11", "affected_tickers": ["WBD"], "covered_tickers": ["WBD"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-05-10", "effective_date": "2022-05-10", "affected_tickers": ["BALL"], "covered_tickers": ["BALL"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-06-08", "effective_date": "2022-06-08", "affected_tickers": ["VICI"], "covered_tickers": ["VICI"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-06-09", "effective_date": "2022-06-09", "affected_tickers": ["META"], "covered_tickers": ["META"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-06-21", "effective_date": "2022-06-21", "affected_tickers": ["KDP", "ON"], "covered_tickers": ["KDP", "ON"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-06-28", "effective_date": "2022-06-28", "affected_tickers": ["ELV"], "covered_tickers": ["ELV"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-09-19", "effective_date": "2022-09-19", "affected_tickers": ["CSGP", "INVH"], "covered_tickers": ["CSGP", "INVH"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-10-03", "effective_date": "2022-10-03", "affected_tickers": ["EQT", "PCG"], "covered_tickers": ["EQT", "PCG"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-10-12", "effective_date": "2022-10-12", "affected_tickers": ["TRGP"], "covered_tickers": ["TRGP"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-11-01", "effective_date": "2022-11-01", "affected_tickers": ["ACGL"], "covered_tickers": ["ACGL"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-11-08", "effective_date": "2022-11-08", "affected_tickers": ["GEN"], "covered_tickers": ["GEN"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-12-19", "effective_date": "2022-12-19", "affected_tickers": ["FSLR"], "covered_tickers": ["FSLR"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2022-12-22", "effective_date": "2022-12-22", "affected_tickers": ["STLD"], "covered_tickers": ["STLD"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2023-01-04", "effective_date": "2023-01-04", "affected_tickers": ["GEHC"], "covered_tickers": ["GEHC"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2023-03-15", "effective_date": "2023-03-15", "affected_tickers": ["BG", "PODD"], "covered_tickers": ["BG", "PODD"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2023-03-20", "effective_date": "2023-03-20", "affected_tickers": ["FICO"], "covered_tickers": ["FICO"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2023-05-04", "effective_date": "2023-05-04", "affected_tickers": ["AXON"], "covered_tickers": ["AXON"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2023-05-16", "effective_date": "2023-05-16", "affected_tickers": ["RVTY"], "covered_tickers": ["RVTY"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2023-06-07", "effective_date": "2023-06-07", "affected_tickers": ["FI"], "covered_tickers": [], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2023-06-20", "effective_date": "2023-06-20", "affected_tickers": ["PANW"], "covered_tickers": ["PANW"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2023-07-10", "effective_date": "2023-07-10", "affected_tickers": ["EG"], "covered_tickers": ["EG"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2023-08-25", "effective_date": "2023-08-25", "affected_tickers": ["KVUE"], "covered_tickers": ["KVUE"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2023-08-30", "effective_date": "2023-08-30", "affected_tickers": ["COR"], "covered_tickers": ["COR"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2023-09-18", "effective_date": "2023-09-18", "affected_tickers": ["ABNB", "BX"], "covered_tickers": ["ABNB", "BX"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2023-10-02", "effective_date": "2023-10-02", "affected_tickers": ["VLTO"], "covered_tickers": ["VLTO"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2023-10-18", "effective_date": "2023-10-18", "affected_tickers": ["BLDR", "HUBB", "JBL", "LULU", "UBER"], "covered_tickers": ["BLDR", "HUBB", "JBL", "LULU", "UBER"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2024-02-01", "effective_date": "2024-02-01", "affected_tickers": ["DAY"], "covered_tickers": [], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2024-03-04", "effective_date": "2024-03-04", "affected_tickers": ["DOC"], "covered_tickers": ["DOC"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2024-03-18", "effective_date": "2024-03-18", "affected_tickers": ["DECK", "SMCI"], "covered_tickers": ["DECK", "SMCI"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2024-03-25", "effective_date": "2024-03-25", "affected_tickers": ["CPAY"], "covered_tickers": ["CPAY"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2024-04-03", "effective_date": "2024-04-03", "affected_tickers": ["GEV", "SOLV"], "covered_tickers": ["GEV", "SOLV"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2024-05-08", "effective_date": "2024-05-08", "affected_tickers": ["VST"], "covered_tickers": ["VST"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2024-06-24", "effective_date": "2024-06-24", "affected_tickers": ["CRWD", "GDDY", "KKR"], "covered_tickers": ["CRWD", "GDDY", "KKR"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2024-07-08", "effective_date": "2024-07-08", "affected_tickers": ["SW"], "covered_tickers": [], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2024-09-23", "effective_date": "2024-09-23", "affected_tickers": ["DELL", "ERIE", "PLTR"], "covered_tickers": ["DELL", "ERIE", "PLTR"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2024-09-30", "effective_date": "2024-09-30", "affected_tickers": ["AMTM"], "covered_tickers": ["AMTM"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2024-11-26", "effective_date": "2024-11-26", "affected_tickers": ["TPL"], "covered_tickers": [], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2024-12-23", "effective_date": "2024-12-23", "affected_tickers": ["APO", "LII", "WDAY"], "covered_tickers": ["APO", "LII", "WDAY"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2025-03-24", "effective_date": "2025-03-24", "affected_tickers": ["DASH", "EXE", "TKO", "WSM"], "covered_tickers": ["DASH", "EXE", "TKO", "WSM"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2025-05-19", "effective_date": "2025-05-19", "affected_tickers": ["COIN"], "covered_tickers": ["COIN"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2025-07-09", "effective_date": "2025-07-09", "affected_tickers": ["DDOG"], "covered_tickers": ["DDOG"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2025-07-18", "effective_date": "2025-07-18", "affected_tickers": ["TTD"], "covered_tickers": ["TTD"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2025-07-23", "effective_date": "2025-07-23", "affected_tickers": ["XYZ"], "covered_tickers": ["XYZ"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2025-08-08", "effective_date": "2025-08-08", "affected_tickers": ["PSKY"], "covered_tickers": ["PSKY"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2025-08-28", "effective_date": "2025-08-28", "affected_tickers": ["IBKR"], "covered_tickers": ["IBKR"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2025-09-22", "effective_date": "2025-09-22", "affected_tickers": ["APP", "EME", "HOOD"], "covered_tickers": ["APP", "EME", "HOOD"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2025-10-30", "effective_date": "2025-10-30", "affected_tickers": ["SOLS"], "covered_tickers": ["SOLS"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2025-11-03", "effective_date": "2025-11-03", "affected_tickers": ["Q"], "covered_tickers": ["Q"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2025-11-11", "effective_date": "2025-11-11", "affected_tickers": ["FISV"], "covered_tickers": ["FISV"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2025-11-28", "effective_date": "2025-11-28", "affected_tickers": ["SNDK"], "covered_tickers": ["SNDK"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2025-12-11", "effective_date": "2025-12-11", "affected_tickers": ["ARES"], "covered_tickers": ["ARES"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2025-12-22", "effective_date": "2025-12-22", "affected_tickers": ["CRH", "CVNA", "FIX"], "covered_tickers": ["CVNA", "FIX"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2026-01-14", "effective_date": "2026-01-14", "affected_tickers": ["MRSH"], "covered_tickers": [], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2026-02-09", "effective_date": "2026-02-09", "affected_tickers": ["CIEN"], "covered_tickers": ["CIEN"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2026-03-23", "effective_date": "2026-03-23", "affected_tickers": ["COHR", "LITE", "SATS", "VRT"], "covered_tickers": ["COHR", "LITE", "SATS", "VRT"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2026-04-09", "effective_date": "2026-04-09", "affected_tickers": ["CASY"], "covered_tickers": ["CASY"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2026-05-07", "effective_date": "2026-05-07", "affected_tickers": ["VEEV"], "covered_tickers": ["VEEV"], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2026-05-21", "effective_date": "2026-05-21", "affected_tickers": ["BNY"], "covered_tickers": [], "verification_status": "UNRESOLVED"}
+{"event_batch_id": "SP500|2026-06-01", "effective_date": "2026-06-01", "affected_tickers": ["FDXF"], "covered_tickers": [], "verification_status": "UNRESOLVED"}

@@ -1,0 +1,59 @@
+{
+  "rules_version": "forced-flow-announcement-rules-v1",
+  "purpose": "Source and freeze verified public ANNOUNCEMENT timestamps for the S&P 500 addition census, to unblock the announcement->effective continuation test. Frozen BEFORE searching; joined to returns only AFTER the manifest and rejection ledger are frozen.",
+  "parent_census": "forced-flow-sp500-census-v1",
+  "parent_census_sha256": "927685472fb0f554dbaf46cb114716b62214bcc277ee9ab70f95129f2795fd9f",
+  "blindness_protocol": {
+    "enumerate": "ALL 113 addition effective-date batches, never a convenient subset. The worklist fixes the denominator before searching.",
+    "no_returns_while_sourcing": "Do not calculate or inspect any return, residual, or price outcome while sourcing announcement times.",
+    "freeze_before_join": "Freeze the accepted announcement manifest AND the rejection ledger before joining to any market outcome."
+  },
+  "source_tiers": {
+    "1": "Timestamped S&P Dow Jones Indices release (spglobal.com / spdji.com).",
+    "2": "Timestamped release distributed through an official newswire (PR Newswire / Business Wire / GlobeNewswire) carrying the S&P DJI release.",
+    "3": "Reliable contemporaneous reporting that quotes the announcement with a defensible publication time (e.g. Reuters/Bloomberg/WSJ timestamped story)."
+  },
+  "reject_rules": [
+    "INFERRED_TIME: any time estimated, back-calculated, or assumed (e.g. 'usually after close').",
+    "ARTICLE_UPDATE_TIME: a story's last-updated time rather than its original publication time.",
+    "DATE_ONLY: a date with no defensible publication time.",
+    "NON_CONTEMPORANEOUS: a retrospective list/database entry that is not the original release or contemporaneous report."
+  ],
+  "record_schema": [
+    "event_batch_id",
+    "announcement_public_time",
+    "announcement_timezone",
+    "effective_date",
+    "source_tier",
+    "source_url",
+    "source_sha256",
+    "original_or_correction",
+    "affected_tickers",
+    "timestamp_precision",
+    "first_executable_time",
+    "verification_status"
+  ],
+  "field_rules": {
+    "announcement_public_time": "ISO-8601 with explicit offset; the moment the release/report first became public.",
+    "announcement_timezone": "IANA tz of the source (e.g. America/New_York).",
+    "source_tier": "1 | 2 | 3.",
+    "source_sha256": "sha256 of the fetched source document, stored for audit.",
+    "original_or_correction": "ORIGINAL | CORRECTION (S&P sometimes reissues).",
+    "affected_tickers": "Subset of the batch's added tickers this announcement covers.",
+    "timestamp_precision": "exact_minute | exact_hour ; anything coarser is DATE_ONLY and rejected.",
+    "verification_status": "VERIFIED | REJECTED | UNRESOLVED."
+  },
+  "entry_timing_rule": {
+    "principle": "Tradable entry is the first executable observation AFTER publication. Added names are mid-caps with daily bars only, so the executable entry is a daily session open, never an intraday fill.",
+    "INTRADAY": "Announcement during regular session -> first_executable_time = next session open (no intraday fill without minute bars).",
+    "AFTER_HOURS": "Announcement outside regular session -> first_executable_time = next session open.",
+    "DATE_ONLY": "No defensible publication time -> BLOCKED from the continuation test (kept in the census, excluded from the tradable subset)."
+  },
+  "deliverables": [
+    "announcement_worklist_v1.jsonl (all 113 addition batches, UNRESOLVED) -- frozen denominator",
+    "announcement_manifest_v1.jsonl (VERIFIED records) -- frozen before join",
+    "announcement_rejection_ledger_v1.json (every UNRESOLVED/REJECTED batch + reason)",
+    "tier and precision coverage counts by batch, year, change_type"
+  ],
+  "gate": "Report how many of the 113 addition batches reach a VERIFIED Tier 1/2/3 timestamp. That verified-and-covered subset -- not 113 -- is the tradable continuation sample. If it is small, the continuation test is a descriptive pilot; do not relax the tiers."
+}

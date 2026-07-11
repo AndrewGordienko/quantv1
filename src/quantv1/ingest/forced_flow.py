@@ -198,8 +198,12 @@ def _summarize(records: list[dict]) -> dict:
                    "end": max(r["effective"] for r in records).isoformat()},
         "timestamp_status": "EFFECTIVE_DATE_ONLY",
         "tradability": {
-            "testable_now": ["effective_close_pressure", "post_effective_reversal"],
-            "blocked_until_verified_announcement": ["announcement_to_effective_continuation"],
+            # Daily OHLC supports effective-day and multi-day-reversal returns.
+            # It does NOT support closing-auction / last-hour pressure -- that
+            # needs minute or auction data for these tickers.
+            "testable_now_daily_bars": ["effective_day_return", "d1_d5_reversal"],
+            "blocked_needs_intraday_coverage": ["closing_auction_pressure"],
+            "blocked_needs_verified_announcement_time": ["announcement_to_effective_continuation"],
         },
         "additions": _side(records, "addition"),
         "deletions": _side(records, "deletion"),
