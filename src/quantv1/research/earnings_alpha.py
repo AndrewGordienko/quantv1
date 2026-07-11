@@ -43,6 +43,7 @@ from .protocol import (
     TARGET_VERSION,
     clustered_mean_ci,
     clustered_portfolio_bootstrap,
+    evaluate_power,
     execution_cost_estimate,
     first_session_after,
     hac_statistics,
@@ -750,6 +751,23 @@ def _load_feature_metadata() -> dict:
     return metadata
 
 
+# EERM mismatch models M1/M2 are anchored on point-in-time analyst consensus.
+# That data is only sold by vendors / WRDS and cannot be honestly reconstructed
+# for free, so the two models are paused. The frozen protocol below is preserved
+# verbatim and MUST NOT be weakened or reused; we only record the pause here so
+# the block is durable and auditable. See MGRM (research/mgrm.py) for the
+# zero-vendor pivot that reuses the reaction engine without analyst consensus.
+M1_M2_PROGRAM_STATUS = "BLOCKED_DATA_ECONOMICALLY_INACCESSIBLE"
+M1_M2_BLOCKED_REASON = (
+    "Point-in-time analyst consensus, actuals, and pre-release guidance consensus "
+    "for the sample window are only available through paid vendors or WRDS. We "
+    "cannot recreate historical analyst expectations for free without fabricating "
+    "provenance, so EERM M1 (fundamental surprise) and M2 (surprise-reaction "
+    "mismatch) are paused indefinitely. The frozen EERM protocol is retained "
+    "unchanged; no substitute or backfilled expectations data is admitted."
+)
+
+
 def structured_data_audit(frame: pd.DataFrame | None = None) -> dict:
     """Report whether licensed expectations data is ready for M1/M2."""
     data = frame.copy() if frame is not None else _load_feature_frame()
@@ -762,8 +780,18 @@ def structured_data_audit(frame: pd.DataFrame | None = None) -> dict:
         ).fetchone()[0])
     con.close()
     coverage = coverage_statistics(data)
+    # No admissible vendor expectations exist -> the models are economically
+    # blocked, not merely under-covered. Preserve the distinction explicitly.
+    economically_blocked = sum(tables.values()) == 0
+    program_status = (M1_M2_PROGRAM_STATUS if economically_blocked else
+                      "READY" if coverage["gate_passed"] else "BLOCKED")
     return {
         "status": "READY" if coverage["gate_passed"] else "BLOCKED",
+        "program_status": program_status,
+        "blocked_reason": (M1_M2_BLOCKED_REASON
+                           if program_status == M1_M2_PROGRAM_STATUS else None),
+        "protocol_preserved": True,
+        "pivot": "MGRM (Management Guidance Revision-Reaction Mismatch)",
         "feature_artifact": _load_feature_metadata(),
         "table_rows": tables, "coverage": coverage,
         "required": [
@@ -1584,29 +1612,27 @@ def run(frame: pd.DataFrame | None = None, verbose: bool = True, *,
                         "effective_sample_size": 0, "passes": False}
     else:
         trade_frame["year"] = pd.to_datetime(trade_frame["entry_time"], utc=True).dt.year
-        events_by_year = trade_frame.groupby("year").size().to_dict()
-        bootstrap_effective = candidate_result["cluster_bootstrap"].get(
-            "effective_sample_size", 0
-        )
+        events_by_year = {str(key): int(value) for key, value in
+                          trade_frame.groupby("year").size().to_dict().items()}
+        unique_trades = int(trade_frame.earnings_event_id.nunique())
+        unique_tickers = int(trade_frame.ticker.nunique())
+        unique_dates = int(trade_frame.announcement_date.nunique())
+        gate = evaluate_power(power, unique_trades=unique_trades,
+                              unique_tickers=unique_tickers,
+                              unique_dates=unique_dates,
+                              events_by_year=events_by_year)
         sample_audit = {
-            "unique_executable_trades": int(trade_frame.earnings_event_id.nunique()),
-            "unique_tickers": int(trade_frame.ticker.nunique()),
-            "announcement_dates": int(trade_frame.announcement_date.nunique()),
-            "events_by_year": {str(key): int(value)
-                               for key, value in events_by_year.items()},
-            "effective_sample_size": int(bootstrap_effective),
+            "unique_executable_trades": unique_trades,
+            "unique_tickers": unique_tickers,
+            "announcement_dates": unique_dates,
+            "events_by_year": events_by_year,
+            "effective_sample_size": gate["effective_sample_size"],
+            "clustered_effective_sample_size": int(
+                candidate_result["cluster_bootstrap"].get("effective_sample_size", 0)
+            ),
+            "gate_checks": gate.get("checks", {}),
+            "passes": gate["passes"],
         }
-        sample_audit["passes"] = bool(
-            power.get("status") == "FROZEN" and
-            sample_audit["unique_executable_trades"] >=
-            power["minimum_unique_executable_trades"] and
-            sample_audit["unique_tickers"] >= power["minimum_unique_tickers"] and
-            sample_audit["announcement_dates"] >= power["minimum_announcement_dates"] and
-            sample_audit["effective_sample_size"] >=
-            power["minimum_effective_sample_size"] and
-            bool(events_by_year) and min(events_by_year.values()) >=
-            power["minimum_events_per_eligible_year"]
-        )
     permutation_rows = candidate_result["permutation_controls"].get(
         "grouping", {}
     ).get("permuted_rows", 0)

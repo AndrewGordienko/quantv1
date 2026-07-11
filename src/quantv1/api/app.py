@@ -288,6 +288,32 @@ def research_v4_replay():
     return _read_json("v4_event_reaction_poc.json", {"note": "run v4.event_reaction_poc"})
 
 
+@app.get("/api/research/mgrm")
+def research_mgrm():
+    """MGRM: management guidance revision vs market reaction. Zero-vendor public
+    SEC/IR data only; G0/G1/G2 nested elastic nets gated on the extraction audit."""
+    return _read_json("mgrm_report.json",
+                      {"note": "run scripts/mgrm_sprint.py discover/extract/link/features/run",
+                       "status": "MGRM_NOT_RUN"})
+
+
+@app.get("/api/research/mgrm-audit")
+def research_mgrm_audit():
+    """MGRM data gate: document coverage, extraction/AI agreement, previous-guidance
+    match rate, and power-derived sample requirement."""
+    return _read_json("mgrm_audit.json", {"note": "run scripts/mgrm_sprint.py audit",
+                                          "status": "BLOCKED"})
+
+
+@app.get("/api/research/mgrm-goldset")
+def research_mgrm_goldset():
+    """MGRM extractor gold-set audit: detection precision/recall and field-level
+    accuracy vs frozen labels; certification gates the historical pilot."""
+    return _read_json("mgrm_goldset_audit.json",
+                      {"note": "run scripts/mgrm_sprint.py goldset",
+                       "status": "NO_GOLDSET"})
+
+
 @app.get("/api/forward/book")
 def forward_book():
     """The live paper book to trade: primary LARGE + the 4 observational shadows."""
