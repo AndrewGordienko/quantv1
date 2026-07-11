@@ -395,7 +395,7 @@ def llm_config() -> dict | None:
         if not key:
             return None
         return {"provider": "openai",
-                "model": os.getenv("MGRM_LLM_MODEL", "gpt-5.4-mini"),
+                "model": os.getenv("MGRM_LLM_MODEL", "gpt-5.6-terra"),
                 "base_url": os.getenv("OPENAI_BASE_URL",
                                       "https://api.openai.com/v1").rstrip("/"),
                 "api_key": key}
