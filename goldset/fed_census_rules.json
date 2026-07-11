@@ -14,6 +14,15 @@
     "note": "TLT/IEF (Treasury duration, the cleanest Fed transmission channel) have ZERO minute bars. fed_primary._validate still requires an IEF/TLT + XLF exposure, so they are RECORDED as affected assets, but no outcome rows can be computed for them. All measurable outcomes are equity-ETF spillover, which is noisier than the rate response."
   },
   "actor_universe_rule": "Every person serving on the FOMC (the Board of Governors plus the 12 Federal Reserve Bank presidents) at any point during the census window, per the official Federal Reserve roster. Enumeration is deterministic from the roster; speakers and events are NEVER hand-selected for being interesting.",
+  "census_scope_v1": {
+    "scope": "BOARD_ONLY",
+    "sources": ["federalreserve.gov", "www.federalreserve.gov"],
+    "in_scope_actors": "Board of Governors (incl. the Chair) serving in the window, plus fomc_committee institutional events.",
+    "deferred": "The 12 Reserve Bank presidents and their regional sites are DEFERRED to a later census version. Regional exact content_first_public_time is far harder to establish; deferring keeps timestamp quality high for the first pass.",
+    "reason_code_for_deferred": "OUT_OF_SCOPE_V1",
+    "power_implication": "Board-only may not reach >=6 adequately represented speakers; if so, census v1 is classified DESCRIPTIVE_PILOT and a later full-roster version is required to attempt validation.",
+    "rationale": "Timestamp quality over breadth: federalreserve.gov prepared-text release times are the most defensible, giving the cleanest immediate_text tradability count."
+  },
   "institutional_events": {
     "rule": "FOMC institutional statements and implementation notes are separate NON-speaker events, attributed to the committee, never to an individual. The post-meeting Chair press conference is a DISTINCT event from the 2:00pm statement, with its own content and its own timestamps.",
     "actor_id": "fomc_committee"
@@ -58,7 +67,8 @@
     "NOT_PRIMARY_SPEAKER": "Actor is not the speaker/author (e.g., merely moderated or mentioned).",
     "NO_TRANSCRIPT_CONTENT": "No primary-source text/transcript available.",
     "DUPLICATE": "Same content already accepted under another URL.",
-    "OFF_ROSTER_ACTOR": "Speaker not an FOMC participant during the window."
+    "OFF_ROSTER_ACTOR": "Speaker not an FOMC participant during the window.",
+    "OUT_OF_SCOPE_V1": "On-roster Reserve Bank president deferred from the BOARD_ONLY census v1 scope."
   },
   "manifest_fields": [
     "event_id", "actor", "institution", "event_type", "title",
