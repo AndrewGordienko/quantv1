@@ -1,0 +1,93 @@
+{
+  "rules_version": "fed-census-rules-v1",
+  "purpose": "Deterministic census of every qualifying Federal Reserve public communication in the bars-covered window, for the actor B0-B4 study. Frozen BEFORE any enumeration, feature extraction, or outcome inspection.",
+  "census_window": {
+    "start": "2024-07-15",
+    "end": "2026-07-09",
+    "timezone": "UTC",
+    "derivation": "Intersection of SPY, QQQ, XLF minute-bar coverage in bars_minute (the assets whose reaction we can actually measure).",
+    "trading_days": 537
+  },
+  "market_data_reality": {
+    "measurable_reaction_assets": ["SPY", "QQQ", "XLF"],
+    "recorded_but_unmeasurable_exposures": ["TLT", "IEF"],
+    "note": "TLT/IEF (Treasury duration, the cleanest Fed transmission channel) have ZERO minute bars. fed_primary._validate still requires an IEF/TLT + XLF exposure, so they are RECORDED as affected assets, but no outcome rows can be computed for them. All measurable outcomes are equity-ETF spillover, which is noisier than the rate response."
+  },
+  "actor_universe_rule": "Every person serving on the FOMC (the Board of Governors plus the 12 Federal Reserve Bank presidents) at any point during the census window, per the official Federal Reserve roster. Enumeration is deterministic from the roster; speakers and events are NEVER hand-selected for being interesting.",
+  "institutional_events": {
+    "rule": "FOMC institutional statements and implementation notes are separate NON-speaker events, attributed to the committee, never to an individual. The post-meeting Chair press conference is a DISTINCT event from the 2:00pm statement, with its own content and its own timestamps.",
+    "actor_id": "fomc_committee"
+  },
+  "included_event_types": [
+    "speech", "testimony", "prepared_text_release", "chair_press_conference",
+    "policy_statement", "public_interview", "fomc_statement"
+  ],
+  "timestamp_model": {
+    "principle": "The usable time is when the EXACT CONTENT the model consumes became public, NOT when the speaker started. A completed transcript must never be backdated to the live start; doing so injects the entire future appearance at t=0.",
+    "fields": {
+      "scheduled_time": "Calendar-announced start time.",
+      "live_start_time": "When the person actually began speaking.",
+      "content_first_public_time": "When the EXACT content the model consumes first became public. This is the decision-eligible timestamp.",
+      "transcript_publication_time": "When the completed transcript was published."
+    },
+    "content_mode": {
+      "PREPARED_TEXT_RELEASE": {"tradability_tier": "immediate_text", "content_first_public_time": "prepared-text release time (often == live_start_time)"},
+      "TIMESTAMPED_CAPTIONS": {"tradability_tier": "streaming_live", "content_first_public_time": "per-chunk caption timestamp; usable incrementally only"},
+      "LIVE_STREAM": {"tradability_tier": "streaming_live", "content_first_public_time": "audio/video only, no real-time machine-readable text"},
+      "POST_EVENT_TRANSCRIPT": {"tradability_tier": "research_only", "content_first_public_time": "== transcript_publication_time; CANNOT be backdated to live_start_time"}
+    },
+    "decision_timestamp_rule": "A model may consume ONLY content that genuinely existed at its decision timestamp. The decision timestamp for an event is its content_first_public_time.",
+    "timestamp_precision_required": "exact"
+  },
+  "tradability_tiers": {
+    "immediate_text": "Machine-readable full text at content_first_public_time -> same-day text-based trading possible.",
+    "streaming_live": "Only incremental live audio/captions -> streaming/live trading only.",
+    "research_only": "Content available only as a post-event transcript -> research/backtest only, not real-time tradable."
+  },
+  "inclusion_criteria": [
+    "source_url is on an official Federal Reserve Board or Reserve Bank domain",
+    "actor is the speaker/author (primary role: speaker_author / verified_decision_maker), or the FOMC committee for institutional events",
+    "content_first_public_time falls within the census window",
+    "content_first_public_time is known at EXACT precision (not a page/publication date proxy)",
+    "primary-source transcript/text content is present"
+  ],
+  "exclusion_reason_codes": {
+    "NON_OFFICIAL_SOURCE": "Source is not an official Fed domain.",
+    "NO_EXACT_CONTENT_TIME": "No defensible exact content_first_public_time; only a page/publication date.",
+    "OUTSIDE_WINDOW": "content_first_public_time outside 2024-07-15..2026-07-09.",
+    "NOT_PRIMARY_SPEAKER": "Actor is not the speaker/author (e.g., merely moderated or mentioned).",
+    "NO_TRANSCRIPT_CONTENT": "No primary-source text/transcript available.",
+    "DUPLICATE": "Same content already accepted under another URL.",
+    "OFF_ROSTER_ACTOR": "Speaker not an FOMC participant during the window."
+  },
+  "manifest_fields": [
+    "event_id", "actor", "institution", "event_type", "title",
+    "primary_source_url", "document_sha256", "scheduled_time", "live_start_time",
+    "content_first_public_time", "transcript_publication_time", "timestamp_source",
+    "timestamp_precision", "content_mode", "transcript", "topic",
+    "institutional_event_flag", "overlapping_macro_event", "affected_assets"
+  ],
+  "rejection_ledger_fields": [
+    "candidate_id", "actor", "event_type", "primary_source_url",
+    "candidate_time", "candidate_time_kind", "reason_code", "reason_detail"
+  ],
+  "coverage_tables": [
+    "by_speaker", "by_event_type", "by_year", "by_timing_precision",
+    "by_content_mode", "by_tradability_tier"
+  ],
+  "unit_of_power": "unique_event",
+  "power_note": "Sample power is counted in UNIQUE EVENTS, never event-ticker rows. N events fanned across SPY/QQQ/XLF are still N independent information shocks.",
+  "power_gates": {
+    "min_exact_time_unique_events": 75,
+    "min_represented_speakers": 6,
+    "on_fail": "Classify the result DESCRIPTIVE_PILOT. Do NOT relax timestamp requirements to reach the gate."
+  },
+  "macro_overlap_flags": ["FOMC_DECISION", "CPI", "PCE", "NFP_PAYROLLS", "GDP", "MAJOR_EARNINGS"],
+  "macro_overlap_note": "Flag any event whose content_first_public_time shares a session with a scheduled macro release so speaker attribution is not contaminated by simultaneous shocks.",
+  "clustering_rule": "All downstream statistics cluster by event; several assets reacting to one speech are correlated observations.",
+  "freeze_protocol": {
+    "rules_frozen_before_pull": true,
+    "outcomes_or_features_before_census_freeze": "FORBIDDEN",
+    "census_version_hash": "sha256 over the accepted manifest + rejection ledger, recorded once both are frozen and committed"
+  }
+}
