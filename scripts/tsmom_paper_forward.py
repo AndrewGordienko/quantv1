@@ -80,19 +80,25 @@ def _next_session_on_or_after(d: str) -> str:
     return start.isoformat()
 
 
-def _fetch(today: str) -> pd.DataFrame:
+def _fetch(today: str) -> dict:
+    """Return {'open':df,'close':df} for the basket+SPY, through <= today (inclusive)."""
     tickers = _d.INSTRUMENTS + ["SPY"]
     df = yf.download(tickers, period="2y", auto_adjust=True, progress=False)
-    close = df["Close"] if "Close" in df.columns.get_level_values(0) else df
-    close = close.dropna(how="all").sort_index()
-    close = close[close.index <= pd.Timestamp(today)]
-    return close
+    lvl0 = df.columns.get_level_values(0)
+    out = {}
+    for field in ("Open", "Close"):
+        f = df[field] if field in lvl0 else df
+        out[field.lower()] = f.dropna(how="all").sort_index()[lambda x: x.index <= pd.Timestamp(today)]
+    return out
 
 
-def _target_weights(close: pd.DataFrame) -> tuple[dict, str]:
-    """FROZEN combined-lookback vol-targeted TSMOM weights as of the last close."""
+def _target_weights(close: pd.DataFrame, as_of_ts: pd.Timestamp | None = None) -> tuple[dict, str]:
+    """FROZEN combined-lookback vol-targeted TSMOM weights as of a given close date
+    (default: last available close)."""
     inst = [t for t in _d.INSTRUMENTS if t in close.columns]
     px = close[inst]
+    if as_of_ts is not None:
+        px = px[px.index <= as_of_ts]
     rets = px.pct_change()
     vol = rets.rolling(_d.VOL_WIN, min_periods=_d.VOL_WIN // 2).std() * np.sqrt(_d.ANN)
     sig = sum(np.sign(px / px.shift(L) - 1.0) for L in _d.LOOKBACKS) / len(_d.LOOKBACKS)
@@ -109,7 +115,7 @@ def arm() -> None:
         return
     PAPER.mkdir(parents=True, exist_ok=True)
     today = date.today().isoformat()
-    close = _fetch(today)
+    close = _fetch(today)["close"]
     weights, as_of = _target_weights(close)
     ref_close = {t: round(float(close[t].loc[close.index[-1]]), 4) for t in weights}
     exec_session = _next_session_on_or_after(PROSPECTIVE_START)
@@ -150,37 +156,94 @@ def arm() -> None:
     print(f"  wrote {SPEC.name}, {DECISIONS.name}")
 
 
-def mark() -> None:
-    """Append daily marks for sessions on/after the latest decision's execution."""
-    if not DECISIONS.exists() or not DECISIONS.read_text().strip():
+def _load(p):
+    return [json.loads(l) for l in p.read_text().splitlines() if l.strip()] if p.exists() else []
+
+
+def run() -> None:
+    """Idempotent, append-only: apply any due monthly rebalances, then mark all
+    FINALIZED sessions since the first execution. Correctness fixes vs v0:
+      * entry/rebalance day return = OPEN->CLOSE (we enter at the session open),
+        NOT close->close (which wrongly included the pre-entry overnight move);
+      * subtract turnover cost (cost_bps/side) on entry and each rebalance;
+      * only mark sessions strictly BEFORE today, so an in-progress/unfinalized
+        bar can never be appended to the immutable record.
+    """
+    decisions = _load(DECISIONS)
+    if not decisions:
         print("NOT ARMED — run `arm` first.")
         return
-    dec = [json.loads(l) for l in DECISIONS.read_text().splitlines() if l.strip()][-1]
-    exec_session = dec["execution_session"]
     today = date.today().isoformat()
-    if today < exec_session:
-        print(f"PRE-LAUNCH — nothing to mark before execution_session {exec_session} "
-              f"(today {today}).")
+    px = _fetch(today)
+    close, open_ = px["close"], px["open"]
+    fin = close.index[close.index < pd.Timestamp(today)]        # FINALIZED sessions only
+    first_exec = decisions[0]["execution_session"]
+    if len(fin) == 0 or fin[-1].date().isoformat() < first_exec:
+        print(f"PRE-LAUNCH / no finalized session on-or-after {first_exec} yet (today {today}).")
         return
-    close = _fetch(today)
-    inst = [t for t in dec["target_weights"] if t in close.columns]
-    rets = close[inst].pct_change()
-    w = pd.Series(dec["target_weights"]).reindex(inst).fillna(0.0)
-    marked = {json.loads(l)["date"] for l in MARKS.read_text().splitlines()
-              if l.strip()} if MARKS.exists() else set()
-    sessions = [d for d in rets.index if d.date().isoformat() >= exec_session
-                and d.date().isoformat() not in marked]
+
+    # --- due monthly rebalances: at each month-end finalized session, target as-of
+    #     its close, executed at the next session open (append a REBALANCE decision) ---
+    dec_execs = {d["execution_session"] for d in decisions}
+    month_ends = pd.Series(fin, index=fin).groupby([fin.year, fin.month]).last().tolist()
+    for me in month_ends:
+        if me.date().isoformat() < first_exec:
+            continue
+        nxt = close.index[close.index > me]
+        if len(nxt) == 0:
+            continue
+        exec_next = nxt[0].date().isoformat()
+        if exec_next <= first_exec or exec_next in dec_execs:
+            continue
+        w, asof = _target_weights(close, as_of_ts=me)
+        rec = {"decision_date": me.date().isoformat(), "signal_as_of": asof,
+               "execution_session": exec_next, "status": "REBALANCE",
+               "rules_code_sha256": _rules_hash(), "target_weights": w,
+               "note": "monthly rebalance (last trading day of month)"}
+        with open(DECISIONS, "a") as f:
+            f.write(json.dumps(rec, sort_keys=True) + "\n")
+        decisions.append(rec)
+        dec_execs.add(exec_next)
+
+    # --- mark finalized sessions using the book active on each date ---
+    books = sorted(decisions, key=lambda d: d["execution_session"])
+    marked = {m["date"] for m in _load(MARKS)}
+    cost = COST_BPS_PER_SIDE / 1e4
     new = 0
-    for d in sessions:
-        r = float((w * rets.loc[d]).sum())
-        with open(MARKS, "a") as f:
-            f.write(json.dumps({"date": d.date().isoformat(), "strategy": SPEC_VERSION,
-                                "ret": round(r, 6), "spy_ret": round(float(close["SPY"].pct_change().loc[d]), 6)
-                                if "SPY" in close else None}, sort_keys=True) + "\n")
-        new += 1
-    print(f"marked {new} new session(s) through {today}.")
+    for i, bk in enumerate(books):
+        w = pd.Series(bk["target_weights"], dtype=float)
+        inst = [t for t in w.index if t in close.columns]
+        w = w.reindex(inst).fillna(0.0)
+        w_prev = pd.Series(books[i - 1]["target_weights"], dtype=float) if i > 0 else pd.Series(dtype=float)
+        turnover = float((w - w_prev.reindex(inst).fillna(0.0)).abs().sum())
+        start = bk["execution_session"]
+        end = books[i + 1]["execution_session"] if i + 1 < len(books) else None
+        for d in fin:
+            di = d.date().isoformat()
+            if di < start or (end and di >= end) or di in marked:
+                continue
+            if di == start:                                     # entry/rebalance day: open->close
+                if d not in open_.index:
+                    continue
+                r = float((w * (close.loc[d, inst] / open_.loc[d, inst] - 1.0)).sum()) - turnover * cost
+                spy = float(close.loc[d, "SPY"] / open_.loc[d, "SPY"] - 1.0) if d in open_.index else None
+                first = True
+            else:                                               # holding day: close->close
+                r = float((w * close[inst].pct_change().loc[d]).sum())
+                spy = float(close["SPY"].pct_change().loc[d])
+                first = False
+            with open(MARKS, "a") as f:
+                f.write(json.dumps({"date": di, "strategy": SPEC_VERSION, "ret": round(r, 6),
+                                    "spy_ret": round(spy, 6) if spy is not None else None,
+                                    "entry_or_rebalance_day": first, "book_execution": start},
+                                   sort_keys=True) + "\n")
+            marked.add(di)
+            new += 1
+    tot = _load(MARKS)
+    equity = float(np.prod([1 + m["ret"] for m in tot])) if tot else 1.0
+    print(f"marked {new} new session(s); {len(tot)} total; paper equity index {equity:.4f}")
 
 
 if __name__ == "__main__":
-    cmd = sys.argv[1] if len(sys.argv) > 1 else "arm"
-    {"arm": arm, "mark": mark}.get(cmd, arm)()
+    cmd = sys.argv[1] if len(sys.argv) > 1 else "run"
+    {"arm": arm, "run": run, "mark": run}.get(cmd, run)()
