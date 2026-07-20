@@ -282,6 +282,13 @@ def research_intraday():
     return _read_json("intraday_meanrev.json", {"note": "run intraday_meanrev"})
 
 
+@app.get("/api/research/latent-flow")
+def research_latent_flow():
+    """F1 latent-flow-shock bar-only screen; research-only, not executable flow."""
+    return _read_json("latent_flow_f1.json", {"note": "run scripts/latent_flow_sprint.py",
+                                                "status": "NOT_RUN"})
+
+
 @app.get("/api/research/v4-replay")
 def research_v4_replay():
     """V4 leak-free event-replay PoC (Federal Register -> sector ETF, hourly)."""
@@ -295,6 +302,14 @@ def research_mgrm():
     return _read_json("mgrm_report.json",
                       {"note": "run scripts/mgrm_sprint.py discover/extract/link/features/run",
                        "status": "MGRM_NOT_RUN"})
+
+
+@app.get("/api/research/event-atlas")
+def research_event_atlas():
+    """SEC Event Atlas taxonomy/unsigned Stage-1 diagnostic."""
+    return _read_json("sec_event_atlas_unsigned.json",
+                      {"status": "BLOCKED_NO_ATLAS_MANIFEST",
+                       "note": "run scripts/sec_event_atlas.py ingest then unsigned"})
 
 
 @app.get("/api/research/mgrm-audit")
@@ -348,6 +363,37 @@ def forward_decisions(limit: int = 200):
         for k in ("decision_date", "source_filing_date", "first_seen_at"):
             r[k] = str(r[k])
     return rows
+
+
+@app.get("/api/forward/opening-flow")
+def forward_opening_flow(limit: int = 200):
+    """Opening Flow canary decisions, paper orders, marks, and fixed screen."""
+    from ..config import DATA_DIR
+    try:
+        decisions = q("""SELECT decision_id, decision_date, decision_ts, book,
+                                policy_version, ticker, action, side, target_weight,
+                                status, reason, features
+                         FROM opening_flow_decisions
+                         ORDER BY decision_ts DESC, book LIMIT ?""", [limit])
+        orders = q("""SELECT order_id, decision_id, book, ticker, side, qty,
+                            broker, status, submitted_at, filled_at, fill_price
+                     FROM opening_flow_orders ORDER BY submitted_at DESC LIMIT ?""", [limit])
+        marks = q("""SELECT decision_id, mark_ts, ticker, price, pnl, exit_reason
+                    FROM opening_flow_marks ORDER BY mark_ts DESC LIMIT ?""", [limit])
+    except duckdb.Error:
+        decisions, orders, marks = [], [], []
+    for row in decisions:
+        row["reason"], row["features"] = _loads(row["reason"]), _loads(row["features"])
+        for key in ("decision_date", "decision_ts", "signal_as_of", "entry_after", "exit_by"):
+            if key in row and row[key] is not None:
+                row[key] = str(row[key])
+    for row in orders + marks:
+        for key in ("submitted_at", "filled_at", "mark_ts"):
+            if key in row and row[key] is not None:
+                row[key] = str(row[key])
+    screen = _read_json("opening_flow_screen.json", {"status": "NOT_RUN"})
+    return {"books": ["CASH_CHAMPION", "OPENING_FLOW_P1", "OPENING_FLOW_P2", "OPENING_FLOW_P3"],
+            "decisions": decisions, "orders": orders, "marks": marks, "screen": screen}
 
 
 @app.get("/api/events/summary")

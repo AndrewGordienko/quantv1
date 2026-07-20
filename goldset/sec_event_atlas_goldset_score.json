@@ -1,0 +1,26 @@
+{
+  "labeled": 0,
+  "partitions": {
+    "development": {
+      "event_detection_precision": null,
+      "event_detection_recall": null,
+      "event_type_accuracy": null,
+      "evidence_grounding_accuracy": null,
+      "labeled": 0,
+      "magnitude_extraction_coverage": null,
+      "routine_controls_confirmed": 0
+    },
+    "sealed": {
+      "event_detection_precision": null,
+      "event_detection_recall": null,
+      "event_type_accuracy": null,
+      "evidence_grounding_accuracy": null,
+      "labeled": 0,
+      "magnitude_extraction_coverage": null,
+      "routine_controls_confirmed": 0
+    }
+  },
+  "pending": 80,
+  "protocol": "issuer-disjoint; sealed is evaluation-only",
+  "rows": 80
+}

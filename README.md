@@ -40,6 +40,20 @@ See [docs/strategy.md](docs/strategy.md) for the frozen protocol and
 hypotheses and negative results are recorded in
 [docs/research_ledger.md](docs/research_ledger.md).
 
+**Latent flow shock (F1 research screen).** A separate intraday engine now
+screens factor-residual, volume, CUSUM and peer-confirmed shocks using the local
+minute bars. It is explicitly non-deployable: this is not trade-level order flow
+without historical trades and NBBO quotes. The frozen first screen is negative;
+see [docs/latent_flow_shock_spec.md](docs/latent_flow_shock_spec.md).
+
+**Opening Flow paper canary.** The frozen P0/P1/P2/P3 policy, historical screen,
+paper-only live runner, immutable decision/order/mark ledger, and localhost
+replay are documented in [docs/opening_flow_spec.md](docs/opening_flow_spec.md).
+
+**SEC Event Atlas.** The primary research lane now has a source-anchored
+15-family/51-type unsigned event manifest contract and Stage-1 volatility audit;
+see [docs/sec_event_atlas_spec.md](docs/sec_event_atlas_spec.md).
+
 ## Status
 
 - EERM M0: price and reaction baseline available.
@@ -69,6 +83,12 @@ uv run python scripts/mgrm_sprint.py link
 uv run python scripts/mgrm_sprint.py goldset   # gold-set audit + certification
 uv run python scripts/mgrm_sprint.py audit     # data gate (incl. goldset_certified)
 uv run python scripts/mgrm_sprint.py run
+
+# Latent Flow Shock F1 (minute bars already loaded)
+uv run python scripts/latent_flow_sprint.py
+
+# Latent Flow Shock F2 source gate (does not build an F2 model)
+uv run python scripts/latent_flow_f2_audit.py PATH/manifest.json
 ```
 
 Set the extraction backend with `MGRM_LLM_PROVIDER` (`openai` or `ollama`); with

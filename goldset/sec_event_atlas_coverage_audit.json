@@ -1,0 +1,1159 @@
+{
+  "accession_mapping_rate": 0.9433198380566802,
+  "accession_price_window_rate": 0.0,
+  "by_family": {
+    "unknown": {
+      "events": 2386,
+      "mapped": 2279,
+      "price_windows": 0
+    }
+  },
+  "by_issuer": {
+    "0000001800": {
+      "events": 11,
+      "mapped": 11,
+      "price_windows": 0
+    },
+    "0000007536": {
+      "events": 17,
+      "mapped": 17,
+      "price_windows": 0
+    },
+    "0000020286": {
+      "events": 13,
+      "mapped": 13,
+      "price_windows": 0
+    },
+    "0000025895": {
+      "events": 14,
+      "mapped": 14,
+      "price_windows": 0
+    },
+    "0000030697": {
+      "events": 2,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0000033002": {
+      "events": 2,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0000034067": {
+      "events": 15,
+      "mapped": 15,
+      "price_windows": 0
+    },
+    "0000036029": {
+      "events": 11,
+      "mapped": 11,
+      "price_windows": 0
+    },
+    "0000063908": {
+      "events": 6,
+      "mapped": 6,
+      "price_windows": 0
+    },
+    "0000064040": {
+      "events": 14,
+      "mapped": 14,
+      "price_windows": 0
+    },
+    "0000064996": {
+      "events": 12,
+      "mapped": 12,
+      "price_windows": 0
+    },
+    "0000070858": {
+      "events": 32,
+      "mapped": 32,
+      "price_windows": 0
+    },
+    "0000074303": {
+      "events": 21,
+      "mapped": 21,
+      "price_windows": 0
+    },
+    "0000076334": {
+      "events": 13,
+      "mapped": 13,
+      "price_windows": 0
+    },
+    "0000088941": {
+      "events": 10,
+      "mapped": 10,
+      "price_windows": 0
+    },
+    "0000093389": {
+      "events": 9,
+      "mapped": 9,
+      "price_windows": 0
+    },
+    "0000093556": {
+      "events": 6,
+      "mapped": 6,
+      "price_windows": 0
+    },
+    "0000095574": {
+      "events": 15,
+      "mapped": 15,
+      "price_windows": 0
+    },
+    "0000101984": {
+      "events": 1,
+      "mapped": 1,
+      "price_windows": 0
+    },
+    "0000104918": {
+      "events": 14,
+      "mapped": 14,
+      "price_windows": 0
+    },
+    "0000277948": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0000310764": {
+      "events": 10,
+      "mapped": 10,
+      "price_windows": 0
+    },
+    "0000320187": {
+      "events": 2,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0000320335": {
+      "events": 1,
+      "mapped": 1,
+      "price_windows": 0
+    },
+    "0000354707": {
+      "events": 12,
+      "mapped": 12,
+      "price_windows": 0
+    },
+    "0000356037": {
+      "events": 6,
+      "mapped": 6,
+      "price_windows": 0
+    },
+    "0000700841": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0000722572": {
+      "events": 3,
+      "mapped": 3,
+      "price_windows": 0
+    },
+    "0000723188": {
+      "events": 10,
+      "mapped": 10,
+      "price_windows": 0
+    },
+    "0000723254": {
+      "events": 1,
+      "mapped": 1,
+      "price_windows": 0
+    },
+    "0000731653": {
+      "events": 4,
+      "mapped": 4,
+      "price_windows": 0
+    },
+    "0000732712": {
+      "events": 25,
+      "mapped": 25,
+      "price_windows": 0
+    },
+    "0000763907": {
+      "events": 12,
+      "mapped": 12,
+      "price_windows": 0
+    },
+    "0000764401": {
+      "events": 10,
+      "mapped": 10,
+      "price_windows": 0
+    },
+    "0000765880": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0000784977": {
+      "events": 1,
+      "mapped": 1,
+      "price_windows": 0
+    },
+    "0000810958": {
+      "events": 9,
+      "mapped": 9,
+      "price_windows": 0
+    },
+    "0000811589": {
+      "events": 16,
+      "mapped": 16,
+      "price_windows": 0
+    },
+    "0000813672": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0000817720": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0000818033": {
+      "events": 9,
+      "mapped": 9,
+      "price_windows": 0
+    },
+    "0000832489": {
+      "events": 4,
+      "mapped": 4,
+      "price_windows": 0
+    },
+    "0000849395": {
+      "events": 19,
+      "mapped": 19,
+      "price_windows": 0
+    },
+    "0000849399": {
+      "events": 21,
+      "mapped": 21,
+      "price_windows": 0
+    },
+    "0000851205": {
+      "events": 13,
+      "mapped": 13,
+      "price_windows": 0
+    },
+    "0000866829": {
+      "events": 17,
+      "mapped": 17,
+      "price_windows": 0
+    },
+    "0000879526": {
+      "events": 14,
+      "mapped": 14,
+      "price_windows": 0
+    },
+    "0000887343": {
+      "events": 6,
+      "mapped": 6,
+      "price_windows": 0
+    },
+    "0000899923": {
+      "events": 3,
+      "mapped": 3,
+      "price_windows": 0
+    },
+    "0000906553": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0000912767": {
+      "events": 8,
+      "mapped": 8,
+      "price_windows": 0
+    },
+    "0000913760": {
+      "events": 6,
+      "mapped": 6,
+      "price_windows": 0
+    },
+    "0000914208": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0000917251": {
+      "events": 18,
+      "mapped": 18,
+      "price_windows": 0
+    },
+    "0000924168": {
+      "events": 12,
+      "mapped": 12,
+      "price_windows": 0
+    },
+    "0000926617": {
+      "events": 27,
+      "mapped": 27,
+      "price_windows": 0
+    },
+    "0001001907": {
+      "events": 8,
+      "mapped": 8,
+      "price_windows": 0
+    },
+    "0001006830": {
+      "events": 9,
+      "mapped": 0,
+      "price_windows": 0
+    },
+    "0001006837": {
+      "events": 19,
+      "mapped": 19,
+      "price_windows": 0
+    },
+    "0001010470": {
+      "events": 12,
+      "mapped": 12,
+      "price_windows": 0
+    },
+    "0001013880": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0001020214": {
+      "events": 21,
+      "mapped": 21,
+      "price_windows": 0
+    },
+    "0001026655": {
+      "events": 21,
+      "mapped": 21,
+      "price_windows": 0
+    },
+    "0001034670": {
+      "events": 4,
+      "mapped": 4,
+      "price_windows": 0
+    },
+    "0001035443": {
+      "events": 10,
+      "mapped": 10,
+      "price_windows": 0
+    },
+    "0001046311": {
+      "events": 17,
+      "mapped": 17,
+      "price_windows": 0
+    },
+    "0001049521": {
+      "events": 22,
+      "mapped": 22,
+      "price_windows": 0
+    },
+    "0001050446": {
+      "events": 18,
+      "mapped": 18,
+      "price_windows": 0
+    },
+    "0001051514": {
+      "events": 10,
+      "mapped": 10,
+      "price_windows": 0
+    },
+    "0001057379": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0001058090": {
+      "events": 2,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0001065696": {
+      "events": 1,
+      "mapped": 1,
+      "price_windows": 0
+    },
+    "0001075531": {
+      "events": 2,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0001082324": {
+      "events": 11,
+      "mapped": 11,
+      "price_windows": 0
+    },
+    "0001082733": {
+      "events": 12,
+      "mapped": 0,
+      "price_windows": 0
+    },
+    "0001106644": {
+      "events": 3,
+      "mapped": 3,
+      "price_windows": 0
+    },
+    "0001114483": {
+      "events": 13,
+      "mapped": 13,
+      "price_windows": 0
+    },
+    "0001117057": {
+      "events": 8,
+      "mapped": 8,
+      "price_windows": 0
+    },
+    "0001123494": {
+      "events": 37,
+      "mapped": 37,
+      "price_windows": 0
+    },
+    "0001126741": {
+      "events": 10,
+      "mapped": 10,
+      "price_windows": 0
+    },
+    "0001131312": {
+      "events": 4,
+      "mapped": 0,
+      "price_windows": 0
+    },
+    "0001132651": {
+      "events": 10,
+      "mapped": 10,
+      "price_windows": 0
+    },
+    "0001133421": {
+      "events": 14,
+      "mapped": 14,
+      "price_windows": 0
+    },
+    "0001134765": {
+      "events": 4,
+      "mapped": 0,
+      "price_windows": 0
+    },
+    "0001138723": {
+      "events": 1,
+      "mapped": 1,
+      "price_windows": 0
+    },
+    "0001179929": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0001212545": {
+      "events": 9,
+      "mapped": 9,
+      "price_windows": 0
+    },
+    "0001226616": {
+      "events": 2,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0001228627": {
+      "events": 15,
+      "mapped": 15,
+      "price_windows": 0
+    },
+    "0001261654": {
+      "events": 17,
+      "mapped": 17,
+      "price_windows": 0
+    },
+    "0001280776": {
+      "events": 13,
+      "mapped": 13,
+      "price_windows": 0
+    },
+    "0001288403": {
+      "events": 20,
+      "mapped": 20,
+      "price_windows": 0
+    },
+    "0001288855": {
+      "events": 1,
+      "mapped": 1,
+      "price_windows": 0
+    },
+    "0001304161": {
+      "events": 3,
+      "mapped": 0,
+      "price_windows": 0
+    },
+    "0001309082": {
+      "events": 4,
+      "mapped": 4,
+      "price_windows": 0
+    },
+    "0001316835": {
+      "events": 6,
+      "mapped": 6,
+      "price_windows": 0
+    },
+    "0001318605": {
+      "events": 3,
+      "mapped": 3,
+      "price_windows": 0
+    },
+    "0001327273": {
+      "events": 14,
+      "mapped": 14,
+      "price_windows": 0
+    },
+    "0001327567": {
+      "events": 9,
+      "mapped": 9,
+      "price_windows": 0
+    },
+    "0001332349": {
+      "events": 9,
+      "mapped": 9,
+      "price_windows": 0
+    },
+    "0001341766": {
+      "events": 6,
+      "mapped": 6,
+      "price_windows": 0
+    },
+    "0001355848": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0001361658": {
+      "events": 9,
+      "mapped": 9,
+      "price_windows": 0
+    },
+    "0001370053": {
+      "events": 2,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0001372807": {
+      "events": 13,
+      "mapped": 13,
+      "price_windows": 0
+    },
+    "0001376986": {
+      "events": 1,
+      "mapped": 0,
+      "price_windows": 0
+    },
+    "0001378950": {
+      "events": 18,
+      "mapped": 18,
+      "price_windows": 0
+    },
+    "0001383414": {
+      "events": 17,
+      "mapped": 12,
+      "price_windows": 0
+    },
+    "0001384195": {
+      "events": 6,
+      "mapped": 6,
+      "price_windows": 0
+    },
+    "0001397016": {
+      "events": 2,
+      "mapped": 0,
+      "price_windows": 0
+    },
+    "0001401521": {
+      "events": 17,
+      "mapped": 17,
+      "price_windows": 0
+    },
+    "0001407583": {
+      "events": 12,
+      "mapped": 0,
+      "price_windows": 0
+    },
+    "0001431567": {
+      "events": 3,
+      "mapped": 3,
+      "price_windows": 0
+    },
+    "0001434316": {
+      "events": 2,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0001437226": {
+      "events": 9,
+      "mapped": 9,
+      "price_windows": 0
+    },
+    "0001437958": {
+      "events": 10,
+      "mapped": 10,
+      "price_windows": 0
+    },
+    "0001448431": {
+      "events": 19,
+      "mapped": 19,
+      "price_windows": 0
+    },
+    "0001454742": {
+      "events": 7,
+      "mapped": 0,
+      "price_windows": 0
+    },
+    "0001455684": {
+      "events": 20,
+      "mapped": 20,
+      "price_windows": 0
+    },
+    "0001477009": {
+      "events": 19,
+      "mapped": 0,
+      "price_windows": 0
+    },
+    "0001478320": {
+      "events": 2,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0001491419": {
+      "events": 27,
+      "mapped": 27,
+      "price_windows": 0
+    },
+    "0001494259": {
+      "events": 13,
+      "mapped": 13,
+      "price_windows": 0
+    },
+    "0001519449": {
+      "events": 2,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0001520006": {
+      "events": 14,
+      "mapped": 14,
+      "price_windows": 0
+    },
+    "0001520118": {
+      "events": 4,
+      "mapped": 4,
+      "price_windows": 0
+    },
+    "0001524472": {
+      "events": 9,
+      "mapped": 9,
+      "price_windows": 0
+    },
+    "0001527599": {
+      "events": 13,
+      "mapped": 13,
+      "price_windows": 0
+    },
+    "0001534969": {
+      "events": 10,
+      "mapped": 10,
+      "price_windows": 0
+    },
+    "0001538379": {
+      "events": 4,
+      "mapped": 4,
+      "price_windows": 0
+    },
+    "0001539838": {
+      "events": 42,
+      "mapped": 42,
+      "price_windows": 0
+    },
+    "0001550913": {
+      "events": 10,
+      "mapped": 0,
+      "price_windows": 0
+    },
+    "0001552797": {
+      "events": 24,
+      "mapped": 24,
+      "price_windows": 0
+    },
+    "0001554818": {
+      "events": 6,
+      "mapped": 6,
+      "price_windows": 0
+    },
+    "0001556593": {
+      "events": 17,
+      "mapped": 17,
+      "price_windows": 0
+    },
+    "0001560327": {
+      "events": 11,
+      "mapped": 11,
+      "price_windows": 0
+    },
+    "0001566044": {
+      "events": 16,
+      "mapped": 16,
+      "price_windows": 0
+    },
+    "0001571996": {
+      "events": 36,
+      "mapped": 36,
+      "price_windows": 0
+    },
+    "0001579241": {
+      "events": 16,
+      "mapped": 16,
+      "price_windows": 0
+    },
+    "0001581068": {
+      "events": 8,
+      "mapped": 8,
+      "price_windows": 0
+    },
+    "0001587523": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0001590895": {
+      "events": 28,
+      "mapped": 28,
+      "price_windows": 0
+    },
+    "0001590955": {
+      "events": 6,
+      "mapped": 6,
+      "price_windows": 0
+    },
+    "0001591956": {
+      "events": 16,
+      "mapped": 16,
+      "price_windows": 0
+    },
+    "0001601046": {
+      "events": 10,
+      "mapped": 10,
+      "price_windows": 0
+    },
+    "0001609065": {
+      "events": 18,
+      "mapped": 18,
+      "price_windows": 0
+    },
+    "0001611547": {
+      "events": 8,
+      "mapped": 8,
+      "price_windows": 0
+    },
+    "0001612720": {
+      "events": 3,
+      "mapped": 3,
+      "price_windows": 0
+    },
+    "0001621832": {
+      "events": 24,
+      "mapped": 24,
+      "price_windows": 0
+    },
+    "0001633917": {
+      "events": 9,
+      "mapped": 9,
+      "price_windows": 0
+    },
+    "0001633931": {
+      "events": 5,
+      "mapped": 5,
+      "price_windows": 0
+    },
+    "0001634117": {
+      "events": 24,
+      "mapped": 24,
+      "price_windows": 0
+    },
+    "0001636422": {
+      "events": 8,
+      "mapped": 8,
+      "price_windows": 0
+    },
+    "0001636651": {
+      "events": 8,
+      "mapped": 8,
+      "price_windows": 0
+    },
+    "0001643154": {
+      "events": 3,
+      "mapped": 0,
+      "price_windows": 0
+    },
+    "0001651932": {
+      "events": 3,
+      "mapped": 3,
+      "price_windows": 0
+    },
+    "0001668010": {
+      "events": 30,
+      "mapped": 30,
+      "price_windows": 0
+    },
+    "0001675149": {
+      "events": 34,
+      "mapped": 34,
+      "price_windows": 0
+    },
+    "0001680062": {
+      "events": 8,
+      "mapped": 8,
+      "price_windows": 0
+    },
+    "0001701478": {
+      "events": 28,
+      "mapped": 28,
+      "price_windows": 0
+    },
+    "0001709682": {
+      "events": 15,
+      "mapped": 15,
+      "price_windows": 0
+    },
+    "0001712762": {
+      "events": 2,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0001713210": {
+      "events": 2,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0001725160": {
+      "events": 9,
+      "mapped": 9,
+      "price_windows": 0
+    },
+    "0001727196": {
+      "events": 9,
+      "mapped": 9,
+      "price_windows": 0
+    },
+    "0001730984": {
+      "events": 3,
+      "mapped": 3,
+      "price_windows": 0
+    },
+    "0001737523": {
+      "events": 3,
+      "mapped": 3,
+      "price_windows": 0
+    },
+    "0001758488": {
+      "events": 3,
+      "mapped": 3,
+      "price_windows": 0
+    },
+    "0001760689": {
+      "events": 11,
+      "mapped": 11,
+      "price_windows": 0
+    },
+    "0001761612": {
+      "events": 3,
+      "mapped": 3,
+      "price_windows": 0
+    },
+    "0001763660": {
+      "events": 8,
+      "mapped": 8,
+      "price_windows": 0
+    },
+    "0001764013": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0001787297": {
+      "events": 3,
+      "mapped": 3,
+      "price_windows": 0
+    },
+    "0001794776": {
+      "events": 1,
+      "mapped": 1,
+      "price_windows": 0
+    },
+    "0001795815": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0001800667": {
+      "events": 2,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0001802457": {
+      "events": 2,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0001807046": {
+      "events": 2,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0001809750": {
+      "events": 8,
+      "mapped": 8,
+      "price_windows": 0
+    },
+    "0001811115": {
+      "events": 12,
+      "mapped": 12,
+      "price_windows": 0
+    },
+    "0001812173": {
+      "events": 17,
+      "mapped": 17,
+      "price_windows": 0
+    },
+    "0001817232": {
+      "events": 30,
+      "mapped": 30,
+      "price_windows": 0
+    },
+    "0001817713": {
+      "events": 6,
+      "mapped": 6,
+      "price_windows": 0
+    },
+    "0001821586": {
+      "events": 4,
+      "mapped": 4,
+      "price_windows": 0
+    },
+    "0001824502": {
+      "events": 8,
+      "mapped": 8,
+      "price_windows": 0
+    },
+    "0001824893": {
+      "events": 5,
+      "mapped": 5,
+      "price_windows": 0
+    },
+    "0001828105": {
+      "events": 20,
+      "mapped": 20,
+      "price_windows": 0
+    },
+    "0001829247": {
+      "events": 2,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0001829794": {
+      "events": 44,
+      "mapped": 44,
+      "price_windows": 0
+    },
+    "0001831651": {
+      "events": 21,
+      "mapped": 21,
+      "price_windows": 0
+    },
+    "0001833769": {
+      "events": 13,
+      "mapped": 13,
+      "price_windows": 0
+    },
+    "0001834622": {
+      "events": 8,
+      "mapped": 8,
+      "price_windows": 0
+    },
+    "0001838987": {
+      "events": 34,
+      "mapped": 34,
+      "price_windows": 0
+    },
+    "0001839839": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0001840425": {
+      "events": 5,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0001840776": {
+      "events": 12,
+      "mapped": 12,
+      "price_windows": 0
+    },
+    "0001841408": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0001841761": {
+      "events": 4,
+      "mapped": 4,
+      "price_windows": 0
+    },
+    "0001843165": {
+      "events": 10,
+      "mapped": 10,
+      "price_windows": 0
+    },
+    "0001843973": {
+      "events": 5,
+      "mapped": 5,
+      "price_windows": 0
+    },
+    "0001846235": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0001852244": {
+      "events": 14,
+      "mapped": 14,
+      "price_windows": 0
+    },
+    "0001855474": {
+      "events": 10,
+      "mapped": 10,
+      "price_windows": 0
+    },
+    "0001856725": {
+      "events": 10,
+      "mapped": 10,
+      "price_windows": 0
+    },
+    "0001858681": {
+      "events": 11,
+      "mapped": 11,
+      "price_windows": 0
+    },
+    "0001865107": {
+      "events": 10,
+      "mapped": 10,
+      "price_windows": 0
+    },
+    "0001865200": {
+      "events": 5,
+      "mapped": 5,
+      "price_windows": 0
+    },
+    "0001866226": {
+      "events": 26,
+      "mapped": 26,
+      "price_windows": 0
+    },
+    "0001871509": {
+      "events": 22,
+      "mapped": 22,
+      "price_windows": 0
+    },
+    "0001871638": {
+      "events": 4,
+      "mapped": 4,
+      "price_windows": 0
+    },
+    "0001872292": {
+      "events": 1,
+      "mapped": 0,
+      "price_windows": 0
+    },
+    "0001892747": {
+      "events": 4,
+      "mapped": 4,
+      "price_windows": 0
+    },
+    "0001894562": {
+      "events": 7,
+      "mapped": 7,
+      "price_windows": 0
+    },
+    "0001895262": {
+      "events": 35,
+      "mapped": 35,
+      "price_windows": 0
+    },
+    "0001898496": {
+      "events": 9,
+      "mapped": 9,
+      "price_windows": 0
+    },
+    "0001918102": {
+      "events": 5,
+      "mapped": 0,
+      "price_windows": 0
+    },
+    "0001944013": {
+      "events": 4,
+      "mapped": 0,
+      "price_windows": 0
+    },
+    "0001956955": {
+      "events": 15,
+      "mapped": 15,
+      "price_windows": 0
+    },
+    "0001962481": {
+      "events": 2,
+      "mapped": 2,
+      "price_windows": 0
+    },
+    "0002000775": {
+      "events": 3,
+      "mapped": 0,
+      "price_windows": 0
+    },
+    "0002010788": {
+      "events": 10,
+      "mapped": 10,
+      "price_windows": 0
+    }
+  },
+  "by_year": {
+    "2022": {
+      "events": 663,
+      "mapped": 635,
+      "price_windows": 0
+    },
+    "2023": {
+      "events": 868,
+      "mapped": 820,
+      "price_windows": 0
+    },
+    "2024": {
+      "events": 855,
+      "mapped": 824,
+      "price_windows": 0
+    }
+  },
+  "delisting_coverage": false,
+  "delisting_records": 0,
+  "denominators": {
+    "event_accessions": 494,
+    "event_issuers": 221,
+    "event_tags": 2386,
+    "mapped_event_accessions": 466,
+    "mapped_event_issuers": 205,
+    "selected_filings": 500,
+    "windowed_event_accessions": 0
+  },
+  "events": 2386,
+  "filing_mapping_rate": 0.932,
+  "mapped_events": 2279,
+  "mapping_rate": 0.9551550712489523,
+  "missingness_comparison": {
+    "mapped": 2279,
+    "unmapped": 107,
+    "window_missing": 2386,
+    "windowed": 0
+  },
+  "price_window_events": 0,
+  "price_window_rate": 0.0,
+  "promotion_gate": false
+}

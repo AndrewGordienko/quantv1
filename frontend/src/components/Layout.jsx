@@ -4,6 +4,7 @@ import { useApi } from "../api.js";
 const NAV = [
   { to: "/", label: "Today", ico: "◉", end: true },
   { to: "/paper", label: "Paper Book", ico: "◈" },
+  { to: "/opening-flow", label: "Opening Flow", ico: "↗" },
   { to: "/feed", label: "Live Feed", ico: "≋" },
   { to: "/leaderboard", label: "Leaderboard", ico: "▲" },
   { to: "/research", label: "Research", ico: "⌗" },

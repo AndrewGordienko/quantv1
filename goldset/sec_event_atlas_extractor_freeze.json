@@ -1,0 +1,16 @@
+{
+  "freeze_version": "sec-atlas-extraction-freeze-v2",
+  "frozen_at": "2026-07-11",
+  "selection_is_return_blind": true,
+  "development_labels_required_before_sealed_scoring": 63,
+  "sealed_records": 17,
+  "taxonomy_version": "sec-event-atlas-v1",
+  "census_version": "sec-atlas-phaseA-pilot-v1",
+  "component_sha256": {
+    "sec_census.py": "bb316125f4f306f9c83aa40d665744da9659e2cc7cf3b23dc8e5f34a8a932fd8",
+    "security_master.py": "e9db6e1dc73677ac8e4e0ec57867099d7a9258a31c94f1476881a21b858a67ec",
+    "goldset.py": "d61b8ac971c7b07b10dd915ea0f9edce81b5afea80d159712460b753a977b978"
+  },
+  "status": "FROZEN_FOR_ANNOTATION",
+  "sealed_scoring_status": "BLOCKED_UNTIL_DEVELOPMENT_ADJUDICATION"
+}

@@ -1,0 +1,39 @@
+{
+  "version": "latent-flow-f2-microstructure-audit-v1",
+  "provider": "vendor-name",
+  "dataset_id": "immutable-dataset-id",
+  "snapshot_id": "vendor-snapshot-or-export-id",
+  "retrieved_at": "2026-07-11T12:00:00Z",
+  "source_documentation_url": "https://vendor.example/documentation",
+  "historical_availability": {
+    "point_in_time": true,
+    "available_from": "2024-01-01T00:00:00Z",
+    "documentation_url": "https://vendor.example/historical-availability"
+  },
+  "ordering": {
+    "exchange_timestamp": true,
+    "sequence_numbers": true,
+    "sequence_domain": ["ticker", "session"],
+    "documentation_url": "https://vendor.example/sequence-ordering"
+  },
+  "quote_completeness": {
+    "nbbo_updates_complete": true,
+    "methodology": "Vendor's immutable NBBO construction and gap policy.",
+    "documentation_url": "https://vendor.example/nbbo-methodology"
+  },
+  "conditions": {
+    "trade_condition_codes_documented": true,
+    "quote_condition_codes_documented": true,
+    "corrections_and_cancellations_included": true
+  },
+  "selection": {
+    "path": "f2_pilot_selection_v1.json",
+    "sha256": "98ad1620c02185254833b4853f6865a44963b990b655adf95e97546a347f85ac"
+  },
+  "files": {
+    "quotes": {"path": "quotes.parquet", "sha256": "replace-with-64-hex-digest"},
+    "trades": {"path": "trades.parquet", "sha256": "replace-with-64-hex-digest"},
+    "halts": {"path": "halts.csv", "sha256": "replace-with-64-hex-digest"},
+    "corporate_actions": {"path": "corporate_actions.csv", "sha256": "replace-with-64-hex-digest"}
+  }
+}

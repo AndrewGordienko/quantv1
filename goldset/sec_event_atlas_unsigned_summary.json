@@ -1,0 +1,549 @@
+{
+  "status": "UNSIGNED_DIAGNOSTIC_ONLY",
+  "taxonomy_version": "sec-event-atlas-v1",
+  "taxonomy_hash": "37b1ea724e2a249a8d7727562b7e6c7be8daf63ca7b2b7740d41929ec28ad1cf",
+  "n_verified_events": 2386,
+  "n_with_price_outcome": 953,
+  "by_family_split": [
+    {
+      "event_family": "activist_ownership",
+      "split": "discovery",
+      "n": 22,
+      "n_ticker_date_clusters": 22,
+      "mean_abs_residual_1d": 0.015201074385503747,
+      "mean_abs_residual_5d": 0.08521873783107814,
+      "median_abs_residual_5d": 0.039590928646084156
+    },
+    {
+      "event_family": "auditor",
+      "split": "discovery",
+      "n": 27,
+      "n_ticker_date_clusters": 27,
+      "mean_abs_residual_1d": 0.02194575768085408,
+      "mean_abs_residual_5d": 0.053362188390064,
+      "median_abs_residual_5d": 0.03311148220169524
+    },
+    {
+      "event_family": "capital_return",
+      "split": "discovery",
+      "n": 87,
+      "n_ticker_date_clusters": 87,
+      "mean_abs_residual_1d": 0.018192378795237378,
+      "mean_abs_residual_5d": 0.04736690605315363,
+      "median_abs_residual_5d": 0.019417185907283585
+    },
+    {
+      "event_family": "commercial",
+      "split": "discovery",
+      "n": 120,
+      "n_ticker_date_clusters": 120,
+      "mean_abs_residual_1d": 0.019940104471278173,
+      "mean_abs_residual_5d": 0.04719384755800767,
+      "median_abs_residual_5d": 0.026301927553313065
+    },
+    {
+      "event_family": "cybersecurity",
+      "split": "discovery",
+      "n": 30,
+      "n_ticker_date_clusters": 30,
+      "mean_abs_residual_1d": 0.02139652603266177,
+      "mean_abs_residual_5d": 0.043059427094671955,
+      "median_abs_residual_5d": 0.030017473321683252
+    },
+    {
+      "event_family": "financing_dilution",
+      "split": "discovery",
+      "n": 85,
+      "n_ticker_date_clusters": 85,
+      "mean_abs_residual_1d": 0.01994290901303438,
+      "mean_abs_residual_5d": 0.05502106693707505,
+      "median_abs_residual_5d": 0.024908748539216763
+    },
+    {
+      "event_family": "going_concern",
+      "split": "discovery",
+      "n": 7,
+      "n_ticker_date_clusters": 7,
+      "mean_abs_residual_1d": 0.014744293252469858,
+      "mean_abs_residual_5d": 0.11304454940515532,
+      "median_abs_residual_5d": 0.10758628677352089
+    },
+    {
+      "event_family": "government",
+      "split": "discovery",
+      "n": 4,
+      "n_ticker_date_clusters": 4,
+      "mean_abs_residual_1d": 0.011941689588860216,
+      "mean_abs_residual_5d": 0.06662736788771664,
+      "median_abs_residual_5d": 0.04856103957514962
+    },
+    {
+      "event_family": "guidance",
+      "split": "discovery",
+      "n": 98,
+      "n_ticker_date_clusters": 98,
+      "mean_abs_residual_1d": 0.02241098857364873,
+      "mean_abs_residual_5d": 0.056275297400740026,
+      "median_abs_residual_5d": 0.030017473321683252
+    },
+    {
+      "event_family": "insider",
+      "split": "discovery",
+      "n": 7,
+      "n_ticker_date_clusters": 7,
+      "mean_abs_residual_1d": 0.01803265519513697,
+      "mean_abs_residual_5d": 0.09020760977795152,
+      "median_abs_residual_5d": 0.017944406634365917
+    },
+    {
+      "event_family": "leadership",
+      "split": "discovery",
+      "n": 161,
+      "n_ticker_date_clusters": 161,
+      "mean_abs_residual_1d": 0.021025260644173573,
+      "mean_abs_residual_5d": 0.054051362785682296,
+      "median_abs_residual_5d": 0.02405093680487458
+    },
+    {
+      "event_family": "litigation_regulatory",
+      "split": "discovery",
+      "n": 120,
+      "n_ticker_date_clusters": 120,
+      "mean_abs_residual_1d": 0.02100607850395264,
+      "mean_abs_residual_5d": 0.05487450869792885,
+      "median_abs_residual_5d": 0.026025103233204838
+    },
+    {
+      "event_family": "merger_acquisition",
+      "split": "discovery",
+      "n": 106,
+      "n_ticker_date_clusters": 106,
+      "mean_abs_residual_1d": 0.021667215989048968,
+      "mean_abs_residual_5d": 0.05324083820985261,
+      "median_abs_residual_5d": 0.027423265357739424
+    },
+    {
+      "event_family": "restatement_controls",
+      "split": "discovery",
+      "n": 43,
+      "n_ticker_date_clusters": 43,
+      "mean_abs_residual_1d": 0.019124034706273507,
+      "mean_abs_residual_5d": 0.06486428757164617,
+      "median_abs_residual_5d": 0.03061311727277294
+    },
+    {
+      "event_family": "restructuring",
+      "split": "discovery",
+      "n": 36,
+      "n_ticker_date_clusters": 36,
+      "mean_abs_residual_1d": 0.02786687628783861,
+      "mean_abs_residual_5d": 0.06298153141410923,
+      "median_abs_residual_5d": 0.03857883209955726
+    }
+  ],
+  "controls": [
+    {
+      "control": "same_company_normal",
+      "event_family": "activist_ownership",
+      "n": 22,
+      "mean_abs_residual_5d": 0.04670992887996526,
+      "median_abs_residual_5d": 0.03488903786701725
+    },
+    {
+      "control": "same_company_normal",
+      "event_family": "auditor",
+      "n": 27,
+      "mean_abs_residual_5d": 0.04605355599904984,
+      "median_abs_residual_5d": 0.04492148614718905
+    },
+    {
+      "control": "same_company_normal",
+      "event_family": "capital_return",
+      "n": 87,
+      "mean_abs_residual_5d": 0.03232586869626556,
+      "median_abs_residual_5d": 0.016426155183312474
+    },
+    {
+      "control": "same_company_normal",
+      "event_family": "commercial",
+      "n": 120,
+      "mean_abs_residual_5d": 0.041743177587670786,
+      "median_abs_residual_5d": 0.022347571329922544
+    },
+    {
+      "control": "same_company_normal",
+      "event_family": "cybersecurity",
+      "n": 30,
+      "mean_abs_residual_5d": 0.034669190532020736,
+      "median_abs_residual_5d": 0.019036777509869374
+    },
+    {
+      "control": "same_company_normal",
+      "event_family": "financing_dilution",
+      "n": 85,
+      "mean_abs_residual_5d": 0.04257163949509199,
+      "median_abs_residual_5d": 0.019998205152749637
+    },
+    {
+      "control": "same_company_normal",
+      "event_family": "going_concern",
+      "n": 7,
+      "mean_abs_residual_5d": 0.07125195169137466,
+      "median_abs_residual_5d": 0.07932184655569374
+    },
+    {
+      "control": "same_company_normal",
+      "event_family": "government",
+      "n": 4,
+      "mean_abs_residual_5d": 0.04432131481719198,
+      "median_abs_residual_5d": 0.015426046764305534
+    },
+    {
+      "control": "same_company_normal",
+      "event_family": "guidance",
+      "n": 97,
+      "mean_abs_residual_5d": 0.034529455262215285,
+      "median_abs_residual_5d": 0.02316532005889993
+    },
+    {
+      "control": "same_company_normal",
+      "event_family": "insider",
+      "n": 7,
+      "mean_abs_residual_5d": 0.08842142583559698,
+      "median_abs_residual_5d": 0.05517197848372246
+    },
+    {
+      "control": "same_company_normal",
+      "event_family": "leadership",
+      "n": 161,
+      "mean_abs_residual_5d": 0.040729625153041356,
+      "median_abs_residual_5d": 0.02358662166142811
+    },
+    {
+      "control": "same_company_normal",
+      "event_family": "litigation_regulatory",
+      "n": 119,
+      "mean_abs_residual_5d": 0.044237663694417825,
+      "median_abs_residual_5d": 0.020753705619307672
+    },
+    {
+      "control": "same_company_normal",
+      "event_family": "merger_acquisition",
+      "n": 105,
+      "mean_abs_residual_5d": 0.042531623629143325,
+      "median_abs_residual_5d": 0.022790008852514254
+    },
+    {
+      "control": "same_company_normal",
+      "event_family": "restatement_controls",
+      "n": 42,
+      "mean_abs_residual_5d": 0.035696304071658566,
+      "median_abs_residual_5d": 0.022977664455707092
+    },
+    {
+      "control": "same_company_normal",
+      "event_family": "restructuring",
+      "n": 36,
+      "mean_abs_residual_5d": 0.038539265197554934,
+      "median_abs_residual_5d": 0.015251698777674239
+    },
+    {
+      "control": "shuffled_timestamp",
+      "event_family": "activist_ownership",
+      "n": 22,
+      "mean_abs_residual_5d": 0.03426200191687765,
+      "median_abs_residual_5d": 0.02567500175362214
+    },
+    {
+      "control": "shuffled_timestamp",
+      "event_family": "auditor",
+      "n": 27,
+      "mean_abs_residual_5d": 0.03608924394783925,
+      "median_abs_residual_5d": 0.024762056071881866
+    },
+    {
+      "control": "shuffled_timestamp",
+      "event_family": "capital_return",
+      "n": 87,
+      "mean_abs_residual_5d": 0.030095493893955834,
+      "median_abs_residual_5d": 0.019894072164591714
+    },
+    {
+      "control": "shuffled_timestamp",
+      "event_family": "commercial",
+      "n": 120,
+      "mean_abs_residual_5d": 0.025700737633788457,
+      "median_abs_residual_5d": 0.015435300789353457
+    },
+    {
+      "control": "shuffled_timestamp",
+      "event_family": "cybersecurity",
+      "n": 30,
+      "mean_abs_residual_5d": 0.032902683640868825,
+      "median_abs_residual_5d": 0.03155521328919286
+    },
+    {
+      "control": "shuffled_timestamp",
+      "event_family": "financing_dilution",
+      "n": 85,
+      "mean_abs_residual_5d": 0.035288409051812866,
+      "median_abs_residual_5d": 0.02597222413249556
+    },
+    {
+      "control": "shuffled_timestamp",
+      "event_family": "going_concern",
+      "n": 7,
+      "mean_abs_residual_5d": 0.04402960364238738,
+      "median_abs_residual_5d": 0.03164031950965385
+    },
+    {
+      "control": "shuffled_timestamp",
+      "event_family": "government",
+      "n": 4,
+      "mean_abs_residual_5d": 0.07792234798835368,
+      "median_abs_residual_5d": 0.046109361233556356
+    },
+    {
+      "control": "shuffled_timestamp",
+      "event_family": "guidance",
+      "n": 97,
+      "mean_abs_residual_5d": 0.03406022908471351,
+      "median_abs_residual_5d": 0.02507217973035525
+    },
+    {
+      "control": "shuffled_timestamp",
+      "event_family": "insider",
+      "n": 7,
+      "mean_abs_residual_5d": 0.08892763810577832,
+      "median_abs_residual_5d": 0.03355417871796329
+    },
+    {
+      "control": "shuffled_timestamp",
+      "event_family": "leadership",
+      "n": 161,
+      "mean_abs_residual_5d": 0.042813793321181966,
+      "median_abs_residual_5d": 0.025114656904648758
+    },
+    {
+      "control": "shuffled_timestamp",
+      "event_family": "litigation_regulatory",
+      "n": 119,
+      "mean_abs_residual_5d": 0.03183593074980795,
+      "median_abs_residual_5d": 0.019309840299898462
+    },
+    {
+      "control": "shuffled_timestamp",
+      "event_family": "merger_acquisition",
+      "n": 105,
+      "mean_abs_residual_5d": 0.037742937315965286,
+      "median_abs_residual_5d": 0.024555761680984167
+    },
+    {
+      "control": "shuffled_timestamp",
+      "event_family": "restatement_controls",
+      "n": 42,
+      "mean_abs_residual_5d": 0.04284050495917872,
+      "median_abs_residual_5d": 0.03193171451811827
+    },
+    {
+      "control": "shuffled_timestamp",
+      "event_family": "restructuring",
+      "n": 36,
+      "mean_abs_residual_5d": 0.03247000612240203,
+      "median_abs_residual_5d": 0.021461917444450418
+    }
+  ],
+  "coverage": {
+    "event_tags": 2386,
+    "priced_event_tags": 953,
+    "priced_tag_rate": 0.39941324392288347,
+    "priced_cluster_rate": 0.39941324392288347,
+    "priced_accessions": 186,
+    "unique_event_ciks": 221,
+    "unique_event_tickers": 221,
+    "pit_ticker_mapping": "NOT_AVAILABLE_IN_CURRENT_SEC_CATALOG",
+    "delisting_coverage": "NOT_AVAILABLE",
+    "price_source": "local prices table; current-link diagnostic only",
+    "market_cap_proxy_linked_tickers": 14,
+    "liquidity_proxy": "not point-in-time; volume data exists only for current price-linked names",
+    "event_tags_by_year": {
+      "2023": 868,
+      "2024": 855,
+      "2022": 663
+    },
+    "priced_event_tags_by_year": {
+      "2022": 320,
+      "2023": 313,
+      "2024": 320
+    }
+  },
+  "phaseA_table": [
+    {
+      "family": "activist_ownership",
+      "events": 22,
+      "accessions": 22,
+      "companies": 18,
+      "extraction_precision": null,
+      "extraction_recall": null,
+      "abnormal_volatility_lift_5d": 0.03850880895111288,
+      "stable_by_year": null,
+      "goldset_status": "UNLABELED"
+    },
+    {
+      "family": "auditor",
+      "events": 27,
+      "accessions": 27,
+      "companies": 23,
+      "extraction_precision": null,
+      "extraction_recall": null,
+      "abnormal_volatility_lift_5d": 0.007308632391014161,
+      "stable_by_year": null,
+      "goldset_status": "UNLABELED"
+    },
+    {
+      "family": "capital_return",
+      "events": 87,
+      "accessions": 87,
+      "companies": 51,
+      "extraction_precision": null,
+      "extraction_recall": null,
+      "abnormal_volatility_lift_5d": 0.015041037356888068,
+      "stable_by_year": null,
+      "goldset_status": "UNLABELED"
+    },
+    {
+      "family": "commercial",
+      "events": 120,
+      "accessions": 120,
+      "companies": 63,
+      "extraction_precision": null,
+      "extraction_recall": null,
+      "abnormal_volatility_lift_5d": 0.0054506699703368855,
+      "stable_by_year": null,
+      "goldset_status": "UNLABELED"
+    },
+    {
+      "family": "cybersecurity",
+      "events": 30,
+      "accessions": 30,
+      "companies": 23,
+      "extraction_precision": null,
+      "extraction_recall": null,
+      "abnormal_volatility_lift_5d": 0.00839023656265122,
+      "stable_by_year": null,
+      "goldset_status": "UNLABELED"
+    },
+    {
+      "family": "financing_dilution",
+      "events": 85,
+      "accessions": 85,
+      "companies": 50,
+      "extraction_precision": null,
+      "extraction_recall": null,
+      "abnormal_volatility_lift_5d": 0.01244942744198306,
+      "stable_by_year": null,
+      "goldset_status": "UNLABELED"
+    },
+    {
+      "family": "going_concern",
+      "events": 7,
+      "accessions": 7,
+      "companies": 7,
+      "extraction_precision": null,
+      "extraction_recall": null,
+      "abnormal_volatility_lift_5d": 0.04179259771378066,
+      "stable_by_year": null,
+      "goldset_status": "UNLABELED"
+    },
+    {
+      "family": "government",
+      "events": 4,
+      "accessions": 4,
+      "companies": 4,
+      "extraction_precision": null,
+      "extraction_recall": null,
+      "abnormal_volatility_lift_5d": 0.022306053070524662,
+      "stable_by_year": null,
+      "goldset_status": "UNLABELED"
+    },
+    {
+      "family": "guidance",
+      "events": 98,
+      "accessions": 98,
+      "companies": 57,
+      "extraction_precision": null,
+      "extraction_recall": null,
+      "abnormal_volatility_lift_5d": 0.02174584213852474,
+      "stable_by_year": null,
+      "goldset_status": "UNLABELED"
+    },
+    {
+      "family": "insider",
+      "events": 7,
+      "accessions": 7,
+      "companies": 6,
+      "extraction_precision": null,
+      "extraction_recall": null,
+      "abnormal_volatility_lift_5d": 0.0017861839423545384,
+      "stable_by_year": null,
+      "goldset_status": "UNLABELED"
+    },
+    {
+      "family": "leadership",
+      "events": 161,
+      "accessions": 161,
+      "companies": 74,
+      "extraction_precision": null,
+      "extraction_recall": null,
+      "abnormal_volatility_lift_5d": 0.01332173763264094,
+      "stable_by_year": null,
+      "goldset_status": "UNLABELED"
+    },
+    {
+      "family": "litigation_regulatory",
+      "events": 120,
+      "accessions": 120,
+      "companies": 64,
+      "extraction_precision": null,
+      "extraction_recall": null,
+      "abnormal_volatility_lift_5d": 0.010636845003511024,
+      "stable_by_year": null,
+      "goldset_status": "UNLABELED"
+    },
+    {
+      "family": "merger_acquisition",
+      "events": 106,
+      "accessions": 106,
+      "companies": 61,
+      "extraction_precision": null,
+      "extraction_recall": null,
+      "abnormal_volatility_lift_5d": 0.010709214580709288,
+      "stable_by_year": null,
+      "goldset_status": "UNLABELED"
+    },
+    {
+      "family": "restatement_controls",
+      "events": 43,
+      "accessions": 43,
+      "companies": 33,
+      "extraction_precision": null,
+      "extraction_recall": null,
+      "abnormal_volatility_lift_5d": 0.0291679834999876,
+      "stable_by_year": null,
+      "goldset_status": "UNLABELED"
+    },
+    {
+      "family": "restructuring",
+      "events": 36,
+      "accessions": 36,
+      "companies": 29,
+      "extraction_precision": null,
+      "extraction_recall": null,
+      "abnormal_volatility_lift_5d": 0.024442266216554293,
+      "stable_by_year": null,
+      "goldset_status": "UNLABELED"
+    }
+  ],
+  "directional_model": "NOT_RUN",
+  "warning": "This validates unsigned market impact only; current ticker links are not point-in-time, no delisting master is present, and this is not directional alpha or a trade selection."
+}

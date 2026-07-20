@@ -1,0 +1,505 @@
+{
+  "price_table_columns": [
+    "close",
+    "date",
+    "high",
+    "low",
+    "open",
+    "ticker",
+    "volume"
+  ],
+  "requirements": [
+    "raw_ohlcv",
+    "adjusted_ohlcv",
+    "split_dividend_factors",
+    "listing_intervals",
+    "delisting_evidence",
+    "last_trade",
+    "terminal_status",
+    "filing_era_symbol"
+  ],
+  "rows": [
+    {
+      "accession_number": "0001840776-23-000003",
+      "atlas_event_id": "7b6eb6bd047b6eb57c9176ce",
+      "cik": "0001840776",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": false,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "HGTY"
+    },
+    {
+      "accession_number": "0001104659-23-027330",
+      "atlas_event_id": "8a10581dc308f62a1e08e494",
+      "cik": "0000007536",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": true,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "ARW"
+    },
+    {
+      "accession_number": "0001193125-23-240903",
+      "atlas_event_id": "397928b92b8824783603007b",
+      "cik": "0001675149",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": true,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "AA"
+    },
+    {
+      "accession_number": "0001437749-24-013216",
+      "atlas_event_id": "d635c79320b7ada05c30f35f",
+      "cik": "0000906553",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": true,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "BYD"
+    },
+    {
+      "accession_number": "0001437749-22-004318",
+      "atlas_event_id": "b79e14f220009de3d2c45d8f",
+      "cik": "0001621832",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": false,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "AQMS"
+    },
+    {
+      "accession_number": "0001212545-22-000127",
+      "atlas_event_id": "abb65b7c2baf358029fbb82e",
+      "cik": "0001212545",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": true,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "WAL"
+    },
+    {
+      "accession_number": "0001437749-24-036295",
+      "atlas_event_id": "3a5d161a2e6a58eef75aaad3",
+      "cik": "0001134765",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": false,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "CHUC"
+    },
+    {
+      "accession_number": "0001683168-24-001664",
+      "atlas_event_id": "be66eb90e40bce7e369a9006",
+      "cik": "0001829794",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": false,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "EMPD"
+    },
+    {
+      "accession_number": "0000926617-22-000008",
+      "atlas_event_id": "bcd25120b5f32a8a08ba89a5",
+      "cik": "0000926617",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": false,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "AWHL"
+    },
+    {
+      "accession_number": "0001640334-23-000249",
+      "atlas_event_id": "41c5e6ffc54cc933eee6ea24",
+      "cik": "0001651932",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": false,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "XITO"
+    },
+    {
+      "accession_number": "0000950170-23-016713",
+      "atlas_event_id": "3143ef6ffe7d074f7d3351b2",
+      "cik": "0001609065",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": false,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "PBHC"
+    },
+    {
+      "accession_number": "0000064040-22-000059",
+      "atlas_event_id": "bc01367f7183c9292c86349c",
+      "cik": "0000064040",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": true,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "SPGI"
+    },
+    {
+      "accession_number": "0000950170-23-026234",
+      "atlas_event_id": "43850c2d74feeb90381da492",
+      "cik": "0001856725",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": false,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "RANI"
+    },
+    {
+      "accession_number": "0000849399-22-000005",
+      "atlas_event_id": "64a58c9c38251b00e66a9814",
+      "cik": "0000849399",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": true,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "GEN"
+    },
+    {
+      "accession_number": "0001493152-23-021998",
+      "atlas_event_id": "5ffe7570677c3f997940c9c5",
+      "cik": "0001701478",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": false,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "AZTR"
+    },
+    {
+      "accession_number": "0001828105-22-000054",
+      "atlas_event_id": "477b53011b9f44a85cb7e08c",
+      "cik": "0001828105",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": true,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "HIPO"
+    },
+    {
+      "accession_number": "0001213900-24-097900",
+      "atlas_event_id": "2b906ca35c232ac69fa64bad",
+      "cik": "0001866226",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": false,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "EMAT"
+    },
+    {
+      "accession_number": "0001104659-22-092594",
+      "atlas_event_id": "659eef9b83e91058236940f1",
+      "cik": "0000917251",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": true,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "ADC"
+    },
+    {
+      "accession_number": "0001193125-23-085640",
+      "atlas_event_id": "6f99f16c6e7b853ba96595f9",
+      "cik": "0001539838",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": true,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "FANG"
+    },
+    {
+      "accession_number": "0001062993-24-010082",
+      "atlas_event_id": "3807598a2ef81a07cd3c2fdd",
+      "cik": "0001591956",
+      "corporate_actions": false,
+      "delisting_evidence": false,
+      "listing_interval": false,
+      "price_rows": true,
+      "raw_adjusted_ohlcv": {
+        "adjusted": false,
+        "columns": [
+          "close",
+          "date",
+          "high",
+          "low",
+          "open",
+          "ticker",
+          "volume"
+        ],
+        "raw": false
+      },
+      "terminal_status": "MISSING_PANEL_CONTRACT",
+      "ticker": "ANY"
+    }
+  ],
+  "sample_size": 20,
+  "status": "BLOCKED_PANEL_INCOMPLETE"
+}

@@ -1,0 +1,26 @@
+{
+  "version": "latent-flow-f2-pilot-selection-v1",
+  "selection_id": "latent-flow-f2-pilot-v1",
+  "created_at": "2026-07-11T00:00:00Z",
+  "selection_method": "precommitted-liquid-sector-representative-v1",
+  "calendar": "XNYS",
+  "session_window_type": "contiguous",
+  "stock_symbols": [
+    "AAPL", "JPM", "LLY", "XOM", "CAT", "AMZN", "WMT", "NEE", "LIN", "PLD", "GOOGL"
+  ],
+  "benchmark": "SPY",
+  "sector_etfs": {
+    "AAPL": "XLK", "JPM": "XLF", "LLY": "XLV", "XOM": "XLE", "CAT": "XLI",
+    "AMZN": "XLY", "WMT": "XLP", "NEE": "XLU", "LIN": "XLB", "PLD": "XLRE", "GOOGL": "XLC"
+  },
+  "sessions": [
+    "2025-03-03", "2025-03-04", "2025-03-05", "2025-03-06", "2025-03-07",
+    "2025-03-10", "2025-03-11", "2025-03-12", "2025-03-13", "2025-03-14",
+    "2025-03-17", "2025-03-18", "2025-03-19", "2025-03-20", "2025-03-21",
+    "2025-03-24", "2025-03-25", "2025-03-26", "2025-03-27", "2025-03-28",
+    "2025-03-31", "2025-04-01", "2025-04-02", "2025-04-03", "2025-04-04",
+    "2025-04-07", "2025-04-08", "2025-04-09", "2025-04-10", "2025-04-11"
+  ],
+  "no_return_or_move_selection": true,
+  "selection_rationale": "One precommitted liquid representative for each mapped U.S. sector; standard full XNYS sessions only. No day, symbol, return, volatility, news, or move was selected after inspecting the requested trade/quote observations."
+}

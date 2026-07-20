@@ -1,0 +1,940 @@
+{
+  "by_category": {
+    "MISSING_EFFECTIVE_INTERVAL": {
+      "accessions": 2,
+      "tags": 8
+    },
+    "NO_PRIMARY_SYMBOL_EVIDENCE": {
+      "accessions": 26,
+      "tags": 99
+    }
+  },
+  "by_family": {
+    "activist_ownership": {
+      "accessions": 1,
+      "tags": 1
+    },
+    "auditor": {
+      "accessions": 3,
+      "tags": 3
+    },
+    "capital_return": {
+      "accessions": 12,
+      "tags": 12
+    },
+    "commercial": {
+      "accessions": 13,
+      "tags": 13
+    },
+    "cybersecurity": {
+      "accessions": 1,
+      "tags": 1
+    },
+    "financing_dilution": {
+      "accessions": 13,
+      "tags": 13
+    },
+    "going_concern": {
+      "accessions": 3,
+      "tags": 3
+    },
+    "guidance": {
+      "accessions": 4,
+      "tags": 4
+    },
+    "insider": {
+      "accessions": 1,
+      "tags": 1
+    },
+    "leadership": {
+      "accessions": 23,
+      "tags": 23
+    },
+    "litigation_regulatory": {
+      "accessions": 14,
+      "tags": 14
+    },
+    "merger_acquisition": {
+      "accessions": 12,
+      "tags": 12
+    },
+    "restatement_controls": {
+      "accessions": 7,
+      "tags": 7
+    }
+  },
+  "by_year": {
+    "2022": {
+      "accessions": 7,
+      "tags": 28
+    },
+    "2023": {
+      "accessions": 10,
+      "tags": 48
+    },
+    "2024": {
+      "accessions": 11,
+      "tags": 31
+    }
+  },
+  "rows": [
+    {
+      "accession_number": "0001213900-22-043146",
+      "atlas_event_id": "66f1ddd3a3fb533547e1dd3f",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001131312",
+      "event_family": "leadership",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001213900-22-043146",
+      "atlas_event_id": "62f9116b47b15c7120e0e0a6",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001131312",
+      "event_family": "merger_acquisition",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001213900-22-043146",
+      "atlas_event_id": "8563f322ab45fb4f2d6baa4d",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001131312",
+      "event_family": "litigation_regulatory",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001654954-24-001022",
+      "atlas_event_id": "30fa96579aab9dd0b9477af4",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001304161",
+      "event_family": "leadership",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001654954-24-001022",
+      "atlas_event_id": "fdb15bee506ff7078ea638b5",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001304161",
+      "event_family": "capital_return",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001654954-24-001022",
+      "atlas_event_id": "329a78a6c3b9d927ee099209",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001304161",
+      "event_family": "litigation_regulatory",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001437749-23-022976",
+      "atlas_event_id": "fe094d9718f2225c298e18a1",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001006830",
+      "event_family": "leadership",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001437749-23-022976",
+      "atlas_event_id": "0f9d5f30fe48dd4360a8156d",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001006830",
+      "event_family": "capital_return",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001437749-23-022976",
+      "atlas_event_id": "bfef3885117272ad589c3fa1",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001006830",
+      "event_family": "commercial",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001437749-23-022976",
+      "atlas_event_id": "7175f8a11024d46a566e6077",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001006830",
+      "event_family": "litigation_regulatory",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001213900-22-040363",
+      "atlas_event_id": "1241cd7df7ca0875ea53fbf8",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001918102",
+      "event_family": "going_concern",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001213900-22-040363",
+      "atlas_event_id": "c696f0354f187f6e25deaba8",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001918102",
+      "event_family": "auditor",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001213900-22-040363",
+      "atlas_event_id": "3aeb4b7a90ce2a223a794feb",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001918102",
+      "event_family": "leadership",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001213900-22-040363",
+      "atlas_event_id": "90a0ad64db15ea815722cded",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001918102",
+      "event_family": "merger_acquisition",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001213900-22-040363",
+      "atlas_event_id": "8ec115237f72356da0a46920",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001918102",
+      "event_family": "commercial",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0000898432-23-000160",
+      "atlas_event_id": "fba42afe30a4d94c2a225e30",
+      "category": "MISSING_EFFECTIVE_INTERVAL",
+      "cik": "0001840425",
+      "event_family": "leadership",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0000898432-23-000160",
+      "atlas_event_id": "c7323a4d64fb6f6e926964f0",
+      "category": "MISSING_EFFECTIVE_INTERVAL",
+      "cik": "0001840425",
+      "event_family": "financing_dilution",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0000898432-23-000160",
+      "atlas_event_id": "6800654a20d290e15bfed33b",
+      "category": "MISSING_EFFECTIVE_INTERVAL",
+      "cik": "0001840425",
+      "event_family": "merger_acquisition",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001493152-23-027704",
+      "atlas_event_id": "5bd2a4fa7301bfa61e76cbcf",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001407583",
+      "event_family": "restatement_controls",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001493152-23-027704",
+      "atlas_event_id": "f6fa945bdad0eeffe2949ede",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001407583",
+      "event_family": "auditor",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001493152-23-027704",
+      "atlas_event_id": "8c8b34c708401cd367ff7f1c",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001407583",
+      "event_family": "leadership",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001493152-23-027704",
+      "atlas_event_id": "65e05963bc2fe2751d3891e1",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001407583",
+      "event_family": "financing_dilution",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001493152-23-027704",
+      "atlas_event_id": "03350554ce7b65680f27d631",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001407583",
+      "event_family": "capital_return",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001493152-23-027704",
+      "atlas_event_id": "6cd2b03b667b3d4c6c75efd8",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001407583",
+      "event_family": "merger_acquisition",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001493152-23-027704",
+      "atlas_event_id": "a3d3c49ed4f2ef3e517bdd27",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001407583",
+      "event_family": "commercial",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001493152-23-027704",
+      "atlas_event_id": "b4e3ec461fab925ecbee69a6",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001407583",
+      "event_family": "litigation_regulatory",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001493152-23-027704",
+      "atlas_event_id": "3c3a8bc6510f83884d7cf6ef",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001407583",
+      "event_family": "insider",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001493152-23-027704",
+      "atlas_event_id": "b9d8e05b32825496fd21da03",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001407583",
+      "event_family": "guidance",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001654954-24-013160",
+      "atlas_event_id": "f362521766f892ad7130107c",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001082733",
+      "event_family": "leadership",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001213900-24-060115",
+      "atlas_event_id": "016cc9433e6faa5c59099125",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001131312",
+      "event_family": "leadership",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001654954-22-008690",
+      "atlas_event_id": "28e6998e71fccbc0ed1e9c5e",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001082733",
+      "event_family": "restatement_controls",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001654954-22-008690",
+      "atlas_event_id": "1573b5f065bf7fc64275b9b5",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001082733",
+      "event_family": "leadership",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001437749-22-001286",
+      "atlas_event_id": "343ac783b003efb1f954b47f",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001006830",
+      "event_family": "leadership",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001437749-22-001286",
+      "atlas_event_id": "a88e7d1fa16cb4dfbd64f8fd",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001006830",
+      "event_family": "capital_return",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001437749-22-001286",
+      "atlas_event_id": "d1f78404a5b8fa5bf791f324",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001006830",
+      "event_family": "merger_acquisition",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001437749-22-001286",
+      "atlas_event_id": "f1e87e03d88d9d65417f023d",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001006830",
+      "event_family": "commercial",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001437749-22-001286",
+      "atlas_event_id": "b39ef421269d0e02cb6cd594",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001006830",
+      "event_family": "litigation_regulatory",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001493152-24-037233",
+      "atlas_event_id": "cf95c7f05de3733ffc5c0e32",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001872292",
+      "event_family": "leadership",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001376986-23-000004",
+      "atlas_event_id": "07f4c2f598821df6e8a2e5c6",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001376986",
+      "event_family": "cybersecurity",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001279569-23-000220",
+      "atlas_event_id": "b284304de20402559fc99959",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001643154",
+      "event_family": "leadership",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001279569-23-000220",
+      "atlas_event_id": "92a8b44fd4318627bbe3b21f",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001643154",
+      "event_family": "commercial",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001279569-23-000220",
+      "atlas_event_id": "b86f2e88aa85cabd1c55a08d",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001643154",
+      "event_family": "litigation_regulatory",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001829126-24-002200",
+      "atlas_event_id": "7741acc80fc75d58e763524b",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0002000775",
+      "event_family": "leadership",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001829126-24-002200",
+      "atlas_event_id": "fd8ee1a8ad341714ab2f3957",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0002000775",
+      "event_family": "financing_dilution",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001829126-24-002200",
+      "atlas_event_id": "8a982fc20131275c26659a4c",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0002000775",
+      "event_family": "merger_acquisition",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001550913-24-000017",
+      "atlas_event_id": "9a7f8a082de791be3e7d6f50",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001550913",
+      "event_family": "financing_dilution",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001550913-24-000017",
+      "atlas_event_id": "0565f2fd7aa4091f6cb54783",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001550913",
+      "event_family": "capital_return",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001550913-24-000017",
+      "atlas_event_id": "3cce13044f1e33eac895e206",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001550913",
+      "event_family": "commercial",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001550913-24-000017",
+      "atlas_event_id": "c05e0dd07314e81dc55a4cc1",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001550913",
+      "event_family": "litigation_regulatory",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001104659-23-079147",
+      "atlas_event_id": "d18b9b5fb2bad82636e6b76f",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "leadership",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001104659-23-079147",
+      "atlas_event_id": "778a0e41fca63e3ac9887f9c",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "financing_dilution",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001104659-23-079147",
+      "atlas_event_id": "79066109aaa6a948544c1a0d",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "merger_acquisition",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001104659-23-079147",
+      "atlas_event_id": "c5e242ba62362c2890770c56",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "commercial",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001104659-23-079147",
+      "atlas_event_id": "8bcbde071bd1ad7a999c6d7c",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "litigation_regulatory",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001493152-23-005434",
+      "atlas_event_id": "ba13e7bc27a0701ea8d25e0c",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001397016",
+      "event_family": "auditor",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001493152-23-005434",
+      "atlas_event_id": "2f943b5338b6785718d40778",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001397016",
+      "event_family": "leadership",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001493152-22-032908",
+      "atlas_event_id": "17eb9d8aab04dead66564a3b",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001407583",
+      "event_family": "restatement_controls",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001493152-22-032908",
+      "atlas_event_id": "13b833b6a70c26ea10ed7e79",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001407583",
+      "event_family": "leadership",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001493152-22-006464",
+      "atlas_event_id": "eec53a29fcc13bb340593e1e",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001454742",
+      "event_family": "leadership",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001493152-22-006464",
+      "atlas_event_id": "c5f0756385911700fbbd0fab",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001454742",
+      "event_family": "financing_dilution",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001493152-22-006464",
+      "atlas_event_id": "17edac3698a651d058526cce",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001454742",
+      "event_family": "capital_return",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001493152-22-006464",
+      "atlas_event_id": "4dde3a8bbbabff8a3bb10a66",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001454742",
+      "event_family": "merger_acquisition",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001493152-22-006464",
+      "atlas_event_id": "89c9e67a0cdf13bb70b0270a",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001454742",
+      "event_family": "commercial",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001493152-22-006464",
+      "atlas_event_id": "c8e997e460455a845b7eef83",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001454742",
+      "event_family": "guidance",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001213900-23-097475",
+      "atlas_event_id": "b90358bdd0961a7ad5079dff",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "restatement_controls",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001213900-23-097475",
+      "atlas_event_id": "37384502fcf6858e1b33131f",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "leadership",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001213900-23-097475",
+      "atlas_event_id": "49c0cba6fb86f6e326d21722",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "financing_dilution",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001213900-23-097475",
+      "atlas_event_id": "ede66d311480474aaf440bd9",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "capital_return",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001213900-23-097475",
+      "atlas_event_id": "7f35f00de30d4b06d060780c",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "merger_acquisition",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001213900-23-097475",
+      "atlas_event_id": "fcf34a18edea5e3ddf8436f7",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "commercial",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001213900-23-097475",
+      "atlas_event_id": "f57d0dc656a7b1e442f32ab7",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "litigation_regulatory",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001550913-24-000015",
+      "atlas_event_id": "17b70db0eb04e3ce7863ad4b",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001550913",
+      "event_family": "financing_dilution",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001550913-24-000015",
+      "atlas_event_id": "d5985c073fc1f53ecdb4f46e",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001550913",
+      "event_family": "capital_return",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001171843-22-000896",
+      "atlas_event_id": "973972deb2984320ce263eab",
+      "category": "MISSING_EFFECTIVE_INTERVAL",
+      "cik": "0001383414",
+      "event_family": "leadership",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001171843-22-000896",
+      "atlas_event_id": "b04432f0ba9510c31025d61c",
+      "category": "MISSING_EFFECTIVE_INTERVAL",
+      "cik": "0001383414",
+      "event_family": "financing_dilution",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001171843-22-000896",
+      "atlas_event_id": "17bef34bf0abbf52e2e345d2",
+      "category": "MISSING_EFFECTIVE_INTERVAL",
+      "cik": "0001383414",
+      "event_family": "capital_return",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001171843-22-000896",
+      "atlas_event_id": "b33e89f09bd1a18702de0f44",
+      "category": "MISSING_EFFECTIVE_INTERVAL",
+      "cik": "0001383414",
+      "event_family": "litigation_regulatory",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001171843-22-000896",
+      "atlas_event_id": "9759541227d563b21068e73d",
+      "category": "MISSING_EFFECTIVE_INTERVAL",
+      "cik": "0001383414",
+      "event_family": "guidance",
+      "year": "2022"
+    },
+    {
+      "accession_number": "0001437749-24-036295",
+      "atlas_event_id": "15945252d5c113ce3e581586",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001134765",
+      "event_family": "going_concern",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001437749-24-036295",
+      "atlas_event_id": "3a5d161a2e6a58eef75aaad3",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001134765",
+      "event_family": "financing_dilution",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001437749-24-036295",
+      "atlas_event_id": "c849b5390bf1048c23920cac",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001134765",
+      "event_family": "commercial",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001437749-24-036295",
+      "atlas_event_id": "8160c8ed2015c6fee51a0322",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001134765",
+      "event_family": "litigation_regulatory",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001550913-24-000032",
+      "atlas_event_id": "f9b6b95340e5120128fd6e90",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001550913",
+      "event_family": "leadership",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001550913-24-000032",
+      "atlas_event_id": "3259708160833fa5bc024d4f",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001550913",
+      "event_family": "financing_dilution",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001550913-24-000032",
+      "atlas_event_id": "c94fd1ebb4bfed281d59d921",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001550913",
+      "event_family": "capital_return",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001550913-24-000032",
+      "atlas_event_id": "a62d93848fa487947cd91d22",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001550913",
+      "event_family": "commercial",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001493152-24-027126",
+      "atlas_event_id": "b4f0878f08d11961818e7878",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001454742",
+      "event_family": "leadership",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001193125-23-051026",
+      "atlas_event_id": "bf0743080ed800d242128e71",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001944013",
+      "event_family": "restatement_controls",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001193125-23-051026",
+      "atlas_event_id": "5eac423b00710e974c64a72a",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001944013",
+      "event_family": "merger_acquisition",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001193125-23-051026",
+      "atlas_event_id": "15cb291c9c9786ec626615c1",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001944013",
+      "event_family": "litigation_regulatory",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001193125-23-051026",
+      "atlas_event_id": "22ddbedb7a8969ba6328f61f",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001944013",
+      "event_family": "guidance",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001654954-23-003374",
+      "atlas_event_id": "3297f71fb801aaefeea9cc0b",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001082733",
+      "event_family": "restatement_controls",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001654954-23-003374",
+      "atlas_event_id": "34f7abe8816479e0ab874bee",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001082733",
+      "event_family": "going_concern",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001654954-23-003374",
+      "atlas_event_id": "29ade0413cbbfde35f2e93ea",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001082733",
+      "event_family": "leadership",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001654954-23-003374",
+      "atlas_event_id": "fcc8fd15ec5e33ab829271a7",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001082733",
+      "event_family": "financing_dilution",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001654954-23-003374",
+      "atlas_event_id": "20b30d46708885c3b45f7eb6",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001082733",
+      "event_family": "capital_return",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001654954-23-003374",
+      "atlas_event_id": "d2f0236ca674b513facc08ee",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001082733",
+      "event_family": "merger_acquisition",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001654954-23-003374",
+      "atlas_event_id": "5d501757b05aaca0ddb58915",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001082733",
+      "event_family": "commercial",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001654954-23-003374",
+      "atlas_event_id": "2793acc9ea2e701919ca5789",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001082733",
+      "event_family": "litigation_regulatory",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001654954-23-003374",
+      "atlas_event_id": "9ce2c5e5ee12acc205240d88",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001082733",
+      "event_family": "activist_ownership",
+      "year": "2023"
+    },
+    {
+      "accession_number": "0001213900-24-099084",
+      "atlas_event_id": "98f5a68c9d1ebe977ad7a500",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "restatement_controls",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001213900-24-099084",
+      "atlas_event_id": "b51d39b20fce87ed3459afb3",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "leadership",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001213900-24-099084",
+      "atlas_event_id": "7bfa53c08ec5d47bbdcd64f9",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "financing_dilution",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001213900-24-099084",
+      "atlas_event_id": "683b145cb8fdf751c0cb3d05",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "capital_return",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001213900-24-099084",
+      "atlas_event_id": "763c55375f2af04160cc15a3",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "merger_acquisition",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001213900-24-099084",
+      "atlas_event_id": "bfe42bda9628e70942fcd2c3",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "commercial",
+      "year": "2024"
+    },
+    {
+      "accession_number": "0001213900-24-099084",
+      "atlas_event_id": "acd40e638b2f77f35c13da35",
+      "category": "NO_PRIMARY_SYMBOL_EVIDENCE",
+      "cik": "0001477009",
+      "event_family": "litigation_regulatory",
+      "year": "2024"
+    }
+  ],
+  "unmapped_accessions": 28,
+  "unmapped_tags": 107
+}

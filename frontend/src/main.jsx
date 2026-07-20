@@ -11,6 +11,7 @@ import Ticker from "./pages/Ticker.jsx";
 import Research from "./pages/Research.jsx";
 import Evidence from "./pages/Evidence.jsx";
 import PaperBook from "./pages/PaperBook.jsx";
+import OpeningFlow from "./pages/OpeningFlow.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
@@ -24,6 +25,7 @@ ReactDOM.createRoot(document.getElementById("root")).render(
           <Route path="/ticker/:ticker" element={<Ticker />} />
           <Route path="/research" element={<Research />} />
           <Route path="/paper" element={<PaperBook />} />
+          <Route path="/opening-flow" element={<OpeningFlow />} />
           <Route path="/evidence" element={<Evidence />} />
         </Route>
       </Routes>

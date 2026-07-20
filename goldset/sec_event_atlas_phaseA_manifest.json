@@ -1,0 +1,17 @@
+{
+  "census_version": "sec-atlas-phaseA-pilot-v1",
+  "period": ["2022-01-01", "2024-12-31"],
+  "company_selection": "SEC company_tickers.json, non-fund/non-ETF issuers, CIK-deduplicated, deterministic SHA-256 sort",
+  "unique_ciks": 500,
+  "candidate_filings": 8906,
+  "selected_filings": 500,
+  "selection_is_return_blind": true,
+  "selection_hash": "f59dda94c53da4d116670d07c604bc5411db9092ebc5849de17f9b972628b57d",
+  "event_records": 2386,
+  "accessions": 494,
+  "event_issuers": 221,
+  "routine_controls": 6,
+  "goldset_queue": 80,
+  "rejection_ledger": "empty for pilot extraction; schema records explicit reasons",
+  "price_outcomes": "unsigned current-link diagnostic only; not used for selection"
+}
