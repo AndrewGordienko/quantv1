@@ -57,10 +57,13 @@ If a candidate fails, **close the hypothesis** — no rescue via new feature sli
   Tier-1/2-compliant resolver now exists (`scripts/forced_flow_resolve.py`):
   raw-fetch the S&P DJI / PR Newswire release → parse machine-readable
   `datePublished` (exact minute) → hash source bytes → validate exchange-qualified
-  ticker + "S&P 500". Feasibility proven. **68/113 batches VERIFIED** through
-  2025-07-09 (claim `underpowered candidate test`, 50–74; **`full candidate
-  test`** at ≥75 — **reject-only; promotion still needs ≥100 independent
-  executable events**, never conflate the two).
+  ticker + "S&P 500". **CENSUS FROZEN at 75/113 verified genuine-addition batches**
+  (`goldset/forced_flow/census_freeze_v1.json`, manifest sha256 `152622d8…`; 20
+  quarterly-rebalance, 55 ad-hoc; 33 renames/mergers excluded). Claim: **`full
+  candidate test` — reject-only; promotion still needs ≥100 executable events**.
+  The announcement→effective continuation test is **PREREGISTERED, return-blind**
+  in `docs/forced_flow_continuation_test_spec.md`; it runs **exactly once** and
+  can only kill or shortlist the leg, never promote it.
   (Tier 2, after-hours ~18:00 ET.) Window differs by type: **ad-hoc
   adds ~5–8 days** pre-effective vs **quarterly-rebalance adds ~2–3 weeks** (report
   separately per spec); outliers NOW intraday, TSLA 35-day window →

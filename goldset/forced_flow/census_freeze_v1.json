@@ -1,0 +1,21 @@
+{
+  "candidates_sha256": "d2fb67a063c318dce58f20e17b068d39d3c40c10cdf604c29586bd928688e263",
+  "coverage_sha256": "8d8093e216f9599e5615962f552af8b579fe11b7b078ac1955e87f69b5d43dd4",
+  "date_range": [
+    "2019-01-18",
+    "2025-11-28"
+  ],
+  "freeze_id": "forced-flow-announcement-corpus-frozen-v1",
+  "frozen_at": "2026-07-20",
+  "manifest_sha256": "152622d88239f213e94fc5c0efe1c292ce7cabd998dc87962ee5d1bd130e8dca",
+  "n_renames_mergers_excluded": 33,
+  "n_verified_addition_batches": 75,
+  "note": "Sample + denominator locked. No returns/prices were joined before this freeze. The outcome test is preregistered in docs/forced_flow_continuation_test_spec.md and run EXACTLY ONCE against this hash.",
+  "predeclared_claim": "full candidate test (reject-only; promotion needs >=100 executable events)",
+  "renames_excluded_sha256": "39151d32be0bd79014862c773b0c289797e5c89b5728643c37588bbc9730eefa",
+  "split_preview": {
+    "ad_hoc_batches": 55,
+    "quarterly_rebalance_batches": 20
+  },
+  "status": "FROZEN_BEFORE_RETURNS"
+}
