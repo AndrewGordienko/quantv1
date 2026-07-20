@@ -150,6 +150,20 @@ is a HARD gate**, not a formality — auto-tags cannot carry the trade sign. The
 worth running (once) only on the correctly-signed **negative-news** families
 (restatement, secondary_offering) after annotation + PIT prices land.
 
+## Intraday engine track (2026-07-21) — SCOPED, DATA-GATED
+
+Separate event-driven day-trade engine (NOT TSMOM sped up). Frozen spec:
+`docs/strategy_intraday.md` (event-absorption, 5–60 min holds, ≤3 positions, flat
+overnight, NO_TRADE by default, trade only if net edge > 2× cost). Load-bearing
+gap = **NBBO quotes + tick trades**: contract skeleton in `ingest/nbbo.py`
+(`quotes_nbbo`/`trades_tick`, `known_at` discipline, quote-rule aggressor
+classifier + tests). **No intraday result may be computed until a paid Polygon
+quotes/trades tier + a calibrated fill simulator exist** — bars are not order
+flow. Build order: NBBO ingest → replay==live → fill simulator (before any
+signal) → elastic-net baseline → validation gates (≥100 event clusters,
+day-clustered SEs, Sharpe>1, 2× cost, +latency, beat matched non-event shocks,
+Deflated Sharpe) → paper-forward.
+
 ## Standing discipline
 
 - A buy/sell display is a UI demo until a frozen walk-forward model produces the
