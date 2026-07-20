@@ -1,0 +1,63 @@
+{
+  "basket_by_class": {
+    "commodity": [
+      "GLD",
+      "USO",
+      "DBA"
+    ],
+    "credit": [
+      "LQD",
+      "HYG"
+    ],
+    "equity": [
+      "SPY",
+      "IWM",
+      "QQQ",
+      "EFA",
+      "EEM"
+    ],
+    "rates": [
+      "TLT",
+      "IEF"
+    ],
+    "real_estate": [
+      "VNQ"
+    ]
+  },
+  "benchmark": "SPY",
+  "capital": "PAPER_ONLY_NO_REAL_MONEY",
+  "cost_bps_per_side": 2.0,
+  "execution": "enter at next XNYS session open after decision",
+  "frozen_at": "2026-07-20",
+  "lookbacks_days": [
+    63,
+    126,
+    252
+  ],
+  "max_leverage_per_instrument": 3.0,
+  "price_source": "yfinance auto_adjust (total-return proxy)",
+  "prospective_start": "2026-07-21",
+  "rebalance": "monthly (last trading day); initialized at prospective_start",
+  "rules_code_sha256": "dc624730dba10403098d81e46f2e2404ca898bcdb69f5e6ee1592242fa13af06",
+  "rules_source": "scripts/tsmom_etf_diag.py",
+  "signal": "mean sign of cumulative return over lookbacks",
+  "spec_version": "tsmom-etf-paper-v1",
+  "universe": [
+    "SPY",
+    "IWM",
+    "QQQ",
+    "EFA",
+    "EEM",
+    "TLT",
+    "IEF",
+    "LQD",
+    "HYG",
+    "GLD",
+    "USO",
+    "DBA",
+    "VNQ"
+  ],
+  "vol_target_per_instrument": 0.1,
+  "vol_window_days": 60,
+  "weighting": "averaged across N instruments (equal notional slots)"
+}

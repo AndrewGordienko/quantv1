@@ -18,7 +18,7 @@ kill gates. Everything else is lab-building. Updated as verdicts land.
 | **Latent flow shock F1** (bars only) | 38 holdout episodes | −18.2 bps / 30m | — | Negative | Negative | **REJECTED** — F2 trades/NBBO separately gated |
 | **SEC Event Atlas** (unsigned stage) | 2,386 tags / 494 accessions | diagnostic only | — | — | — | **PRIMARY DISCOVERY LANE** — 80-label queue and PIT security-master/price coverage gates pending |
 | **Opening Flow P3** (prospective canary) | — | — | — | — | — | **SHADOW / PAPER ONLY** — live evidence not yet accumulated |
-| **Diversified TSMOM** (ETF proxies) | diagnostic (not val.) | Sharpe-scaled | **0.66** @2bps | **0.59** @6d ✓ | **0.63** @5bps ✓ | **ROBUST MODEST DIVERSIFIER — below >1 gate; low SPY corr (0.26); stable 11/14 yrs, not 2022-conc., PSR(>0)=0.99; overlay not standalone** |
+| **Diversified TSMOM** (ETF proxies) | diagnostic + **PAPER-FORWARD ARMED** | Sharpe-scaled | **0.66** @2bps | **0.59** @6d ✓ | **0.63** @5bps ✓ | **ROBUST MODEST DIVERSIFIER — below >1 gate; low SPY corr; overlay not standalone. Frozen paper-forward armed 2026-07-20, live from 2026-07-21** (`scripts/tsmom_paper_forward.py`, `goldset/tsmom_paper/`) |
 
 ## Kill gates (a candidate advances only if ALL hold)
 
@@ -57,16 +57,24 @@ If a candidate fails, **close the hypothesis** — no rescue via new feature sli
   Tier-1/2-compliant resolver now exists (`scripts/forced_flow_resolve.py`):
   raw-fetch the S&P DJI / PR Newswire release → parse machine-readable
   `datePublished` (exact minute) → hash source bytes → validate exchange-qualified
-  ticker + "S&P 500". Feasibility proven. **51/113 batches VERIFIED** through
-  2023-03-20 — **crossed 50, so the predeclared claim upgraded to `underpowered
-  candidate test`** (50–74). (Tier 2, after-hours ~18:00 ET.) Window differs by type: **ad-hoc
+  ticker + "S&P 500". Feasibility proven. **58/113 batches VERIFIED** through
+  2024-03-18 (claim `underpowered candidate test`, 50–74; **`full candidate
+  test`** at ≥75 — **reject-only; promotion still needs ≥100 independent
+  executable events**, never conflate the two).
+  (Tier 2, after-hours ~18:00 ET.) Window differs by type: **ad-hoc
   adds ~5–8 days** pre-effective vs **quarterly-rebalance adds ~2–3 weeks** (report
   separately per spec); outliers NOW intraday, TSLA 35-day window →
   `goldset/forced_flow/announcement_manifest_v1.jsonl` +
-  `announcement_coverage_v1.json`. Slow grind (62 remain); **claim now
-  `underpowered candidate test`** (≥50); reaches `full test` at ≥75 verified.
-- **Census-quality finding:** **23 of the 74 batches processed so far are renames
-  / mergers, not fresh additions** (~31%) — e.g. LHX (Harris→L3Harris), GL
+  `announcement_coverage_v1.json`. Slow grind (55 remain); **claim
+  `underpowered candidate test`** (≥50); reaches **`full candidate test`** at ≥75
+  (reject-only; ≥100 executable events required for promotion). Plan: stop the
+  census at ≥75, freeze the manifest/rejection-ledger/rename-exclusions, then
+  preregister and run the announcement→effective continuation test **once**
+  (batch = independent unit; ad-hoc vs quarterly separated; costs, delayed entry,
+  doubled costs, clustered CIs, concentration checks); kill/advance with no rescue
+  filters; write the result up power-honestly (n≈75 → MDE ~1.2–1.5%, likely null).
+- **Census-quality finding:** **30 of the 88 batches processed so far are renames
+  / mergers, not fresh additions** (~34%) — e.g. LHX (Harris→L3Harris), GL
   (Torchmark→Globe Life), BKR (BHGE→Baker Hughes), NLOK, PEAK, J (JEC ticker
   change), AMCR (inherited Bemis's spot), TT (Ingersoll-Rand→Trane), HWM
   (Arconic→Howmet), LUMN (CenturyLink→Lumen), plus merger tickers VIAC/TFC/RTX in

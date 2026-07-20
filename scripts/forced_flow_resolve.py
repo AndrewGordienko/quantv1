@@ -170,8 +170,12 @@ def main() -> None:
         y = r["effective_date"][:4]
         by_year[y] = by_year.get(y, 0) + 1
         by_tier[str(r["source_tier"])] = by_tier.get(str(r["source_tier"]), 0) + 1
+    # >=75 is a FULL CANDIDATE TEST: it can REJECT the hypothesis, but cannot
+    # promote it -- the strategy scoreboard requires >=100 independent executable
+    # events for promotion. Never conflate the two.
     claim = ("descriptive pilot only" if len(verified) < 50 else
-             "underpowered candidate test" if len(verified) < 75 else "full test")
+             "underpowered candidate test" if len(verified) < 75 else
+             "full candidate test (reject-only; promotion needs >=100 executable events)")
     coverage = {
         "rules_version": "forced-flow-announcement-rules-v1",
         "total_addition_batches": total_batches,

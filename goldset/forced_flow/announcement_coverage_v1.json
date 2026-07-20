@@ -1,19 +1,20 @@
 {
   "by_tier": {
-    "2": 51
+    "2": 58
   },
   "by_year": {
     "2019": 15,
     "2020": 9,
     "2021": 12,
     "2022": 12,
-    "2023": 3
+    "2023": 9,
+    "2024": 1
   },
   "note": "return-blind; verified-and-covered subset is the tradable continuation sample, NOT 113; tiers never relaxed",
   "predeclared_claim_if_frozen_now": "underpowered candidate test",
-  "remaining": 62,
+  "remaining": 55,
   "rules_version": "forced-flow-announcement-rules-v1",
   "total_addition_batches": 113,
-  "verified": 51,
-  "verified_pct": 45.1
+  "verified": 58,
+  "verified_pct": 51.3
 }
