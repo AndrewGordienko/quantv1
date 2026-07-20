@@ -12,7 +12,7 @@ kill gates. Everything else is lab-building. Updated as verdicts land.
 
 | Strategy | Indep. validation trades | Net return | Net Sharpe | Delayed-entry | 2× costs | Decision |
 |---|---|---|---|---|---|---|
-| **Forced flow** (index effect) | — | — | — | — | — | **BUILD NEXT (flagship)** — data-viable |
+| **Forced flow** (announcement→effective continuation) | 61 executable batches (candidate test) | gross +126 bps / **net +59 bps (CI incl. 0)** | — | +64 bps (CI incl. 0) | **−7 bps (fails)** | **REJECTED — leg closed.** Gross index effect exists but net not sig after hedged costs; fails doubled-cost; placebo +30 bps (survivorship). No rescue. |
 | **MGRM** (guidance underreaction) | — | — | — | — | — | **TEST ONCE** — blocked on extraction cert |
 | **Actor B3** (Fed speaker deviation) | — | — | — | — | — | **SIDE EXPERIMENT (≤10%)** — census v1 frozen |
 | **Latent flow shock F1** (bars only) | 38 holdout episodes | −18.2 bps / 30m | — | Negative | Negative | **REJECTED** — F2 trades/NBBO separately gated |
