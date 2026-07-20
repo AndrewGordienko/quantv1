@@ -57,24 +57,24 @@ If a candidate fails, **close the hypothesis** — no rescue via new feature sli
   Tier-1/2-compliant resolver now exists (`scripts/forced_flow_resolve.py`):
   raw-fetch the S&P DJI / PR Newswire release → parse machine-readable
   `datePublished` (exact minute) → hash source bytes → validate exchange-qualified
-  ticker + "S&P 500". Feasibility proven. **58/113 batches VERIFIED** through
-  2024-03-18 (claim `underpowered candidate test`, 50–74; **`full candidate
+  ticker + "S&P 500". Feasibility proven. **68/113 batches VERIFIED** through
+  2025-07-09 (claim `underpowered candidate test`, 50–74; **`full candidate
   test`** at ≥75 — **reject-only; promotion still needs ≥100 independent
   executable events**, never conflate the two).
   (Tier 2, after-hours ~18:00 ET.) Window differs by type: **ad-hoc
   adds ~5–8 days** pre-effective vs **quarterly-rebalance adds ~2–3 weeks** (report
   separately per spec); outliers NOW intraday, TSLA 35-day window →
   `goldset/forced_flow/announcement_manifest_v1.jsonl` +
-  `announcement_coverage_v1.json`. Slow grind (55 remain); **claim
-  `underpowered candidate test`** (≥50); reaches **`full candidate test`** at ≥75
+  `announcement_coverage_v1.json`. Slow grind (45 remain, ~7 real adds short of 75);
+  **claim `underpowered candidate test`** (≥50); reaches **`full candidate test`** at ≥75
   (reject-only; ≥100 executable events required for promotion). Plan: stop the
   census at ≥75, freeze the manifest/rejection-ledger/rename-exclusions, then
   preregister and run the announcement→effective continuation test **once**
   (batch = independent unit; ad-hoc vs quarterly separated; costs, delayed entry,
   doubled costs, clustered CIs, concentration checks); kill/advance with no rescue
   filters; write the result up power-honestly (n≈75 → MDE ~1.2–1.5%, likely null).
-- **Census-quality finding:** **30 of the 88 batches processed so far are renames
-  / mergers, not fresh additions** (~34%) — e.g. LHX (Harris→L3Harris), GL
+- **Census-quality finding:** **31 of the 99 batches processed so far are renames
+  / mergers, not fresh additions** (~31%) — e.g. LHX (Harris→L3Harris), GL
   (Torchmark→Globe Life), BKR (BHGE→Baker Hughes), NLOK, PEAK, J (JEC ticker
   change), AMCR (inherited Bemis's spot), TT (Ingersoll-Rand→Trane), HWM
   (Arconic→Howmet), LUMN (CenturyLink→Lumen), plus merger tickers VIAC/TFC/RTX in
