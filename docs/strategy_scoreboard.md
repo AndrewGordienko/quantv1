@@ -1,5 +1,9 @@
 # Strategy Scoreboard
 
+> **Consolidated state & resourcing fork:** `docs/research_state_2026-07-20.md`
+> (one real signal = sub-gate TSMOM overlay; all else null/blocked; decision fork
+> a/b/c/d).
+
 The single table that matters. A candidate becomes *the* strategy only by
 filling this row with real, post-cost, walk-forward numbers and clearing the
 kill gates. Everything else is lab-building. Updated as verdicts land.
@@ -11,6 +15,10 @@ kill gates. Everything else is lab-building. Updated as verdicts land.
 | **Forced flow** (index effect) | — | — | — | — | — | **BUILD NEXT (flagship)** — data-viable |
 | **MGRM** (guidance underreaction) | — | — | — | — | — | **TEST ONCE** — blocked on extraction cert |
 | **Actor B3** (Fed speaker deviation) | — | — | — | — | — | **SIDE EXPERIMENT (≤10%)** — census v1 frozen |
+| **Latent flow shock F1** (bars only) | 38 holdout episodes | −18.2 bps / 30m | — | Negative | Negative | **REJECTED** — F2 trades/NBBO separately gated |
+| **SEC Event Atlas** (unsigned stage) | 2,386 tags / 494 accessions | diagnostic only | — | — | — | **PRIMARY DISCOVERY LANE** — 80-label queue and PIT security-master/price coverage gates pending |
+| **Opening Flow P3** (prospective canary) | — | — | — | — | — | **SHADOW / PAPER ONLY** — live evidence not yet accumulated |
+| **Diversified TSMOM** (ETF proxies) | diagnostic (not val.) | Sharpe-scaled | **0.66** @2bps | **0.59** @6d ✓ | **0.63** @5bps ✓ | **ROBUST MODEST DIVERSIFIER — below >1 gate; low SPY corr (0.26); stable 11/14 yrs, not 2022-conc., PSR(>0)=0.99; overlay not standalone** |
 
 ## Kill gates (a candidate advances only if ALL hold)
 
@@ -26,10 +34,9 @@ If a candidate fails, **close the hypothesis** — no rescue via new feature sli
 
 ## Effort allocation (this stage)
 
-- **50%** forced-flow strategy + its historical data
-- **30%** finish the one decisive MGRM experiment
-- **10%** historical replay + eventual paper execution
-- **10%** bounded Fed actor experiment (B0–B4), no graph expansion
+- **60%** SEC Event Atlas extraction and unsigned validation
+- **25%** forced-flow announcement timestamps and continuation test
+- **15%** Opening Flow operational paper canary
 
 ## Grounded status (2026-07-11)
 
@@ -46,6 +53,29 @@ If a candidate fails, **close the hypothesis** — no rescue via new feature sli
   be sourced. Zero-vendor path exists (S&P change lists + official releases).
 - **Four sub-tests to run separately:** pre-effective continuation, closing-
   auction pressure, post-effective reversal, related-company diffusion.
+- **Announcement census progress (2026-07-20):** a reusable, return-blind,
+  Tier-1/2-compliant resolver now exists (`scripts/forced_flow_resolve.py`):
+  raw-fetch the S&P DJI / PR Newswire release → parse machine-readable
+  `datePublished` (exact minute) → hash source bytes → validate exchange-qualified
+  ticker + "S&P 500". Feasibility proven. **51/113 batches VERIFIED** through
+  2023-03-20 — **crossed 50, so the predeclared claim upgraded to `underpowered
+  candidate test`** (50–74). (Tier 2, after-hours ~18:00 ET.) Window differs by type: **ad-hoc
+  adds ~5–8 days** pre-effective vs **quarterly-rebalance adds ~2–3 weeks** (report
+  separately per spec); outliers NOW intraday, TSLA 35-day window →
+  `goldset/forced_flow/announcement_manifest_v1.jsonl` +
+  `announcement_coverage_v1.json`. Slow grind (62 remain); **claim now
+  `underpowered candidate test`** (≥50); reaches `full test` at ≥75 verified.
+- **Census-quality finding:** **23 of the 74 batches processed so far are renames
+  / mergers, not fresh additions** (~31%) — e.g. LHX (Harris→L3Harris), GL
+  (Torchmark→Globe Life), BKR (BHGE→Baker Hughes), NLOK, PEAK, J (JEC ticker
+  change), AMCR (inherited Bemis's spot), TT (Ingersoll-Rand→Trane), HWM
+  (Arconic→Howmet), LUMN (CenturyLink→Lumen), plus merger tickers VIAC/TFC/RTX in
+  mixed batches — with no "set to join" release and **no announcement drift**.
+  Logged in `announcement_renames_excluded_v1.jsonl`. Extrapolating ~61% real
+  adds, the true tradable-addition denominator is likely **~65–70**, i.e. an
+  **underpowered-candidate** sample (50–74), not a full test. Prior (disappearing
+  index effect) already says the eventual test is likely null — low expected
+  value, but now unblocked and mechanically closeable.
 
 ### MGRM — test once, then keep or kill
 - **Blocker (checked):** `mgrm_extractor_certification.json` = `GOLDSET_TOO_SMALL`,
@@ -64,6 +94,50 @@ If a candidate fails, **close the hypothesis** — no rescue via new feature sli
 - **State:** outcome writer merged (PR #6); census v1 rules frozen, BOARD_ONLY,
   PR #7 open. **Stop expanding** beyond the frozen Fed pilot. No universal
   actor graph until incremental value is shown on this cohort.
+
+## Data infrastructure gate (2026-07-20)
+
+The daily `prices` panel is **survivorship-biased by construction** and
+**corporate-action-incomplete**. Audit: `scripts/pit_panel_audit.py` →
+`data/pit_panel_audit.json`; contract + remediation in
+`docs/point_in_time_panel_spec.md`. Hard numbers: of 163 S&P 500 deletions since
+2019, **84 (51.5%) are absent entirely** and **0 present ones record a terminal
+stop**, vs 11.2% of additions missing — a non-sign-neutral survivorship
+signature. `close` is fully back-adjusted (yfinance `auto_adjust=True`) with no
+raw price stored, so as-of-date price levels are unrecoverable.
+
+**Consequence for the backlog:** daily cross-sectional residual momentum (#2) and
+PCA/ETF residual stat-arb (#3) are **DATA-GATED**. They may run only as
+survivorship-labelled diagnostics on current constituents — **no promotion, no
+scoreboard row, no Deflated-Sharpe claim** — until the panel reports
+`PANEL_CONTRACT_OK`. Remediation is the top infrastructure task: PIT identity
+backbone (free, partly built in `ingest/security_master.py`), raw+factors for
+survivors (free), delisted-inclusive history via the already-integrated Polygon
+key (paid tier), delisting returns (CRSP, paid).
+
+**Diagnostic gate run (2026-07-20, backlog #2 simple form).**
+`scripts/daily_xs_reversal_diag.py` ran the cheap gross-signal gate *before*
+committing panel budget. On the survivorship-optimistic panel (1,080 names avg):
+residual momentum has **no gross signal**; short-term reversal has a real gross
+edge (+12%/yr, Sharpe 0.57) but turnover ~1.0/day buries it — **all 24 net cells
+negative** (10 & 20 bps/side). Verdict `NO_GROSS_SIGNAL_KILL_CANDIDATE`.
+**Implication:** do **not** build the paid panel on behalf of #2's naive daily
+L/S form; the eventual clean panel is justified (if at all) by the lower-turnover
+**event** lane, not by cross-sectional reversal. Priority shifts further toward
+the SEC Atlas / event lane.
+
+**SEC Atlas signed-drift diagnostic (2026-07-20, backlog #1).**
+`scripts/atlas_signed_drift_diag.py` froze a return-blind structural-sign map and
+measured signed post-open drift on the 490 signed, current-linked discovery
+events. **No family has significant tradeable drift** (all 5-day CIs cross zero),
+and the immediate signed gap is **wrong-signed** for the largest positive
+auto-tag families (`guidance_raised` −65 bps, `major_customer_win` −54 bps,
+`activist_13d` −84 bps). **Two consequences:** (a) the directive's crux is
+confirmed — the Atlas is unsigned in practice; (b) **human directional annotation
+is a HARD gate**, not a formality — auto-tags cannot carry the trade sign. The
+35% Atlas allocation should be read as *annotation-first*, and the signed test is
+worth running (once) only on the correctly-signed **negative-news** families
+(restatement, secondary_offering) after annotation + PIT prices land.
 
 ## Standing discipline
 
