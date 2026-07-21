@@ -178,6 +178,18 @@ walk-forward + **mandatory sub-period decay** (≈3 regimes). Pre-registered gat
 net Sharpe>1 in EVERY regime, bootstrap LB>0, Deflated Sharpe, paper-only.
 Replication, not novel alpha; honest prior is most variants die on costs.
 
+## Crypto day-trade (OFI flow) — first real experiment REJECTED (2026-07-21)
+
+First genuine intraday day-trade test on real data (89 days BTC+ETH 5-min signed
+OFI from free Binance aggTrades). `scripts/crypto_ofi_experiment.py`: elastic-net,
+NO_TRADE default, walk-forward, day-clustered Sharpe. **Result: no edge.** OFI→
+forward-return corr ≈ 0; elastic-net zeroes OFI; predicted edges <3 bps vs 32 bps
+gate → 0 executions; always-on gross day-Sharpe NEGATIVE. The accessible
+(trade-level, 5-min) order-flow signal is dead on BTC/ETH perps. The remaining
+microstructure avenue (L2 depth/microprice/queue at seconds resolution) needs a
+live order-book collector (weeks) and is a separate, harder build — not a rescue
+of this. Trial `crypto_ofi_flow_v1` (registry 11). No rescue filters.
+
 ## Standing discipline
 
 - A buy/sell display is a UI demo until a frozen walk-forward model produces the
