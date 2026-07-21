@@ -1,0 +1,25 @@
+{
+  "capital": "PAPER_ONLY_NO_REAL_MONEY",
+  "execution": "next daily bar",
+  "fee_slippage_bps_per_side": 7.0,
+  "frozen_at": "2026-07-21",
+  "funding": "modeled (long pays when funding>0)",
+  "lookbacks": [
+    30,
+    60,
+    120
+  ],
+  "max_lev": 2.0,
+  "note": "daily trend overlay, not a day-trader; PAPER ONLY",
+  "prospective_start": "2026-07-21",
+  "rebalance": "daily",
+  "rules_code_sha256": "013d69a97f6e99c0d1cc8564bf2ce869575ba3bebbd19a6a98d382f00e7b196a",
+  "rules_source": "scripts/crypto_tsmom_backtest.py",
+  "spec_version": "crypto-tsmom-btc-eth-paper-v1",
+  "target_vol": 0.25,
+  "universe": [
+    "BTCUSDT",
+    "ETHUSDT"
+  ],
+  "vol_window": 30
+}

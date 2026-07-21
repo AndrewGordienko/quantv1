@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import io
 import zipfile
+from datetime import date, timedelta
 from pathlib import Path
 
 try:
@@ -96,6 +97,45 @@ def ingest_sample(symbol: str = "BTCUSDT", days=("2026-07-19",), freq="1min") ->
             "mean_abs_ofi": round(float(bars["ofi"].abs().mean()), 4),
             "range": [str(bars.index.min()), str(bars.index.max())],
             "wrote": str(path)}
+
+
+def _existing_days(path: Path) -> set:
+    if not path.exists():
+        return set()
+    idx = pd.read_csv(path, index_col=0, parse_dates=True).index
+    return set(pd.Series(idx).dt.date.astype(str))
+
+
+def ingest_range(symbol: str = "BTCUSDT", days_back: int = 14,
+                 freqs=("1min", "5min")) -> dict:
+    """Resumable multi-day OFI accumulation. Downloads each new day ONCE (serving
+    all freqs), skips days already stored, discards raw after computing bars."""
+    OUT.mkdir(parents=True, exist_ok=True)
+    end = date.today() - timedelta(days=1)          # today's archive may not exist yet
+    want = sorted((end - timedelta(days=i)).isoformat() for i in range(days_back))
+    paths = {f: OUT / f"{symbol}_ofi_{f}.csv" for f in freqs}
+    have = {f: _existing_days(paths[f]) for f in freqs}
+    added, missing = [], []
+    for d in want:
+        if all(d in have[f] for f in freqs):
+            continue
+        try:
+            trades = download_aggtrades(symbol, d)
+        except Exception:
+            missing.append(d)
+            continue
+        for f in freqs:
+            if d in have[f]:
+                continue
+            bars = ofi_bars(trades, f)
+            existing = pd.read_csv(paths[f], index_col=0, parse_dates=True) if paths[f].exists() else None
+            combined = pd.concat([x for x in (existing, bars) if x is not None]).sort_index()
+            combined = combined[~combined.index.duplicated(keep="last")]
+            combined.to_csv(paths[f])
+        added.append(d)
+        del trades
+    return {"symbol": symbol, "added_days": added, "missing_days": missing,
+            "coverage_days": {f: len(_existing_days(paths[f])) for f in freqs}}
 
 
 if __name__ == "__main__":
