@@ -164,6 +164,19 @@ signal) → elastic-net baseline → validation gates (≥100 event clusters,
 day-clustered SEs, Sharpe>1, 2× cost, +latency, beat matched non-event shocks,
 Deflated Sharpe) → paper-forward.
 
+## Crypto perp track (2026-07-21) — venue pivot, data UNBLOCKED
+
+Crypto removes the paid-data gate: BTC/ETH perp OHLCV + funding + books are FREE
+(Binance USD-M), 24/7, no PDT, symmetric shorts; BTC/ETH-only sidesteps
+survivorship + wash-trading. Frozen spec: `docs/strategy_crypto.md`. Real data
+ingested (`ingest/crypto_perp.py` → `data/crypto/`): BTC 2,509 daily bars +
+7,518 funding recs, ETH 2,429 + 7,284, 2019→2026. **Funding measured ≈ 3.2–3.8
+bps/day (a long perp pays ~12–14%/yr)** — must be modeled. First experiment =
+**TSMOM port** (the one survivor) with taker fees + funding + slippage,
+walk-forward + **mandatory sub-period decay** (≈3 regimes). Pre-registered gate:
+net Sharpe>1 in EVERY regime, bootstrap LB>0, Deflated Sharpe, paper-only.
+Replication, not novel alpha; honest prior is most variants die on costs.
+
 ## Standing discipline
 
 - A buy/sell display is a UI demo until a frozen walk-forward model produces the
