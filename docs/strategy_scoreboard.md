@@ -18,6 +18,7 @@ kill gates. Everything else is lab-building. Updated as verdicts land.
 | **Latent flow shock F1** (bars only) | 38 holdout episodes | −18.2 bps / 30m | — | Negative | Negative | **REJECTED** — F2 trades/NBBO separately gated |
 | **SEC Event Atlas** (unsigned stage) | 2,386 tags / 494 accessions | diagnostic only | — | — | — | **PRIMARY DISCOVERY LANE** — 80-label queue and PIT security-master/price coverage gates pending |
 | **Opening Flow P3** (prospective canary) | — | — | — | — | — | **SHADOW / PAPER ONLY** — live evidence not yet accumulated |
+| **Crypto TSMOM** (BTC/ETH perps, daily) | 2359 days (backtest) | +22%/yr @21% vol | **1.07** net ✓ | **1.01** @2d ✓ | **1.00** @2× ✓ | **CANDIDATE — first to clear the full battery; cross-regime avg 0.95, replication not novel, daily trend NOT day-trade; needs Deflated Sharpe + forward paper. Paper-only** |
 | **Diversified TSMOM** (ETF proxies) | diagnostic + **PAPER-FORWARD ARMED** | Sharpe-scaled | **0.66** @2bps | **0.59** @6d ✓ | **0.63** @5bps ✓ | **ROBUST MODEST DIVERSIFIER — below >1 gate; low SPY corr; overlay not standalone. Frozen paper-forward armed 2026-07-20, live from 2026-07-21** (`scripts/tsmom_paper_forward.py`, `goldset/tsmom_paper/`) |
 
 ## Kill gates (a candidate advances only if ALL hold)
