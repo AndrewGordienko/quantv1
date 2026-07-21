@@ -190,6 +190,16 @@ microstructure avenue (L2 depth/microprice/queue at seconds resolution) needs a
 live order-book collector (weeks) and is a separate, harder build — not a rescue
 of this. Trial `crypto_ofi_flow_v1` (registry 11). No rescue filters.
 
+## Multiple-testing check (2026-07-21) — Probabilistic Sharpe
+
+Against the 11-trial global search, neither TSMOM candidate is confidently a >1
+Sharpe strategy; both are real-but-modest:
+- **Crypto TSMOM** (daily net, n=2359): PSR(>0)=0.998, **PSR(>0.5)=0.934**, PSR(>1)=0.572.
+- **Equity TSMOM** (daily net, n=3337): PSR(>0)=0.990, PSR(>0.5)=0.705, **PSR(>1)=0.105**.
+Crypto TSMOM is the stronger candidate (confidently >0.5); the point-estimate
+Sharpes (1.07 / 0.66) overstate the confident lower bound. Both remain paper-only
+candidates pending a real forward record — the "1.07" is not a promotable number.
+
 ## Standing discipline
 
 - A buy/sell display is a UI demo until a frozen walk-forward model produces the
